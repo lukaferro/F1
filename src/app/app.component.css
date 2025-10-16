@@ -13,19 +13,28 @@ nav, main, footer {
 }
 
 nav {
-  background: #222;
-  color: #fff;
+  background: #ffffff;
+  color: #000000;
   padding: 1rem;
 }
 
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 nav a {
-  color: #fff;
+  color: #000000;
   text-decoration: none;
 }
 
 footer {
-  background: #222;
-  color: #fff;
+  background: #ffffff;
+  color: #000000;
   text-align: center;
   padding: 1rem;
   position: fixed;
@@ -36,4 +45,8 @@ footer {
 
 main {
   padding-bottom: 3.5rem;
+}
+
+:host, body {
+  overflow-x: hidden;
 }
