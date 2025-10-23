@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './home.component';
-import { GranPremioComponent } from './gran-premio.component';
+import { GranPremiComponent } from './components/gran.premi/gran-premi.component';
 
 export const routes: Routes = [
   {
@@ -8,7 +8,7 @@ export const routes: Routes = [
     component: HomeComponent,
   },
   {
-    path: 'granpremio',
-    component: GranPremioComponent,
+    path: 'granpremi',
+    component: GranPremiComponent,
   }
 ];

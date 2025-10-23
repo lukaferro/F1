@@ -1,0 +1,44 @@
+<div class="gp-container">
+  <aside class="gp-sidebar">
+    <label class="gp-label">Anno</label>
+    <p-dropdown
+      [options]="years"
+      [(ngModel)]="selectedYear"
+      optionLabel="name"
+      optionValue="value"
+      placeholder="Tutti gli anni"
+      filterBy="name"
+      (ngModelChange)="onYearChange($event)"
+      class="gp-dropdown">
+    </p-dropdown>
+  </aside>
+
+  <section class="gp-cards">
+    <h2 class="gp-section-title">Gran Premi</h2>
+
+    <div *ngIf="meetings?.length; else emptyList" class="cards-grid">
+      <article *ngFor="let meeting of meetings; trackBy: trackById" class="gp-card">
+        <div class="gp-card-header">
+          <div class="gp-country">{{ meeting.country_code }} • {{ meeting.location }}</div>
+          <div class="gp-year">{{ meeting.year }}</div>
+        </div>
+
+        <h3 class="gp-official">{{ meeting.meeting_official_name }}</h3>
+
+        <div class="gp-sub">
+          <span class="gp-name">{{ meeting.meeting_name }}</span>
+          <span class="gp-date">{{ meeting.date_start | date:'mediumDate' }}</span>
+        </div>
+
+        <div class="gp-meta">
+          <span class="chip">{{ meeting.circuit_short_name || 'Circuit' }}</span>
+          <span class="chip">{{ meeting.country_name }}</span>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #emptyList>
+      <div class="empty">Nessun meeting disponibile per l'anno selezionato.</div>
+    </ng-template>
+  </section>
+</div>

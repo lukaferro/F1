@@ -6,16 +6,57 @@
   padding: 0;
 }
 
-nav, main, footer {
+:host,
+body {
+  overflow-x: hidden;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+  padding-bottom: 3.5rem;
+}
+
+nav,
+main,
+footer {
   width: 100%;
   margin: 0;
   padding: 0;
 }
 
 nav {
-  background: #ffffff;
-  color: #000000;
-  padding: 1rem;
+  position: relative;
+  height: 70px;
+  background: linear-gradient(to bottom, #2a2a2a 0%, #1e1e1e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  box-shadow: 0 4px 8px rgba(255, 0, 0, 0.3);
+}
+
+nav::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  background: radial-gradient(ellipse at center,
+      rgba(255, 0, 0, 0.6) 0%,
+      rgba(255, 0, 0, 0) 80%);
+  z-index: 1;
 }
 
 nav ul {
@@ -24,29 +65,57 @@ nav ul {
   padding: 0;
   display: flex;
   align-items: center;
+  gap: 1.5rem;
+}
+
+nav .nav-left {
+  display: flex;
+  align-items: center;
   gap: 1rem;
 }
 
+nav .nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  color: #ffffff;
+}
+
+nav ul li img {
+  height: 1.5rem;
+  cursor: pointer;
+}
+
 nav a {
-  color: #000000;
+  color: #ffffff;
   text-decoration: none;
+  font-weight: 500;
+}
+
+nav a:hover {
+  color: #ff0000;
+  cursor: pointer;
 }
 
 footer {
-  background: #ffffff;
-  color: #000000;
+  position: relative;
+  width: 100%;
   text-align: center;
   padding: 1rem;
-  position: fixed;
+  background: linear-gradient(to bottom, #1e1e1e, #2a2a2a);
+  color: #ffffff;
+  box-shadow: 0 -4px 8px rgba(255, 0, 0, 0.3);
+}
+
+footer::before {
+  content: "";
+  position: absolute;
+  top: -4px;
   left: 0;
-  right: 0;
-  bottom: 0;
-}
-
-main {
-  padding-bottom: 3.5rem;
-}
-
-:host, body {
-  overflow-x: hidden;
+  width: 100%;
+  height: 12px;
+  background: radial-gradient(ellipse at center,
+      rgba(255, 0, 0, 0.6) 0%,
+      rgba(255, 0, 0, 0) 80%);
+  z-index: 1;
 }
