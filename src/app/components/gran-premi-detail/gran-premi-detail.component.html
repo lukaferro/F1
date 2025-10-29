@@ -1,0 +1,285 @@
+<div class="detail-container" *ngIf="meeting; else loading">
+  <div class="detail-header">
+    <div class="back-button">
+      <p-button icon="pi pi-arrow-left" styleClass="p-button-text" label="Torna ai Gran Premi" routerLink="/granpremi"></p-button>
+    </div>
+    
+    <div class="header-content">
+      <div class="flag-container">
+        <img [src]="'https://flagcdn.com/w320/' + getCountryFlagCode(meeting.country_code) + '.png'" [alt]="meeting.country_name" class="country-flag">
+      </div>
+      
+      <div class="title-container">
+        <h1 class="gp-title">{{ meeting.meeting_official_name }}</h1>
+        <div class="gp-subtitle">
+          <span class="gp-year">{{ meeting.year }}</span>
+          <span class="gp-location">{{ meeting.location }}, {{ meeting.country_name }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="detail-content">
+    <div class="detail-main">
+      <section class="circuit-section">
+        <h2>Circuito</h2>
+        <div class="circuit-container">
+          <div class="circuit-image">
+            <img [src]="getCircuitImage(meeting.circuit_short_name)" [alt]="meeting.circuit_short_name" class="circuit-map">
+          </div>
+          <div class="circuit-info">
+            <h3>{{ meeting.circuit_short_name }}</h3>
+            <p class="circuit-location">{{ meeting.location }}, {{ meeting.country_name }}</p>
+            <div class="circuit-meta">
+              <div class="meta-item">
+                <i class="pi pi-calendar"></i>
+                <span>Data: {{ meeting.date_start | date:'fullDate' }}</span>
+              </div>
+              <div class="meta-item">
+                <i class="pi pi-globe"></i>
+                <span>Fuso orario: {{ formatTimeOffset(meeting.gmt_offset) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <section class="info-section">
+        <h2>Informazioni</h2>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-icon">
+              <i class="pi pi-id-card"></i>
+            </div>
+            <div class="info-content">
+              <h3>Nome Ufficiale</h3>
+              <p>{{ meeting.meeting_official_name }}</p>
+            </div>
+          </div>
+          
+          <div class="info-card">
+            <div class="info-icon">
+              <i class="pi pi-tag"></i>
+            </div>
+            <div class="info-content">
+              <h3>Nome Evento</h3>
+              <p>{{ meeting.meeting_name }}</p>
+            </div>
+          </div>
+          
+          <div class="info-card">
+            <div class="info-icon">
+              <i class="pi pi-map-marker"></i>
+            </div>
+            <div class="info-content">
+              <h3>Località</h3>
+              <p>{{ meeting.location }}, {{ meeting.country_name }}</p>
+            </div>
+          </div>
+          
+          <div class="info-card">
+            <div class="info-icon">
+              <i class="pi pi-calendar"></i>
+            </div>
+            <div class="info-content">
+              <h3>Data</h3>
+              <p>{{ meeting.date_start | date:'fullDate' }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Sezione Sessioni e Risultati -->
+      <section class="sessions-section">
+        <h2>Sessioni e Risultati</h2>
+        
+        <div *ngIf="loadingSessions" class="loading-sessions">
+          <i class="pi pi-spin pi-spinner"></i>
+          <p>Caricamento sessioni...</p>
+        </div>
+        
+        <div *ngIf="sessionsError" class="error-message">
+          <i class="pi pi-exclamation-triangle"></i>
+          <p>{{ sessionsError }}</p>
+        </div>
+        
+        <div *ngIf="!loadingSessions && !sessionsError && sessions.length === 0" class="no-sessions">
+          <i class="pi pi-info-circle"></i>
+          <p>Nessuna sessione disponibile per questo Gran Premio.</p>
+        </div>
+        
+        <div *ngIf="!loadingSessions && !sessionsError && sessions.length > 0" class="sessions-container">
+          <p-tabView [(activeIndex)]="activeSessionIndex">
+            <!-- Gara -->
+            <p-tabPanel *ngIf="raceResults.length > 0" header="Gara">
+              <div class="session-info">
+                <h3>Risultati Gara</h3>
+                <p *ngIf="sessions?.length">
+                  <ng-container *ngFor="let s of sessions">
+                    <span *ngIf="s.session_type === 'Race'">{{ formatSessionDate(s.date_start) }}</span>
+                  </ng-container>
+                </p>
+              </div>
+              
+              <p-table [value]="raceResults" styleClass="results-table">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th>Pos</th>
+                    <th>Pilota</th>
+                    <th>Team</th>
+                    <th>Griglia</th>
+                    <th>Tempo</th>
+                    <th>Gap</th>
+                    <th>Punti</th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-result>
+                  <tr>
+                    <td>{{ result.position }}</td>
+                    <td>
+                      <div class="driver-info">
+                        <span class="driver-number" [style.background-color]="getTeamColor(result.team_color)">{{ result.driver_number }}</span>
+                        <span class="driver-name">{{ result.broadcast_name }}</span>
+                      </div>
+                    </td>
+                    <td>{{ result.team_name }}</td>
+                    <td>{{ result.grid_position }}</td>
+                    <td>{{ result.lap_time || result.status }}</td>
+                    <td>{{ result.gap_to_leader || '-' }}</td>
+                    <td>{{ result.points }}</td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </p-tabPanel>
+            
+            <!-- Qualifiche -->
+            <p-tabPanel *ngIf="qualifyingResults.length > 0" header="Qualifiche">
+              <div class="session-info">
+                <h3>Risultati Qualifiche</h3>
+                <p *ngIf="sessions?.length">
+                  <ng-container *ngFor="let s of sessions">
+                    <span *ngIf="s.session_type === 'Qualifying'">{{ formatSessionDate(s.date_start) }}</span>
+                  </ng-container>
+                </p>
+              </div>
+              
+              <p-table [value]="qualifyingResults" styleClass="results-table">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th>Pos</th>
+                    <th>Pilota</th>
+                    <th>Team</th>
+                    <th>Tempo</th>
+                    <th>Gap</th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-result>
+                  <tr>
+                    <td>{{ result.position }}</td>
+                    <td>
+                      <div class="driver-info">
+                        <span class="driver-number" [style.background-color]="getTeamColor(result.team_color)">{{ result.driver_number }}</span>
+                        <span class="driver-name">{{ result.broadcast_name }}</span>
+                      </div>
+                    </td>
+                    <td>{{ result.team_name }}</td>
+                    <td>{{ result.lap_time || result.status }}</td>
+                    <td>{{ result.gap_to_leader || '-' }}</td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </p-tabPanel>
+            
+            <!-- Sprint -->
+            <p-tabPanel *ngIf="sprintResults.length > 0" header="Sprint">
+              <div class="session-info">
+                <h3>Risultati Sprint</h3>
+                <p *ngIf="sessions?.length">
+                  <ng-container *ngFor="let s of sessions">
+                    <span *ngIf="s.session_type === 'Sprint'">{{ formatSessionDate(s.date_start) }}</span>
+                  </ng-container>
+                </p>
+              </div>
+              
+              <p-table [value]="sprintResults" styleClass="results-table">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th>Pos</th>
+                    <th>Pilota</th>
+                    <th>Team</th>
+                    <th>Tempo</th>
+                    <th>Gap</th>
+                    <th>Punti</th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-result>
+                  <tr>
+                    <td>{{ result.position }}</td>
+                    <td>
+                      <div class="driver-info">
+                        <span class="driver-number" [style.background-color]="getTeamColor(result.team_color)">{{ result.driver_number }}</span>
+                        <span class="driver-name">{{ result.broadcast_name }}</span>
+                      </div>
+                    </td>
+                    <td>{{ result.team_name }}</td>
+                    <td>{{ result.lap_time || result.status }}</td>
+                    <td>{{ result.gap_to_leader || '-' }}</td>
+                    <td>{{ result.points }}</td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </p-tabPanel>
+            
+            <!-- Sessioni -->
+            <p-tabPanel header="Tutte le Sessioni">
+              <div class="session-info">
+                <h3>Programma Sessioni</h3>
+              </div>
+              
+              <div class="sessions-list">
+                <div *ngFor="let session of sessions" class="session-item">
+                  <div class="session-type">{{ getSessionName(session) }}</div>
+                  <div class="session-date">{{ formatSessionDate(session.date_start) }}</div>
+                </div>
+              </div>
+            </p-tabPanel>
+          </p-tabView>
+        </div>
+      </section>
+    </div>
+    
+    <aside class="detail-sidebar">
+      <div class="sidebar-card">
+        <h3>Dettagli Evento</h3>
+        <ul class="detail-list">
+          <li>
+            <span class="detail-label">Codice Meeting:</span>
+            <span class="detail-value">{{ meeting.meeting_code }}</span>
+          </li>
+          <li>
+            <span class="detail-label">Circuito:</span>
+            <span class="detail-value">{{ meeting.circuit_short_name }}</span>
+          </li>
+          <li>
+            <span class="detail-label">Paese:</span>
+            <span class="detail-value">{{ meeting.country_name }}</span>
+          </li>
+          <li>
+            <span class="detail-label">Fuso Orario:</span>
+            <span class="detail-value">{{ formatTimeOffset(meeting.gmt_offset) }}</span>
+          </li>
+
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="loading-container">
+    <div class="loading-spinner">
+      <i class="pi pi-spin pi-spinner" style="font-size: 3rem"></i>
+    </div>
+    <p>Caricamento informazioni del Gran Premio...</p>
+  </div>
+</ng-template>
