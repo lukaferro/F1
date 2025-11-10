@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
@@ -12,8 +12,8 @@ import { CardModule } from 'primeng/card';
     <div class="home-container">
       <section class="hero">
         <div class="hero-video">
-          <video autoplay loop muted playsinline>
-            <source src="./../assets/F1.mp4" type="video/mp4">
+          <video #heroVideo autoplay loop muted playsinline preload="auto">
+            <source src="assets/F1.mp4" type="video/mp4">
             Il tuo browser non supporta i video HTML5.
           </video>
           <div class="overlay"></div>
@@ -292,4 +292,20 @@ import { CardModule } from 'primeng/card';
     }
   `]
 })
-export class HomeComponent {}
+export class HomeComponent implements AfterViewInit {
+  @ViewChild('heroVideo') heroVideo?: ElementRef<HTMLVideoElement>;
+
+  ngAfterViewInit(): void {
+    const video = this.heroVideo?.nativeElement;
+    if (!video) {
+      return;
+    }
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        video.muted = true;
+        video.play().catch(() => {});
+      });
+    }
+  }
+}

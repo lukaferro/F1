@@ -175,6 +175,76 @@ h2::after {
   gap: 1rem;
 }
 
+.sponsor-section {
+  margin: 3rem 0;
+}
+
+.sponsor-card {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: linear-gradient(135deg, #0f0f0f 0%, #1f1f1f 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  border-left: 6px solid #ff0000;
+}
+
+.sponsor-media {
+  width: 160px;
+  height: 160px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.sponsor-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+}
+
+.sponsor-info {
+  flex: 1;
+  color: #ffffff;
+}
+
+.sponsor-label {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.75rem;
+}
+
+.sponsor-name {
+  font-size: 2rem;
+  margin: 0 0 0.5rem;
+}
+
+.sponsor-tagline {
+  margin: 0 0 1.25rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sponsor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ff4d4d;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.sponsor-link:hover {
+  color: #ffffff;
+}
+
 .info-icon {
   width: 50px;
   height: 50px;
@@ -199,7 +269,83 @@ h2::after {
 
 .info-content p {
   margin: 0;
-  color: #666;
+  color: #ffffff;
+}
+
+.session-info {
+  margin-bottom: 1.5rem;
+}
+
+:host ::ng-deep .results-table .p-datatable-thead > tr > th {
+  background: rgba(0, 0, 0, 0.85);
+  color: #ffffff;
+  font-weight: 600;
+  border: none;
+  padding: 0.75rem 1rem;
+}
+
+:host ::ng-deep .results-table .p-datatable-tbody > tr > td {
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1rem;
+}
+
+:host ::ng-deep .results-table .p-datatable-tbody > tr:nth-child(even) > td {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.driver-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.driver-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #000;
+  font-weight: 700;
+}
+
+.driver-name {
+  font-weight: 600;
+}
+
+.session-results-overview {
+  margin-top: 3rem;
+}
+
+.session-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff6b6b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+}
+
+:host ::ng-deep .compact-results-table .p-datatable-thead > tr > th {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+:host ::ng-deep .compact-results-table .p-datatable-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+}
+
+:host ::ng-deep .compact-results-table .p-datatable-tbody > tr:hover > td {
+  background: rgba(255, 0, 0, 0.2);
 }
 
 .sidebar-card {
@@ -378,6 +524,102 @@ h2::after {
   margin-top: 1.5rem;
 }
 
+/* Accordion per sessioni */
+.session-accordion {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.session-panel {
+  background: #1e1e1e;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.session-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+}
+
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 1.5rem;
+  cursor: pointer;
+  gap: 1rem;
+  background: linear-gradient(90deg, #1e1e1e, #2d2d2d);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
+.session-header:hover {
+  background: linear-gradient(90deg, #2d2d2d, #3d3d3d);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Stili migliorati per i bottoni */
+:host ::ng-deep .p-button {
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(255,0,0,0.2);
+}
+
+:host ::ng-deep .p-button:hover {
+  background: linear-gradient(135deg, #cc0000, #990000);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255,0,0,0.3);
+}
+
+:host ::ng-deep .p-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(255,0,0,0.2);
+}
+
+.session-header:hover {
+  background: linear-gradient(90deg, #333, #000);
+}
+
+.session-left {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.session-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #ffffff;
+}
+
+.chevron {
+  transition: transform 0.25s ease;
+  font-size: 1.1rem;
+  color: #ff0000;
+}
+
+.chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.session-body {
+  padding: 1.5rem;
+  background: #1e1e1e;
+}
+
 .session-info {
   margin-bottom: 1.5rem;
 }
@@ -385,15 +627,17 @@ h2::after {
 .session-info h3 {
   font-size: 1.5rem;
   margin: 0 0 0.5rem;
+  color: #ffffff;
 }
 
 .session-info p {
-  color: #666;
+  color: #ffffff;
   margin: 0;
+  opacity: 0.8;
 }
 
 :host-context(.dark) .session-info p {
-  color: #ccc;
+  color: #ffffff;
 }
 
 .results-table {
@@ -499,35 +743,172 @@ Stili per i tab di PrimeNG
 
 /* Stili per le tabelle di PrimeNG */
 :host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
-  background: #f5f5f5;
-  color: #333;
-  border-color: #ddd;
-  padding: 0.75rem 1rem;
+  background: #2d2d2d;
+  color: #ffffff;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 :host ::ng-deep .p-datatable .p-datatable-tbody > tr {
-  background: #fff;
-  color: #333;
-  border-color: #ddd;
+  background: #1e1e1e;
+  color: #ffffff;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr:hover {
+  background: #2a2a2a;
 }
 
 :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
-  padding: 0.75rem 1rem;
-  border-color: #ddd;
+  padding: 1rem 1.5rem;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-:host-context(.dark) ::ng-deep .p-datatable .p-datatable-thead > tr > th {
-  background: #333;
-  color: #fff;
-  border-color: #444;
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr:last-child > td {
+  border-bottom: none;
 }
 
-:host-context(.dark) ::ng-deep .p-datatable .p-datatable-tbody > tr {
-  background: #2a2a2a;
-  color: #fff;
-  border-color: #444;
+.driver-number {
+  background: rgba(255,255,255,0.1);
+  color: #ffffff;
+  font-weight: 600;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 
-:host-context(.dark) ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
-  border-color: #444;
+.driver-name {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.team-row {
+  transition: background-color 0.18s ease;
+}
+
+:host ::ng-deep .p-datatable {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Additional panel styles */
+.radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.radio-item {
+  background: var(--surface-card);
+  border-radius: 4px;
+  padding: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.radio-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.radio-player {
+  width: 100%;
+  height: 32px;
+}
+
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.weather-card {
+  background: var(--surface-card);
+  border-radius: 4px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.weather-time {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.weather-data {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.weather-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.weather-item i {
+  font-size: 1.2rem;
+  color: var(--primary-color);
+}
+
+.tyre-compound {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.tyre-compound.soft {
+  background-color: #ff000033;
+  color: #ff0000;
+}
+
+.tyre-compound.medium {
+  background-color: #ffff0033;
+  color: #c8c800;
+}
+
+.tyre-compound.hard {
+  background-color: #ffffff33;
+  color: #ffffff;
+}
+
+.tyre-compound.intermediate {
+  background-color: #00ff0033;
+  color: #00ff00;
+}
+
+.tyre-compound.wet {
+  background-color: #0000ff33;
+  color: #0000ff;
+}
+
+.overtaking, .overtaken {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--primary-color);
+  color: var(--primary-color-text);
+}
+
+.pi-arrow-right {
+  margin: 0 8px;
+}
+
+.compact-table .p-datatable-wrapper {
+  margin: 16px;
 }
