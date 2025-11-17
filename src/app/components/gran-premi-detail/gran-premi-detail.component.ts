@@ -367,31 +367,94 @@ export class GranPremiDetailComponent implements OnInit {
     return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
   }
 
-  // Format seconds (float) to mm:ss.sss or ss.sss
-  formatSeconds(seconds?: number): string {
-    if (seconds === undefined || seconds === null) return '-';
-    if (typeof seconds !== 'number') return String(seconds);
+  private parseNumeric(value: unknown): number | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+      if (/^\d+:\d{2}(\.\d+)?$/.test(trimmed)) {
+        const [minutes, rest] = trimmed.split(':');
+        const baseSeconds = Number(rest);
+        if (Number.isNaN(baseSeconds)) {
+          return null;
+        }
+        return Number(minutes) * 60 + baseSeconds;
+      }
+      const normalized = Number(trimmed.replace(',', '.'));
+      return Number.isFinite(normalized) ? normalized : null;
+    }
+    return null;
+  }
+
+  private formatSecondsValue(seconds: number): string {
+    if (!Number.isFinite(seconds)) {
+      return '-';
+    }
     if (seconds < 60) {
       return `${seconds.toFixed(3)} s`;
     }
-    const mins = Math.floor(seconds / 60);
-    const secs = (seconds % 60).toFixed(3).padStart(6, '0');
-    return `${mins}:${secs}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainder = (seconds % 60).toFixed(3).padStart(6, '0');
+    return `${minutes}:${remainder}`;
+  }
+
+  formatSeconds(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '-';
+    }
+    if (Array.isArray(value)) {
+      const first = value.find(v => v !== null && v !== undefined);
+      return first !== undefined ? this.formatSeconds(first) : '-';
+    }
+    if (typeof value === 'number') {
+      return this.formatSecondsValue(value);
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return '-';
+      }
+      if (/^\d+:\d{2}(\.\d+)?$/.test(trimmed)) {
+        return trimmed;
+      }
+      const numeric = this.parseNumeric(trimmed);
+      if (numeric !== null) {
+        return this.formatSecondsValue(numeric);
+      }
+      return trimmed;
+    }
+    return '-';
   }
 
   // Qualifying helpers: duration and gaps can be arrays; return formatted value or fallback
   getQualDuration(result: any, idx: number): string {
     if (!result) return '-';
-    const d = Array.isArray(result.duration) ? result.duration[idx] : result.duration;
-    return this.formatSeconds(d as number);
+    const duration = Array.isArray(result.duration) ? result.duration[idx] : result.duration;
+    return this.formatSeconds(duration);
   }
 
   getQualGap(result: any, idx: number): string {
     if (!result) return '-';
-    const g = Array.isArray(result.gap_to_leader) ? result.gap_to_leader[idx] : result.gap_to_leader;
-    if (g === undefined || g === null) return '-';
-    // leader has 0 gap; show + for others
-    return g === 0 ? '-' : (`+${g.toFixed(3)} s`);
+    const gap = Array.isArray(result.gap_to_leader) ? result.gap_to_leader[idx] : result.gap_to_leader;
+    if (gap === null || gap === undefined) {
+      return '-';
+    }
+    const numeric = this.parseNumeric(gap);
+    if (numeric !== null) {
+      return numeric === 0 ? '-' : `+${numeric.toFixed(3)} s`;
+    }
+    if (typeof gap === 'string') {
+      const trimmed = gap.trim();
+      return trimmed ? trimmed : '-';
+    }
+    return '-';
   }
 
   // Compute a very light rgba background from hex team color (accepts '#RRGGBB' or 'RRGGBB' or short)
@@ -422,20 +485,41 @@ export class GranPremiDetailComponent implements OnInit {
 
   formatGapForDisplay(result: any): string {
     if (!result) return '-';
-    const g = Array.isArray(result.gap_to_leader) ? result.gap_to_leader[0] : result.gap_to_leader;
-    if (g === undefined || g === null) return '-';
-    return g === 0 ? '-' : (`+${g.toFixed(3)} s`);
+    const gap = Array.isArray(result.gap_to_leader) ? result.gap_to_leader[0] : result.gap_to_leader;
+    if (gap === null || gap === undefined) {
+      return '-';
+    }
+    const numeric = this.parseNumeric(gap);
+    if (numeric !== null) {
+      return numeric === 0 ? '-' : `+${numeric.toFixed(3)} s`;
+    }
+    if (typeof gap === 'string') {
+      const trimmed = gap.trim();
+      return trimmed ? trimmed : '-';
+    }
+    return '-';
   }
 
   formatPrimaryDuration(result: any): string {
     if (!result) return '-';
-    if (Array.isArray(result.duration)) {
-      return this.formatSeconds(result.duration[0]);
+    const source = Array.isArray(result.duration) ? result.duration[0] : result.duration;
+    const formatted = this.formatSeconds(source);
+    if (formatted !== '-') {
+      return formatted;
     }
-    if (typeof result.duration === 'number') {
-      return this.formatSeconds(result.duration);
+    if (typeof result.lap_time === 'string') {
+      const lapTime = result.lap_time.trim();
+      if (lapTime) {
+        return lapTime;
+      }
     }
-    return result.lap_time || result.status || '-';
+    if (typeof result.status === 'string') {
+      const status = result.status.trim();
+      if (status) {
+        return status;
+      }
+    }
+    return '-';
   }
   
   // Ottiene il nome della sessione in italiano
@@ -486,12 +570,12 @@ export class GranPremiDetailComponent implements OnInit {
     return driver?.team_name || 'Unknown Team';
   }
   
-  private loadMeeting(id: number) {
+  private async loadMeeting(id: number) {
     this.loading = true;
     this.error = undefined;
     
     try {
-      this.openF1Service.getMeetings().then(meetings => {
+      this.openF1Service.getMeetings().then(async meetings => {
         console.log('Meetings loaded:', meetings);
         
         if (Array.isArray(meetings)) {
@@ -510,10 +594,10 @@ export class GranPremiDetailComponent implements OnInit {
           this.loading = false;
           
           // Carica i piloti
-          this.loadDrivers(id);
+          await this.loadDrivers(id);
           
           // Carica le sessioni
-          this.loadSessions(id);
+          await this.loadSessions(id);
         }
       }).catch(err => {
         console.error('Error loading meetings:', err);

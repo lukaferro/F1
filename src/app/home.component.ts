@@ -56,7 +56,7 @@ import { CardModule } from 'primeng/card';
             </ng-template>
             <p>Tutti i piloti che partecipano al campionato mondiale di Formula 1.</p>
             <ng-template pTemplate="footer">
-              <p-button label="Prossimamente" icon="pi pi-clock" [disabled]="true"></p-button>
+              <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/drivers"></p-button>
             </ng-template>
           </p-card>
         </div>

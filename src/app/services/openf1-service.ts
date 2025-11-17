@@ -79,6 +79,7 @@ export interface Driver {
   first_name: string;
   last_name: string;
   country_code: string;
+  headshot_url?: string;
 }
 
 export interface Session {

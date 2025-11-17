@@ -126,12 +126,6 @@
                 Risultati
               </button>
               <button class="tab-button" 
-                [class.active]="activeTab[session.session_key] === 'grid'"
-                (click)="setActiveTab(session.session_key, 'grid')"
-                *ngIf="startingGrid[session.session_key]?.length">
-                Griglia
-              </button>
-              <button class="tab-button" 
                 [class.active]="activeTab[session.session_key] === 'stints'"
                 (click)="setActiveTab(session.session_key, 'stints')"
                 *ngIf="stints[session.session_key]?.length">
@@ -225,39 +219,13 @@
             </p-table>
             </div>
 
-            <!-- Grid tab - solo per le gare -->
-            <div *ngIf="activeTab[session.session_key] === 'grid' && startingGrid[session.session_key] && session.session_type === 'Race'">
-              <p-table [value]="startingGrid[session.session_key]" styleClass="compact-table">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th>Pos</th>
-                    <th>Pilota</th>
-                    <th>Team</th>
-                    <th>Tempo</th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-grid>
-                  <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(grid.driver_number))">
-                    <td>{{ grid.position }}</td>
-                    <td>
-                      <div class="driver-info">
-                        <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(grid.driver_number)">{{ grid.driver_number }}</span>
-                        <span class="driver-name">{{ getDriverName(grid.driver_number) }}</span>
-                      </div>
-                    </td>
-                    <td>{{ getDriverTeam(grid.driver_number) }}</td>
-                    <td>{{ formatSeconds(grid.lap_duration) }}</td>
-                  </tr>
-                </ng-template>
-              </p-table>
-            </div>
-
             <!-- Stints tab -->
             <div *ngIf="activeTab[session.session_key] === 'stints' && stints[session.session_key]">
               <p-table [value]="stints[session.session_key]" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
                     <th>Pilota</th>
+                    <th>Team</th>
                     <th>Stint</th>
                     <th>Mescola</th>
                     <th>Giri</th>
@@ -265,8 +233,14 @@
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-stint>
-                  <tr>
-                    <td>{{ stint.driver_number }}</td>
+                  <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(stint.driver_number))">
+                    <td>
+                      <div class="driver-info">
+                        <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(stint.driver_number)">{{ stint.driver_number }}</span>
+                        <span class="driver-name">{{ getDriverName(stint.driver_number) }}</span>
+                      </div>
+                    </td>
+                    <td>{{ getDriverTeam(stint.driver_number) }}</td>
                     <td>{{ stint.stint_number }}</td>
                     <td>
                       <span class="tyre-compound" [class]="stint.compound.toLowerCase()">
@@ -285,7 +259,10 @@
               <div class="radio-list">
                 <div *ngFor="let radio of teamRadios[session.session_key]" class="radio-item">
                   <div class="radio-header">
-                    <span class="radio-driver">{{ radio.driver_number }}</span>
+                    <div class="driver-info">
+                      <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(radio.driver_number)">{{ radio.driver_number }}</span>
+                      <span class="driver-name">{{ getDriverName(radio.driver_number) }}</span>
+                    </div>
                     <span class="radio-time">{{ radio.date | date:'HH:mm:ss' }}</span>
                   </div>
                   <audio controls [src]="radio.recording_url" class="radio-player"></audio>
@@ -295,29 +272,26 @@
 
             <!-- Weather tab -->
             <div *ngIf="activeTab[session.session_key] === 'weather' && weather[session.session_key]">
-              <div class="weather-grid">
-                <div class="weather-card" *ngFor="let w of weather[session.session_key]">
-                  <div class="weather-time">{{ w.date | date:'HH:mm:ss' }}</div>
-                  <div class="weather-data">
-                    <div class="weather-item">
-                      <i class="pi pi-temperature"></i>
-                      <span>Aria: {{ w.air_temperature }}°C</span>
-                    </div>
-                    <div class="weather-item">
-                      <i class="pi pi-road"></i>
-                      <span>Pista: {{ w.track_temperature }}°C</span>
-                    </div>
-                    <div class="weather-item">
-                      <i class="pi pi-cloud"></i>
-                      <span>Umidità: {{ w.humidity }}%</span>
-                    </div>
-                    <div class="weather-item">
-                      <i class="pi pi-wind"></i>
-                      <span>Vento: {{ w.wind_speed }} km/h</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <p-table [value]="weather[session.session_key]" styleClass="compact-table">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th>Orario</th>
+                    <th>Temp. Aria</th>
+                    <th>Temp. Pista</th>
+                    <th>Umidità</th>
+                    <th>Vento</th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-w>
+                  <tr>
+                    <td>{{ w.date | date:'HH:mm:ss' }}</td>
+                    <td>{{ w.air_temperature }}°C</td>
+                    <td>{{ w.track_temperature }}°C</td>
+                    <td>{{ w.humidity }}%</td>
+                    <td>{{ w.wind_speed }} km/h</td>
+                  </tr>
+                </ng-template>
+              </p-table>
             </div>
 
             <!-- Pit Stops tab -->
@@ -326,14 +300,21 @@
                 <ng-template pTemplate="header">
                   <tr>
                     <th>Pilota</th>
+                    <th>Team</th>
                     <th>Giro</th>
                     <th>Durata</th>
                     <th>Orario</th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-pit>
-                  <tr>
-                    <td>{{ pit.driver_number }}</td>
+                  <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(pit.driver_number))">
+                    <td>
+                      <div class="driver-info">
+                        <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(pit.driver_number)">{{ pit.driver_number }}</span>
+                        <span class="driver-name">{{ getDriverName(pit.driver_number) }}</span>
+                      </div>
+                    </td>
+                    <td>{{ getDriverTeam(pit.driver_number) }}</td>
                     <td>{{ pit.lap_number }}</td>
                     <td>{{ pit.pit_duration.toFixed(3) }}s</td>
                     <td>{{ pit.date | date:'HH:mm:ss' }}</td>
@@ -356,9 +337,17 @@
                   <tr>
                     <td>{{ overtake.date | date:'HH:mm:ss' }}</td>
                     <td>
-                      <span class="overtaking">{{ overtake.overtaking_driver_number }}</span>
-                      <i class="pi pi-arrow-right"></i>
-                      <span class="overtaken">{{ overtake.overtaken_driver_number }}</span>
+                      <div class="overtake-info">
+                        <span class="overtaking-driver">
+                          <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaking_driver_number)">{{ overtake.overtaking_driver_number }}</span>
+                          <span class="driver-name">{{ getDriverName(overtake.overtaking_driver_number) }}</span>
+                        </span>
+                        <i class="pi pi-arrow-right"></i>
+                        <span class="overtaken-driver">
+                          <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaken_driver_number)">{{ overtake.overtaken_driver_number }}</span>
+                          <span class="driver-name">{{ getDriverName(overtake.overtaken_driver_number) }}</span>
+                        </span>
+                      </div>
                     </td>
                     <td>P{{ overtake.position }}</td>
                   </tr>

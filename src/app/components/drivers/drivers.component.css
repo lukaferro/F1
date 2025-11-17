@@ -1,0 +1,237 @@
+.drivers-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.drivers-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.drivers-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.drivers-header h1 i {
+  color: #ff0000;
+  margin-right: 1rem;
+}
+
+.drivers-header p {
+  font-size: 1.2rem;
+  color: #cccccc;
+}
+
+/* Filtri */
+.filters-section {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.reset-button {
+  background: linear-gradient(135deg, #ff0000, #cc0000) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+}
+
+.reset-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #cc0000, #990000) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 0, 0, 0.3);
+}
+
+/* Griglia piloti */
+.drivers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.driver-card {
+  background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.driver-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.driver-header {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.driver-number {
+  font-size: 2.5rem;
+  font-weight: 900;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+  letter-spacing: 2px;
+}
+
+.driver-flag {
+  font-size: 2rem;
+}
+
+.driver-body {
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.driver-image-container {
+  width: 100%;
+  height: 320px;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.08));
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.driver-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.driver-info {
+  text-align: center;
+}
+
+.driver-info h3 {
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem;
+  color: #ffffff;
+}
+
+.driver-acronym {
+  font-size: 1.2rem;
+  color: #cccccc;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.driver-team {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.driver-footer {
+  padding: 1rem;
+  text-align: center;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Loading e errori */
+.loading-container,
+.error-container,
+.no-drivers {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin: 2rem 0;
+}
+
+.loading-spinner,
+.error-container i,
+.no-drivers i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.loading-spinner {
+  color: #ff0000;
+}
+
+.error-container i {
+  color: #ff4444;
+}
+
+.no-drivers i {
+  color: #999999;
+}
+
+.loading-container p,
+.error-container p,
+.no-drivers p {
+  font-size: 1.2rem;
+  color: #cccccc;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .drivers-container {
+    padding: 1rem;
+  }
+
+  .drivers-header h1 {
+    font-size: 2rem;
+  }
+
+  .drivers-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reset-button {
+    width: 100%;
+  }
+}
+
+/* Stili per il tema scuro */
+:host-context(.dark) .driver-card {
+  background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+}
+
+:host-context(.dark) .driver-body {
+  background: rgba(0, 0, 0, 0.5);
+}

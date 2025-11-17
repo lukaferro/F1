@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './home.component';
 import { GranPremiComponent } from './components/gran.premi/gran-premi.component';
 import { GranPremiDetailComponent } from './components/gran-premi-detail/gran-premi-detail.component';
+import { DriversComponent } from './components/drivers/drivers.component';
 
 export const routes: Routes = [
   {
@@ -15,5 +16,9 @@ export const routes: Routes = [
   {
     path: 'granpremi/:id',
     component: GranPremiDetailComponent,
+  },
+  {
+    path: 'drivers',
+    component: DriversComponent,
   }
 ];

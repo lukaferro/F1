@@ -1,0 +1,82 @@
+<div class="drivers-container">
+  <div class="drivers-header">
+    <h1><i class="pi pi-users"></i> Piloti Formula 1</h1>
+    <p>Tutti i piloti del campionato mondiale di Formula 1</p>
+  </div>
+
+  <!-- Filtri -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <label>Team</label>
+      <p-dropdown 
+        [options]="teams" 
+        [(ngModel)]="selectedTeam" 
+        (onChange)="onTeamChange($event.value)"
+        optionLabel="name" 
+        optionValue="code"
+        placeholder="Tutti i team"
+        [showClear]="true"
+        styleClass="filter-dropdown">
+      </p-dropdown>
+    </div>
+    
+    <button 
+      pButton 
+      type="button" 
+      label="Reset Filtri" 
+      icon="pi pi-refresh"
+      class="reset-button"
+      (click)="resetFilters()"
+      [disabled]="!selectedTeam">
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <i class="pi pi-spin pi-spinner loading-spinner"></i>
+    <p>Caricamento piloti...</p>
+  </div>
+
+  <!-- Errore -->
+  <div *ngIf="error && !loading" class="error-container">
+    <i class="pi pi-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- Griglia piloti -->
+  <div *ngIf="!loading && !error" class="drivers-grid">
+    <div *ngFor="let driver of drivers" class="driver-card">
+      <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + getTeamColor(driver) + '33, #' + getTeamColor(driver) + '66)'">
+        <div class="driver-number" [style.color]="'#' + getTeamColor(driver)">#{{ driver.driver_number }}</div>
+        <div class="driver-flag">
+          <span class="fi fi-{{ getCountryFlag(driver.country_code) }}"></span>
+        </div>
+      </div>
+      
+      <div class="driver-body">
+        <div class="driver-image-container">
+          <img [src]="getDriverImage(driver)" [alt]="driver.full_name" class="driver-image" />
+        </div>
+        
+        <div class="driver-info">
+          <h3>{{ driver.full_name }}</h3>
+          <div class="driver-acronym">{{ driver.name_acronym }}</div>
+          <div class="driver-team" [style.color]="'#' + getTeamColor(driver)">
+            <i class="pi pi-building"></i>
+            {{ driver.team_name }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="driver-footer" [style.background-color]="'#' + getTeamColor(driver)">
+        <span>{{ driver.broadcast_name }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nessun pilota trovato -->
+  <div *ngIf="!loading && !error && drivers.length === 0" class="no-drivers">
+    <i class="pi pi-info-circle"></i>
+    <p>Nessun pilota trovato con i filtri selezionati</p>
+  </div>
+</div>

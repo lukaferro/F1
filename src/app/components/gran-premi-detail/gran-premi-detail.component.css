@@ -821,7 +821,18 @@ Stili per i tab di PrimeNG
 .radio-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 8px;
+}
+
+.radio-driver {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.radio-time {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
 }
 
 .radio-player {
@@ -905,10 +916,58 @@ Stili per i tab di PrimeNG
   color: var(--primary-color-text);
 }
 
+.overtake-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.overtaking-driver,
+.overtaken-driver {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .pi-arrow-right {
   margin: 0 8px;
+  color: #ff0000;
+  font-size: 1.2rem;
 }
 
 .compact-table .p-datatable-wrapper {
   margin: 16px;
+}
+
+/* Session tabs styling */
+.session-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  overflow-x: auto;
+}
+
+.tab-button {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.tab-button:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-button.active {
+  color: #ff0000;
+  border-bottom-color: #ff0000;
+  background: rgba(255, 0, 0, 0.1);
 }
