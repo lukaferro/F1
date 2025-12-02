@@ -9,7 +9,6 @@ import {
   Openf1ServiceService, 
   Driver, 
   Result,
-  StartingGrid,
   Stint,
   TeamRadio,
   Weather,
@@ -52,7 +51,6 @@ export class GranPremiDetailComponent implements OnInit {
   sessionResultsTable: Array<Result & { sessionLabel: string }> = [];
 
   // Additional session data
-  startingGrid: { [session_key: number]: StartingGrid[] } = {};
   stints: { [session_key: number]: Stint[] } = {};
   teamRadios: { [session_key: number]: TeamRadio[] } = {};
   weather: { [session_key: number]: Weather[] } = {};
@@ -569,6 +567,66 @@ export class GranPremiDetailComponent implements OnInit {
     const driver = this.drivers.find(d => d.driver_number === driverNumber);
     return driver?.team_name || 'Unknown Team';
   }
+
+  // Filtra i dati meteo per mostrare solo quelli ogni 30 minuti
+  getFilteredWeather(sessionKey: number): Weather[] {
+    const weatherData = this.weather[sessionKey];
+    if (!weatherData || weatherData.length === 0) return [];
+
+    // Ordina per data
+    const sorted = [...weatherData].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    // Prendi il primo elemento
+    const filtered: Weather[] = [sorted[0]];
+    let lastTime = new Date(sorted[0].date).getTime();
+
+    // Aggiungi elementi ogni 30 minuti (1800000 ms)
+    for (let i = 1; i < sorted.length; i++) {
+      const currentTime = new Date(sorted[i].date).getTime();
+      if (currentTime - lastTime >= 1800000) { // 30 minuti
+        filtered.push(sorted[i]);
+        lastTime = currentTime;
+      }
+    }
+
+    return filtered;
+  }
+
+  // Raggruppa gli stint per pilota con la loro posizione finale
+  getGroupedStints(sessionKey: number): any[] {
+    const stintsData = this.stints[sessionKey];
+    const results = this.sessionResultsNormalized[sessionKey];
+    
+    if (!stintsData || !results) return [];
+
+    // Crea una mappa dei piloti con i loro stint
+    const driverStintsMap = new Map<number, any>();
+
+    stintsData.forEach(stint => {
+      if (!driverStintsMap.has(stint.driver_number)) {
+        // Trova la posizione finale del pilota
+        const result = results.find(r => r.driver_number === stint.driver_number);
+        driverStintsMap.set(stint.driver_number, {
+          driver_number: stint.driver_number,
+          position: result?.position || 999,
+          stints: []
+        });
+      }
+      driverStintsMap.get(stint.driver_number).stints.push(stint);
+    });
+
+    // Converti la mappa in array e ordina per posizione
+    const grouped = Array.from(driverStintsMap.values()).sort((a, b) => a.position - b.position);
+
+    // Ordina gli stint di ogni pilota per numero stint
+    grouped.forEach(driver => {
+      driver.stints.sort((a: Stint, b: Stint) => a.stint_number - b.stint_number);
+    });
+
+    return grouped;
+  }
   
   private async loadMeeting(id: number) {
     this.loading = true;
@@ -630,16 +688,17 @@ export class GranPremiDetailComponent implements OnInit {
       
       // Ensure we have team colors for all teams
       const teamColors: { [key: string]: string } = {
-        'Red Bull Racing': 'FF1801',
-        'Mercedes': '6CD3BF',
-        'Ferrari': 'F91536',
-        'McLaren': 'FF8700',
-        'Aston Martin': '358C75',
-        'Alpine': '2293D1',
-        'AlphaTauri': '5E8FAA',
+        'Red Bull Racing': '1D19AC',
+        'Mercedes': '00D7B6',
+        'Ferrari': 'ED1131',
+        'McLaren': 'F47600',
+        'Aston Martin': '229971',
+        'Alpine': '00A1E8',
+        'AlphaTauri': '6C98FF',
         'Alfa Romeo': 'C92D4B',
-        'Haas F1 Team': 'FFFFFF',
-        'Williams': '37BEDD'
+        'Haas F1 Team': '9C9FA2',
+        'Williams': '1868DB',
+        'Kick Sauber': '01C00E'
       };
       
       // Apply default team colors if missing
@@ -750,7 +809,6 @@ export class GranPremiDetailComponent implements OnInit {
     // Load all session data in parallel
     try {
       const [
-        startingGrid,
         stints,
         teamRadio,
         weather,
@@ -758,7 +816,6 @@ export class GranPremiDetailComponent implements OnInit {
         positions,
         overtakes
       ] = await Promise.all([
-        this.openF1Service.getStartingGrid(sessionKey),
         this.openF1Service.getStints(sessionKey),
         this.openF1Service.getTeamRadio(sessionKey),
         this.openF1Service.getWeather(sessionKey),
@@ -768,7 +825,6 @@ export class GranPremiDetailComponent implements OnInit {
       ]);
 
       // Store results in session-specific collections
-      this.startingGrid[sessionKey] = startingGrid;
       this.stints[sessionKey] = stints;
       this.teamRadios[sessionKey] = teamRadio;
       this.weather[sessionKey] = weather;
