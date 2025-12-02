@@ -764,6 +764,14 @@ Stili per i tab di PrimeNG
   background: #2a2a2a;
 }
 
+:host ::ng-deep .p-datatable .p-datatable-wrapper {
+  overflow-x: hidden !important;
+}
+
+:host ::ng-deep .p-datatable {
+  overflow-x: hidden !important;
+}
+
 :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
   padding: 1rem 1.5rem;
   border: none;
@@ -775,16 +783,16 @@ Stili per i tab di PrimeNG
 }
 
 .driver-number {
-  background: rgba(255,255,255,0.1);
-  color: #ffffff;
-  font-weight: 600;
-  width: 32px;
-  height: 32px;
+  font-weight: 700;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(0, 0, 0, 0.2);
 }
 
 .driver-name {
@@ -937,6 +945,31 @@ Stili per i tab di PrimeNG
 
 .compact-table .p-datatable-wrapper {
   margin: 16px;
+}
+
+/* Stint strategy styling */
+.stint-strategy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stint-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+}
+
+.stint-label {
+  font-weight: 600;
+  min-width: 60px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.stint-detail {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
 }
 
 /* Session tabs styling */
