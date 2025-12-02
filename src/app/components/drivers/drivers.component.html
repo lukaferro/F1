@@ -1,35 +1,62 @@
 <div class="drivers-container">
-  <div class="drivers-header">
-    <h1><i class="pi pi-users"></i> Piloti Formula 1</h1>
-    <p>Tutti i piloti del campionato mondiale di Formula 1</p>
-  </div>
-
-  <!-- Filtri -->
-  <div class="filters-section">
-    <div class="filter-group">
-      <label>Team</label>
-      <p-dropdown 
-        [options]="teams" 
-        [(ngModel)]="selectedTeam" 
-        (onChange)="onTeamChange($event.value)"
-        optionLabel="name" 
-        optionValue="code"
-        placeholder="Tutti i team"
-        [showClear]="true"
-        styleClass="filter-dropdown">
-      </p-dropdown>
+  <!-- Sidebar con filtri -->
+  <aside class="drivers-sidebar">
+    <div class="filter-section">
+      <h3 class="filter-title">Filtri</h3>
+      
+      <div class="filter-group">
+        <div class="filter-header">
+          <label class="filter-label">Anno</label>
+          <button *ngIf="selectedYear" class="reset-filter" (click)="resetFilters()">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        <p-dropdown
+          [options]="years"
+          [(ngModel)]="selectedYear"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Tutti gli anni"
+          (ngModelChange)="onYearSelect($event)"
+          class="gp-dropdown"
+          panelStyleClass="gp-dropdown-panel">
+        </p-dropdown>
+      </div>
+      
+      <div class="filter-actions">
+        <p-button 
+          label="Resetta filtri" 
+          icon="pi pi-refresh" 
+          styleClass="p-button-outlined p-button-sm" 
+          (click)="resetFilters()"
+          [disabled]="!selectedYear && !searchQuery">
+        </p-button>
+      </div>
     </div>
-    
-    <button 
-      pButton 
-      type="button" 
-      label="Reset Filtri" 
-      icon="pi pi-refresh"
-      class="reset-button"
-      (click)="resetFilters()"
-      [disabled]="!selectedTeam">
-    </button>
-  </div>
+  </aside>
+
+  <!-- Contenuto principale -->
+  <div class="drivers-content">
+    <div class="drivers-header">
+      <div class="header-left">
+        <h1><i class="pi pi-users"></i> Piloti Formula 1</h1>
+        <p *ngIf="selectedYear">Piloti della stagione {{ selectedYear }}</p>
+        <p *ngIf="!selectedYear">Tutti i piloti di tutte le stagioni</p>
+      </div>
+      
+      <div class="header-right">
+        <span class="p-input-icon-left search-container">
+          <i class="pi pi-search"></i>
+          <input 
+            type="text" 
+            pInputText 
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearch()"
+            placeholder="Cerca pilota..." 
+            class="search-input" />
+        </span>
+      </div>
+    </div>
 
   <!-- Loading -->
   <div *ngIf="loading" class="loading-container">
@@ -43,40 +70,39 @@
     <p>{{ error }}</p>
   </div>
 
-  <!-- Griglia piloti -->
-  <div *ngIf="!loading && !error" class="drivers-grid">
-    <div *ngFor="let driver of drivers" class="driver-card">
-      <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + getTeamColor(driver) + '33, #' + getTeamColor(driver) + '66)'">
-        <div class="driver-number" [style.color]="'#' + getTeamColor(driver)">#{{ driver.driver_number }}</div>
-        <div class="driver-flag">
-          <span class="fi fi-{{ getCountryFlag(driver.country_code) }}"></span>
-        </div>
-      </div>
-      
-      <div class="driver-body">
-        <div class="driver-image-container">
-          <img [src]="getDriverImage(driver)" [alt]="driver.full_name" class="driver-image" />
-        </div>
-        
-        <div class="driver-info">
-          <h3>{{ driver.full_name }}</h3>
-          <div class="driver-acronym">{{ driver.name_acronym }}</div>
-          <div class="driver-team" [style.color]="'#' + getTeamColor(driver)">
-            <i class="pi pi-building"></i>
-            {{ driver.team_name }}
+    <!-- Griglia piloti -->
+    <div *ngIf="!loading && !error" class="drivers-grid">
+      <div *ngFor="let driver of drivers; trackBy: trackByDriverNumber" class="driver-card">
+        <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + getTeamColor(driver) + '33, #' + getTeamColor(driver) + '66)'">
+          <div class="driver-number" [style.color]="'#ffffff'">#{{ driver.driver_number }}</div>
+          <div class="driver-flag">
+            <span class="fi fi-{{ getCountryFlag(driver.country_code) }}"></span>
           </div>
         </div>
-      </div>
-      
-      <div class="driver-footer" [style.background-color]="'#' + getTeamColor(driver)">
-        <span>{{ driver.broadcast_name }}</span>
+        
+        <div class="driver-body">
+          <div class="driver-image-container">
+            <img [src]="getDriverImage(driver)" [alt]="driver.full_name" class="driver-image" />
+          </div>
+          
+          <div class="driver-info">
+            <h3>{{ driver.full_name }}</h3>
+            <div class="driver-acronym">{{ driver.name_acronym }}</div>
+            <div *ngIf="driver.team_name" class="driver-team" [style.color]="'#ffffff'">
+              <i class="pi pi-building"></i>
+              {{ driver.team_name }}
+            </div>
+          </div>
+        </div>
+        
+        <div class="driver-accent" [style.background-color]="'#' + getTeamColor(driver)"></div>
       </div>
     </div>
-  </div>
 
-  <!-- Nessun pilota trovato -->
-  <div *ngIf="!loading && !error && drivers.length === 0" class="no-drivers">
-    <i class="pi pi-info-circle"></i>
-    <p>Nessun pilota trovato con i filtri selezionati</p>
+    <!-- Nessun pilota trovato -->
+    <div *ngIf="!loading && !error && drivers.length === 0" class="no-drivers">
+      <i class="pi pi-info-circle"></i>
+      <p>Nessun pilota trovato con i filtri selezionati</p>
+    </div>
   </div>
 </div>
