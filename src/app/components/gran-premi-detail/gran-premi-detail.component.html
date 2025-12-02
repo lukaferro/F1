@@ -167,88 +167,90 @@
               <ng-template pTemplate="header">
                 <!-- Qualifying header: show Q1/Q2/Q3 -->
                 <tr *ngIf="getSessionName(session).toLowerCase().includes('qual')">
-                  <th>Pos</th>
+                  <th style="width: 80px;">Pos</th>
                   <th>Pilota</th>
                   <th>Team</th>
                   <th>Q1</th>
                   <th>Q2</th>
                   <th>Q3</th>
-                  <th *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')">Punti</th>
+                  <th *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="width: 80px;">Punti</th>
                 </tr>
 
                 <!-- Default header for non-qualifying sessions -->
                 <tr *ngIf="!getSessionName(session).toLowerCase().includes('qual')">
-                  <th>Pos</th>
+                  <th style="width: 80px;">Pos</th>
                   <th>Pilota</th>
                   <th>Team</th>
-                  <th>Giri</th>
-                  <th>Gap</th>
+                  <th style="width: 80px;">Giri</th>
+                  <th style="min-width: 150px; width: 150px;">Gap</th>
                   <th>Tempo/Status</th>
-                  <th *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')">Punti</th>
+                  <th *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="width: 80px;">Punti</th>
                 </tr>
               </ng-template>
 
               <ng-template pTemplate="body" let-result>
-                <tr [ngStyle]="getTeamRowStyle(result.team_color)" class="team-row">
-                  <td>
+                <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(result.driver_number))">
+                  <td style="text-align: center; font-weight: bold; font-size: 1.1rem;">
                     {{ result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : (result.position ?? '-'))) }}
                   </td>
 
                   <td>
                     <div class="driver-info">
-                      <span class="driver-number" [style.background-color]="getTeamColor(result.team_color)">{{ result.driver_number }}</span>
-                      <span class="driver-name">{{ result.broadcast_name }}</span>
+                      <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(result.driver_number)" [style.color]="'#000'">{{ result.driver_number }}</span>
+                      <span class="driver-name">{{ getDriverName(result.driver_number) }}</span>
                     </div>
                   </td>
 
-                  <td>{{ result.team_name || '-' }}</td>
+                  <td style="font-weight: 500;">{{ getDriverTeam(result.driver_number) }}</td>
 
                   <!-- Qualifying columns: reading arrays if present -->
-                  <td *ngIf="getSessionName(session).toLowerCase().includes('qual')">{{ getQualDuration(result, 0) }}</td>
-                  <td *ngIf="getSessionName(session).toLowerCase().includes('qual')">{{ getQualDuration(result, 1) }}</td>
-                  <td *ngIf="getSessionName(session).toLowerCase().includes('qual')">{{ getQualDuration(result, 2) }}</td>
+                  <td *ngIf="getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ getQualDuration(result, 0) }}</td>
+                  <td *ngIf="getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ getQualDuration(result, 1) }}</td>
+                  <td *ngIf="getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ getQualDuration(result, 2) }}</td>
 
                   <!-- Non-qualifying columns -->
-                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')">{{ result.number_of_laps || '-' }}</td>
-                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')">{{ formatGapForDisplay(result) }}</td>
-                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')">{{ formatPrimaryDuration(result) }}</td>
+                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="text-align: center; font-weight: 500;">{{ result.number_of_laps || '-' }}</td>
+                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ formatGapForDisplay(result) }}</td>
+                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ formatPrimaryDuration(result) }}</td>
 
-                  <td *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')">{{ result.points || '-' }}</td>
+                  <td *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="text-align: center; font-weight: bold;">{{ result.points || '-' }}</td>
                 </tr>
               </ng-template>
             </p-table>
             </div>
 
             <!-- Stints tab -->
-            <div *ngIf="activeTab[session.session_key] === 'stints' && stints[session.session_key]">
-              <p-table [value]="stints[session.session_key]" styleClass="compact-table">
+            <div *ngIf="activeTab[session.session_key] === 'stints' && getGroupedStints(session.session_key)">
+              <p-table [value]="getGroupedStints(session.session_key)" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
+                    <th style="width: 80px;">Pos</th>
                     <th>Pilota</th>
                     <th>Team</th>
-                    <th>Stint</th>
-                    <th>Mescola</th>
-                    <th>Giri</th>
-                    <th>Età gomme</th>
+                    <th style="min-width: 400px;">Strategia Stint</th>
                   </tr>
                 </ng-template>
-                <ng-template pTemplate="body" let-stint>
-                  <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(stint.driver_number))">
+                <ng-template pTemplate="body" let-driverStint>
+                  <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(driverStint.driver_number))">
+                    <td style="text-align: center; font-weight: bold;">{{ driverStint.position }}</td>
                     <td>
                       <div class="driver-info">
-                        <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(stint.driver_number)">{{ stint.driver_number }}</span>
-                        <span class="driver-name">{{ getDriverName(stint.driver_number) }}</span>
+                        <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(driverStint.driver_number)" [style.color]="'#000'">{{ driverStint.driver_number }}</span>
+                        <span class="driver-name">{{ getDriverName(driverStint.driver_number) }}</span>
                       </div>
                     </td>
-                    <td>{{ getDriverTeam(stint.driver_number) }}</td>
-                    <td>{{ stint.stint_number }}</td>
+                    <td>{{ getDriverTeam(driverStint.driver_number) }}</td>
                     <td>
-                      <span class="tyre-compound" [class]="stint.compound.toLowerCase()">
-                        {{ stint.compound }}
-                      </span>
+                      <div class="stint-strategy">
+                        <div *ngFor="let stint of driverStint.stints" class="stint-item">
+                          <span class="stint-label">Stint {{ stint.stint_number }}:</span>
+                          <span class="tyre-compound" [class]="stint.compound.toLowerCase()">
+                            {{ stint.compound }}
+                          </span>
+                          <span class="stint-detail">Giri {{ stint.lap_start }}-{{ stint.lap_end }} (Età: {{ stint.tyre_age_at_start }})</span>
+                        </div>
+                      </div>
                     </td>
-                    <td>{{ stint.lap_start }} - {{ stint.lap_end }}</td>
-                    <td>{{ stint.tyre_age_at_start }} giri</td>
                   </tr>
                 </ng-template>
               </p-table>
@@ -260,7 +262,7 @@
                 <div *ngFor="let radio of teamRadios[session.session_key]" class="radio-item">
                   <div class="radio-header">
                     <div class="driver-info">
-                      <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(radio.driver_number)">{{ radio.driver_number }}</span>
+                      <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(radio.driver_number)" [style.color]="'#000'">{{ radio.driver_number }}</span>
                       <span class="driver-name">{{ getDriverName(radio.driver_number) }}</span>
                     </div>
                     <span class="radio-time">{{ radio.date | date:'HH:mm:ss' }}</span>
@@ -271,8 +273,8 @@
             </div>
 
             <!-- Weather tab -->
-            <div *ngIf="activeTab[session.session_key] === 'weather' && weather[session.session_key]">
-              <p-table [value]="weather[session.session_key]" styleClass="compact-table">
+            <div *ngIf="activeTab[session.session_key] === 'weather' && getFilteredWeather(session.session_key)">
+              <p-table [value]="getFilteredWeather(session.session_key)" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
                     <th>Orario</th>
@@ -310,7 +312,7 @@
                   <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(pit.driver_number))">
                     <td>
                       <div class="driver-info">
-                        <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(pit.driver_number)">{{ pit.driver_number }}</span>
+                        <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(pit.driver_number)" [style.color]="'#000'">{{ pit.driver_number }}</span>
                         <span class="driver-name">{{ getDriverName(pit.driver_number) }}</span>
                       </div>
                     </td>
@@ -339,12 +341,12 @@
                     <td>
                       <div class="overtake-info">
                         <span class="overtaking-driver">
-                          <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaking_driver_number)">{{ overtake.overtaking_driver_number }}</span>
+                          <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaking_driver_number)" [style.color]="'#000'">{{ overtake.overtaking_driver_number }}</span>
                           <span class="driver-name">{{ getDriverName(overtake.overtaking_driver_number) }}</span>
                         </span>
                         <i class="pi pi-arrow-right"></i>
                         <span class="overtaken-driver">
-                          <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaken_driver_number)">{{ overtake.overtaken_driver_number }}</span>
+                          <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaken_driver_number)" [style.color]="'#000'">{{ overtake.overtaken_driver_number }}</span>
                           <span class="driver-name">{{ getDriverName(overtake.overtaken_driver_number) }}</span>
                         </span>
                       </div>
