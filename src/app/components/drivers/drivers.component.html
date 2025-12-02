@@ -22,16 +22,6 @@
           panelStyleClass="gp-dropdown-panel">
         </p-dropdown>
       </div>
-      
-      <div class="filter-actions">
-        <p-button 
-          label="Resetta filtri" 
-          icon="pi pi-refresh" 
-          styleClass="p-button-outlined p-button-sm" 
-          (click)="resetFilters()"
-          [disabled]="!selectedYear && !searchQuery">
-        </p-button>
-      </div>
     </div>
   </aside>
 
@@ -75,9 +65,7 @@
       <div *ngFor="let driver of drivers; trackBy: trackByDriverNumber" class="driver-card">
         <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + getTeamColor(driver) + '33, #' + getTeamColor(driver) + '66)'">
           <div class="driver-number" [style.color]="'#ffffff'">#{{ driver.driver_number }}</div>
-          <div class="driver-flag">
-            <span class="fi fi-{{ getCountryFlag(driver.country_code) }}"></span>
-          </div>
+          <!-- bandiere rimosse su richiesta -->
         </div>
         
         <div class="driver-body">
@@ -86,7 +74,9 @@
           </div>
           
           <div class="driver-info">
-            <h3>{{ driver.full_name }}</h3>
+            <h3>
+              {{ driver.full_name }}
+            </h3>
             <div class="driver-acronym">{{ driver.name_acronym }}</div>
             <div *ngIf="driver.team_name" class="driver-team" [style.color]="'#ffffff'">
               <i class="pi pi-building"></i>
@@ -95,7 +85,7 @@
           </div>
         </div>
         
-        <div class="driver-accent" [style.background-color]="'#' + getTeamColor(driver)"></div>
+        <div *ngIf="getTeamColor(driver) !== '555555'" class="driver-accent" [style.background-color]="'#' + getTeamColor(driver)"></div>
       </div>
     </div>
 
