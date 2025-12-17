@@ -62,7 +62,7 @@
 
     <!-- Griglia piloti -->
     <div *ngIf="!loading && !error" class="drivers-grid">
-      <div *ngFor="let driver of drivers; trackBy: trackByDriverNumber" class="driver-card">
+      <a *ngFor="let driver of drivers; trackBy: trackByDriverNumber" class="driver-card" [routerLink]="['/drivers', driver.name_acronym || driver.driver_number]">
         <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + getTeamColor(driver) + '33, #' + getTeamColor(driver) + '66)'">
           <div class="driver-number" [style.color]="'#ffffff'">#{{ driver.driver_number }}</div>
           <!-- bandiere rimosse su richiesta -->
@@ -86,7 +86,7 @@
         </div>
         
         <div *ngIf="getTeamColor(driver) !== '555555'" class="driver-accent" [style.background-color]="'#' + getTeamColor(driver)"></div>
-      </div>
+        </a>
     </div>
 
     <!-- Nessun pilota trovato -->

@@ -1,0 +1,369 @@
+.driver-detail {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+.back-button {
+  margin-bottom: 1rem;
+}
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: #e63946;
+}
+.flag-container {
+  flex-shrink: 0;
+}
+.country-flag {
+  width: 100px;
+  border-radius: 8px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+}
+.hero-content {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex: 1;
+}
+.hero-left {
+  flex-shrink: 0;
+}
+.portrait {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 2px solid rgba(255,255,255,0.08);
+  background: #0b0b0b;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+.hero-right {
+  flex: 1;
+  color: #f7f7f7;
+}
+.hero h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.6rem;
+  letter-spacing: 0.5px;
+}
+.meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.badge {
+  background: rgba(255,255,255,0.08);
+  color: #f7f7f7;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.badge.team {
+  color: #cfcfcf;
+}
+.fullname {
+  margin: 0;
+  color: #cfcfcf;
+}
+
+.content-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr 1fr;
+}
+.bio-panel {
+  grid-column: 1 / 2;
+}
+.stats-panel {
+  grid-column: 2 / 3;
+}
+.career-panel {
+  grid-column: 1 / -1;
+}
+.panel {
+  background: #0f1013;
+  color: #e8e8e8;
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+.panel h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+  letter-spacing: 0.4px;
+  position: relative;
+  display: inline-block;
+}
+.panel h2::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: #e63946;
+  border-radius: 1.5px;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.stat-card {
+  border: 1px solid #555;
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.stat-label {
+  font-size: 0.85rem;
+  color: #9aa0a6;
+}
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.bio-panel p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+.bio-panel .muted {
+  color: #8b8b8b;
+  font-size: 0.9rem;
+}
+.wiki-loading, .stats-loading {
+  color: #9aa0a6;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+.wiki-content {
+  margin-top: 0.75rem;
+}
+.wiki-content p {
+  margin-bottom: 0.75rem;
+}
+.wiki-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #e63946;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+.wiki-link:hover {
+  color: #ff4757;
+  text-decoration: underline;
+}
+
+.career-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.career-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.career-item.full-width {
+  grid-column: 1 / -1;
+}
+.career-item.full-width.teams-item {
+  flex-direction: row;
+  align-items: flex-start;
+  text-align: left;
+  gap: 1rem;
+}
+.career-item.full-width.teams-item i {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+.career-item.debut {
+  /* Debutto in primo piano */
+  grid-column: 1 / 2;
+}
+.career-item.championships {
+  /* Titoli mondiali: spazio maggiore e stile speciale */
+  grid-column: 2 / 3;
+  background: linear-gradient(145deg, rgba(230,57,70,0.1), rgba(230,57,70,0.05));
+  border: 2px solid rgba(230,57,70,0.3);
+  padding: 1.5rem;
+}
+.career-item.championships i {
+  font-size: 2.4rem;
+  margin-bottom: 0.5rem;
+}
+.career-item.championships .career-value {
+  font-size: 2.8rem;
+  color: #e63946;
+  margin-bottom: 0.5rem;
+}
+.championship-years {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  align-items: center;
+}
+.championship-years .year {
+  font-size: 0.95rem;
+  color: #e63946;
+  font-weight: 600;
+  padding: 0.25rem 0;
+}
+.career-item i {
+  font-size: 1.8rem;
+  color: #e63946;
+}
+.career-item > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+}
+.career-label {
+  font-size: 0.85rem;
+  color: #9aa0a6;
+}
+.career-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f7f7f7;
+}
+.career-value.teams {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #d0d0d0;
+}
+.teams-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  align-items: flex-start;
+}
+.teams-container .career-label {
+  align-self: flex-start;
+  text-align: left;
+}
+.teams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+.team-entry {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #d0d0d0;
+  padding: 0.4rem 0 0.4rem 0.75rem;
+  border-left: 3px solid #e63946;
+  line-height: 1.4;
+}
+.career-item.full-width.teams-item {
+  flex-direction: row;
+  align-items: flex-start;
+  text-align: left;
+  max-width: 425px;
+  width: 100%;
+}
+.career-item.full-width.teams-item i {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  gap: 0.5rem;
+  color: #555;
+}
+@media (max-width: 900px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  .bio-panel, .stats-panel, .career-panel {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 720px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+  }
+  .hero-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  .flag-container {
+    order: -1;
+  }
+  .portrait {
+    width: 140px;
+    height: 140px;
+  }
+  .meta { justify-content: center; }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Stili PrimeNG Button */
+:host ::ng-deep .p-button {
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(255,0,0,0.2);
+}
+
+:host ::ng-deep .p-button:hover {
+  background: linear-gradient(135deg, #cc0000, #990000);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255,0,0,0.3);
+}
+
+:host ::ng-deep .p-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(255,0,0,0.2);
+}

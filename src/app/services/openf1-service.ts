@@ -149,6 +149,27 @@ export class Openf1ServiceService {
     return firstValueFrom(response);
   }
 
+  async getDriverByNumber(driverNumber: number): Promise<Driver | null> {
+    const url = `${this.baseUrl}/drivers?driver_number=${driverNumber}`;
+    const response = this.http.get<Driver[]>(url);
+    const list = await firstValueFrom(response);
+    return list && list.length ? list[0] : null;
+  }
+
+  async getDriverByAcronym(acronym: string): Promise<Driver | null> {
+    const url = `${this.baseUrl}/drivers?name_acronym=${acronym.toUpperCase()}`;
+    const response = this.http.get<Driver[]>(url);
+    const list = await firstValueFrom(response);
+    return list && list.length ? list[0] : null;
+  }
+
+  async getDriverByFullName(fullName: string): Promise<Driver | null> {
+    const url = `${this.baseUrl}/drivers?full_name=${encodeURIComponent(fullName)}`;
+    const response = this.http.get<Driver[]>(url);
+    const list = await firstValueFrom(response);
+    return list && list.length ? list[0] : null;
+  }
+
   // Additional useful endpoints that appear in the data samples the UI may consume.
   async getStartingGrid(sessionKey: number): Promise<StartingGrid[]> {
     const url = `${this.baseUrl}/starting_grid?session_key=${sessionKey}`;

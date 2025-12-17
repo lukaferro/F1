@@ -3,6 +3,7 @@ import { HomeComponent } from './home.component';
 import { GranPremiComponent } from './components/gran.premi/gran-premi.component';
 import { GranPremiDetailComponent } from './components/gran-premi-detail/gran-premi-detail.component';
 import { DriversComponent } from './components/drivers/drivers.component';
+import { DriverDetailComponent } from './components/driver-detail/driver-detail.component';
 
 export const routes: Routes = [
   {
@@ -20,5 +21,10 @@ export const routes: Routes = [
   {
     path: 'drivers',
     component: DriversComponent,
+  }
+  ,
+  {
+    path: 'drivers/:id',
+    component: DriverDetailComponent,
   }
 ];

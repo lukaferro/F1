@@ -560,7 +560,20 @@ export class GranPremiDetailComponent implements OnInit {
 
   getDriverName(driverNumber: number): string {
     const driver = this.drivers.find(d => d.driver_number === driverNumber);
-    return driver?.broadcast_name || `Driver ${driverNumber}`;
+    if (!driver) return `Driver ${driverNumber}`;
+
+    // Prefer full_name or name fields when available
+    const raw = (driver as any).full_name || (driver as any).name || driver.broadcast_name;
+    if (raw && typeof raw === 'string') {
+      const parts = raw.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0];
+      const last = parts.pop();
+      const first = parts.shift();
+      const initial = first ? first.charAt(0).toUpperCase() + '.' : '';
+      return `${initial} ${last}`.trim();
+    }
+
+    return driver.broadcast_name || `Driver ${driverNumber}`;
   }
 
   getDriverTeam(driverNumber: number): string {
@@ -631,40 +644,29 @@ export class GranPremiDetailComponent implements OnInit {
   private async loadMeeting(id: number) {
     this.loading = true;
     this.error = undefined;
-    
+
     try {
-      this.openF1Service.getMeetings().then(async meetings => {
-        console.log('Meetings loaded:', meetings);
-        
-        if (Array.isArray(meetings)) {
-          this.meeting = meetings.find(m => m.meeting_key === id) || null;
-        } else if (meetings && Array.isArray((meetings as any).data)) {
-          this.meeting = (meetings as any).data.find((m: Meeting) => m.meeting_key === id) || null;
-        }
-        
-        if (!this.meeting) {
-          console.error('Meeting not found with ID:', id);
-          this.error = 'Gran Premio non trovato';
-          this.loading = false;
-        } else {
-          console.log('Meeting found:', this.meeting);
-          this.currentSponsor = this.resolveSponsor(this.meeting.circuit_short_name);
-          this.loading = false;
-          
-          // Carica i piloti
-          await this.loadDrivers(id);
-          
-          // Carica le sessioni
-          await this.loadSessions(id);
-        }
-      }).catch(err => {
-        console.error('Error loading meetings:', err);
-        this.error = err?.message || 'Errore caricamento dettagli Gran Premio';
-        this.loading = false;
-      });
+      const meetings = await this.openF1Service.getMeetings();
+      const list: Meeting[] = Array.isArray(meetings)
+        ? meetings as Meeting[]
+        : (meetings && Array.isArray((meetings as any).data) ? (meetings as any).data as Meeting[] : []);
+
+      this.meeting = list.find((m: Meeting) => m.meeting_key === id) || null;
+
+      if (!this.meeting) {
+        this.error = 'Gran Premio non trovato';
+        return;
+      }
+
+      this.currentSponsor = this.resolveSponsor(this.meeting.circuit_short_name);
+
+      // Carica piloti e poi sessioni per avere colori e nomi pronti prima della normalizzazione
+      await this.loadDrivers(id);
+      await this.loadSessions(id);
     } catch (err: any) {
       console.error('Errore loadMeeting', err);
       this.error = err?.message || 'Errore caricamento dettagli Gran Premio';
+    } finally {
       this.loading = false;
     }
   }
