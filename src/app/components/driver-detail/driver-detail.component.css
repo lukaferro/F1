@@ -129,13 +129,19 @@
   gap: 0.75rem;
 }
 .stat-card {
-  border: 1px solid #555;
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
   padding: 0.75rem;
-  background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  transition: all 0.3s ease;
+}
+.stat-card:hover {
+  border-color: rgba(230,57,70,0.35);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transform: translateY(-1px);
 }
 .stat-label {
   font-size: 0.85rem;
@@ -183,7 +189,7 @@
 
 .career-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 .career-item {
@@ -192,61 +198,93 @@
   align-items: center;
   text-align: center;
   gap: 0.5rem;
-  padding: 1.5rem 1rem;
+  padding: 1.25rem 1rem;
   background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.3s ease;
+}
+.career-item:hover {
+  border-color: rgba(230,57,70,0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.career-item.highlight:hover,
+.career-item.stat-champs:hover {
+  border-color: rgba(230,57,70,0.35);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.22);
+}
+.career-item.highlight {
+  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.career-item.stat-champs {
+  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.08);
 }
 .career-item.full-width {
   grid-column: 1 / -1;
 }
-.career-item.full-width.teams-item {
+.career-item.full-width.scuderie-item,
+.career-item.full-width.championships-years-item {
   flex-direction: row;
   align-items: flex-start;
-  text-align: left;
-  gap: 1rem;
-}
-.career-item.full-width.teams-item i {
-  flex-shrink: 0;
-  margin-top: 0.25rem;
-}
-.career-item.debut {
-  /* Debutto in primo piano */
-  grid-column: 1 / 2;
-}
-.career-item.championships {
-  /* Titoli mondiali: spazio maggiore e stile speciale */
-  grid-column: 2 / 3;
-  background: linear-gradient(145deg, rgba(230,57,70,0.1), rgba(230,57,70,0.05));
-  border: 2px solid rgba(230,57,70,0.3);
+  gap: 1.5rem;
   padding: 1.5rem;
 }
-.career-item.championships i {
-  font-size: 2.4rem;
-  margin-bottom: 0.5rem;
+.career-item.full-width.scuderie-item i,
+.career-item.full-width.championships-years-item i {
+  font-size: 2.2rem;
+  flex-shrink: 0;
 }
-.career-item.championships .career-value {
-  font-size: 2.8rem;
+.career-item.full-width.scuderie-item .career-label,
+.career-item.full-width.championships-years-item .career-label {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+.teams-years {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.team-badge {
+  font-size: 0.95rem;
+  font-weight: 600;
   color: #e63946;
-  margin-bottom: 0.5rem;
+  padding: 0.35rem 0.65rem;
+  background: rgba(230,57,70,0.15);
+  border-radius: 6px;
+  border: 1px solid rgba(230,57,70,0.3);
 }
 .championship-years {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   width: 100%;
-  align-items: center;
+  margin-top: 0.5rem;
 }
 .championship-years .year {
   font-size: 0.95rem;
   color: #e63946;
   font-weight: 600;
-  padding: 0.25rem 0;
+  padding: 0.35rem 0.65rem;
+  background: rgba(230,57,70,0.15);
+  border-radius: 6px;
+  border: 1px solid rgba(230,57,70,0.3);
 }
-.career-item i {
+.career-item i,
+.career-item .career-icon {
   font-size: 1.8rem;
   color: #e63946;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
 }
+
 .career-item > div {
   display: flex;
   flex-direction: column;
@@ -321,6 +359,9 @@
   .bio-panel, .stats-panel, .career-panel {
     grid-column: 1 / -1;
   }
+  .career-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 @media (max-width: 720px) {
   .hero {
@@ -340,6 +381,9 @@
   }
   .meta { justify-content: center; }
   .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .career-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -664,7 +664,6 @@ export class GranPremiDetailComponent implements OnInit {
       await this.loadDrivers(id);
       await this.loadSessions(id);
     } catch (err: any) {
-      console.error('Errore loadMeeting', err);
       this.error = err?.message || 'Errore caricamento dettagli Gran Premio';
     } finally {
       this.loading = false;
@@ -709,9 +708,9 @@ export class GranPremiDetailComponent implements OnInit {
         team_color: driver.team_color || teamColors[driver.team_name] || 'FFFFFF'
       }));
 
-      console.log('Drivers loaded and normalized:', this.drivers);
+      // Drivers caricati e normalizzati
     } catch (err) {
-      console.error('Error loading drivers:', err);
+      // Errore nel caricamento dei piloti
     }
   }
   
@@ -734,7 +733,6 @@ export class GranPremiDetailComponent implements OnInit {
         year: (s as any).year ?? 0
       })).sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime());
 
-      // Rate limit: max 3 chiamate al secondo
       for (let i = 0; i < this.sessions.length; i += 3) {
         const chunk = this.sessions.slice(i, i + 3);
         await Promise.all(chunk.map(async session => {
@@ -752,7 +750,6 @@ export class GranPremiDetailComponent implements OnInit {
       // Dopo aver caricato i risultati per sessione, costruisci gli array per le tab
       this.buildSessionResultArrays();
     } catch (err: any) {
-      console.error('Error loading sessions:', err);
       this.sessionsError = err?.message || 'Errore caricamento sessioni';
     } finally {
       this.loadingSessions = false;
@@ -765,7 +762,6 @@ export class GranPremiDetailComponent implements OnInit {
     this.sprintResults = [];
     this.sessionResultsTable = [];
 
-    // Mantieni l'ordine cronologico delle sessioni
     const sorted = [...this.sessions].sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime());
 
     for (const session of sorted) {
@@ -835,7 +831,7 @@ export class GranPremiDetailComponent implements OnInit {
       this.overtakes[sessionKey] = overtakes;
 
     } catch (err) {
-      console.error('Error loading session details:', err);
+      // Errore nel caricamento dei dettagli della sessione
     }
   }
 

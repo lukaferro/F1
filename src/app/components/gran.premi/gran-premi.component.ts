@@ -212,7 +212,6 @@ export class GranPremiComponent implements OnInit {
       // Popola i filtri
       this.populateFilters(meetings);
     } catch (err: any) {
-      console.error('Errore loadMeetings', err);
       this.meetings = [];
       this.allMeetings = [];
       this.error = err?.message || 'Errore caricamento meeting';

@@ -129,6 +129,7 @@ export class DriverDetailComponent implements OnInit {
     'YUKI TSUNODA': 'https://static.sky.it/images/skysport/it/motori/formula-1/piloti/yuki-tsunoda.png?im=Resize,width=270',
     'DANIEL RICCIARDO': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyNC9kcml2ZXJzL2hlYWRzaG90cy9mMS9yaWMucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
     'VALTTERI BOTTAS': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyNC9kcml2ZXJzL2hlYWRzaG90cy9mMS9ib3QucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
+    'ZHOU GUANYU': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyNC9kcml2ZXJzL2hlYWRzaG90cy9mMS96aG8ucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
     'GUANYU ZHOU': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyNC9kcml2ZXJzL2hlYWRzaG90cy9mMS96aG8ucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
     'KEVIN MAGNUSSEN': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyMy9kcml2ZXJzL2hlYWRzaG90cy9mMS9tYWcucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
     'NICO HULKENBERG': 'https://static.sky.it/images/skysport/it/motori/formula-1/piloti/nico-hulkenberg.png?im=Resize,width=270',
@@ -147,7 +148,6 @@ export class DriverDetailComponent implements OnInit {
   async ngOnInit() {
     this.route.paramMap.subscribe(async params => {
       const id = params.get('id');
-      console.log('[Route] Driver ID from URL:', id);
       if (!id) {
         this.error = 'Pilota non trovato';
         this.loading = false;
@@ -173,16 +173,8 @@ export class DriverDetailComponent implements OnInit {
       if (!this.driver) {
         this.error = 'Pilota non trovato';
       } else {
-        // Log per debug: mostra tutti i dati del pilota
-        console.log('[Driver] Dati OpenF1:', {
-          full_name: this.driver.full_name,
-          name_acronym: this.driver.name_acronym,
-          team_name: this.driver.team_name,
-          team_color: this.driver.team_color,
-          country_code: this.driver.country_code,
-          driver_number: this.driver.driver_number,
-          headshot_url: this.driver.headshot_url
-        });
+        // Aggiorna i dati del pilota con la stagione più recente disponibile
+        await this.refreshDriverLatestSeason();
         // Carica info Wikipedia in background
         this.loadWikipediaInfo(this.driver.full_name);
       }
@@ -190,6 +182,40 @@ export class DriverDetailComponent implements OnInit {
       this.error = err?.message || 'Errore durante il caricamento del pilota';
     } finally {
       this.loading = false;
+    }
+  }
+
+  private async refreshDriverLatestSeason(): Promise<void> {
+    try {
+      if (!this.driver?.name_acronym) return;
+      const acronym = this.driver.name_acronym.toUpperCase();
+      const nowYear = new Date().getFullYear();
+      const yearsToTry = [nowYear, nowYear - 1];
+
+      for (const y of yearsToTry) {
+        const meetings = await this.openF1Service.getMeetings(y);
+        if (!meetings || meetings.length === 0) continue;
+        // Ordina per data di inizio desc e prendi l'ultima gara dell'anno
+        const sorted = meetings
+          .filter(m => !!m.date_start)
+          .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime());
+        const latest = sorted[0];
+        if (!latest) continue;
+        const drivers = await this.openF1Service.getDrivers(latest.meeting_key, 'meeting');
+        const match = drivers.find(d => (d.name_acronym || '').toUpperCase() === acronym || (d.full_name || '').toUpperCase() === (this.driver!.full_name || '').toUpperCase());
+        if (match) {
+          const before = { team: this.driver.team_name, number: this.driver.driver_number };
+          this.driver = {
+            ...this.driver,
+            team_name: match.team_name || this.driver.team_name,
+            team_color: match.team_color || this.driver.team_color,
+            driver_number: match.driver_number || this.driver.driver_number
+          };
+          break;
+        }
+      }
+    } catch (e) {
+      // Silenzia errori di aggiornamento stagione corrente
     }
   }
 
@@ -259,27 +285,20 @@ export class DriverDetailComponent implements OnInit {
         for (const searchName of namesToTry) {
           const searchUrl = `https://${locale}.wikipedia.org/w/api.php?action=query&format=json&origin=*&list=search&srsearch=${encodeURIComponent(searchName)}`;
           const searchResult: any = await this.http.get(searchUrl).toPromise();
-          console.log(`[Wiki] locale: ${locale}, searching: "${searchName}"`, searchResult);
           if (!searchResult?.query?.search?.length) continue;
 
           const pageTitle = searchResult.query.search[0].title;
           this.wikiUrl = `https://${locale}.wikipedia.org/wiki/${encodeURIComponent(pageTitle.replace(/ /g, '_'))}`;
-          console.log('[Wiki] pageTitle:', pageTitle, 'url:', this.wikiUrl);
 
           const extractUrl = `https://${locale}.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(pageTitle)}`;
           const extractResult: any = await this.http.get(extractUrl).toPromise();
-          console.log('[Wiki] extractResult', extractResult);
           if (extractResult?.query?.pages) {
             const pages = extractResult.query.pages;
             const pageId = Object.keys(pages)[0];
             if (pages[pageId]?.extract) {
               this.wikiExtract = pages[pageId].extract;
-              console.log('[Wiki] extract length:', this.wikiExtract.length);
             }
           }
-
-          // Logga primi 400 caratteri di wikitext per capire cosa parsare
-          await this.logWikipediaRaw(pageTitle, locale);
 
           // Prova a estrarre statistiche dalla tabella HTML (Carriera F1)
           await this.loadWikipediaStats(pageTitle, locale);
@@ -300,7 +319,7 @@ export class DriverDetailComponent implements OnInit {
         this.wikiExtract = '';
       }
     } catch (err) {
-      console.warn('Impossibile caricare dati Wikipedia:', err);
+      // Silenzia errori caricamento Wikipedia
     } finally {
       this.loadingWiki = false;
       this.loadingStats = false;
@@ -348,6 +367,7 @@ export class DriverDetailComponent implements OnInit {
         wins: stats.wins || this.careerStats?.wins || '—',
         podiums: stats.podiums || this.careerStats?.podiums || '—',
         poles: stats.poles || this.careerStats?.poles || '—',
+        fastestLaps: stats.fastestLaps || this.careerStats?.fastestLaps || '—',
         points: stats.points || this.careerStats?.points || '—',
         championshipsCount: stats.championshipsCount || this.careerStats?.championshipsCount || '0',
         championshipYears: stats.championshipYears || this.careerStats?.championshipYears || [],
@@ -357,7 +377,6 @@ export class DriverDetailComponent implements OnInit {
       
       // Se OpenF1 non ha country_code, prova a prenderlo da Wikipedia
       if (stats.country && this.driver && !this.driver.country_code) {
-        console.log('[Wiki] Updating country from Wikipedia:', stats.country);
         // Cerca di estrarre codice ISO se presente
         this.driver = { ...this.driver, country_code: this.extractCountryCode(stats.country) };
       }
@@ -365,7 +384,7 @@ export class DriverDetailComponent implements OnInit {
   }
 
   // Parsing HTML della pagina Wikipedia (action=parse) per estrarre le righe chiave della tabella carriera
-  private async parseWikipediaHtmlStats(pageTitle: string, locale: string): Promise<{ wins?: string; podiums?: string; poles?: string; championships?: string; teams?: string; debut?: string; races?: string; points?: string; championshipsCount?: string; championshipYears?: string[]; teamsArray?: string[]; country?: string } | null> {
+  private async parseWikipediaHtmlStats(pageTitle: string, locale: string): Promise<{ wins?: string; podiums?: string; poles?: string; fastestLaps?: string; championships?: string; teams?: string; debut?: string; races?: string; points?: string; championshipsCount?: string; championshipYears?: string[]; teamsArray?: string[]; country?: string } | null> {
     try {
       const parseUrl = `https://${locale}.wikipedia.org/w/api.php?action=parse&origin=*&format=json&page=${encodeURIComponent(pageTitle)}&prop=text`;
       const htmlRes: any = await this.http.get(parseUrl).toPromise();
@@ -376,50 +395,144 @@ export class DriverDetailComponent implements OnInit {
       const doc = parser.parseFromString(html, 'text/html');
       const rows = Array.from(doc.querySelectorAll('table.infobox tr, table.wikitable tr'));
       
-      console.log(`[Wiki] Found ${rows.length} rows in tables`);
       
-      // Debug: mostra i primi 10 th trovati
-      const allTh = Array.from(doc.querySelectorAll('table.infobox th, table.wikitable th')).slice(0, 15);
-      allTh.forEach((th, i) => {
-        console.log(`[Wiki] Row ${i}: "${th.textContent?.trim()}"`);
-      });
 
-      const wanted: Record<'championships' | 'wins' | 'podiums' | 'poles' | 'teams' | 'debut' | 'races' | 'points' | 'country', readonly string[]> = {
-        championships: ['mondiali vinti', 'campionati', 'campionati mondiali', 'world championships', 'titoli', 'world champion', 'f1 championships'],
-        wins: ['gp vinti', 'vittorie', 'wins', 'race wins', 'gran prix wins'],
+      // Marcatori per riconoscere il contesto Formula 1 ed escludere altre serie
+      const f1Markers = [
+        'formula 1', 'formula one', 'formula uno',
+        'campionato mondiale di formula 1', 'statistiche in f1', 'carriera in f1',
+        'formula one world championship', 'career statistics formula one'
+      ];
+      const nonF1Markers = [
+        'indy', 'indycar', 'indianapolis 500', 'indy 500', '500 miglia', '500 miglia di indianapolis',
+        'gp2', 'formula 2', 'f2', 'formula 3', 'f3',
+        'dtm', 'wec', 'fia wec', 'fia world endurance', 'world endurance', 'elms', 'wrc', 'formula e', 'super formula', 'karting', 'endurance', 'daytona',
+        'le mans', '24 ore di le mans', 'andretti', 'gazoo'
+      ];
+
+      const norm = (t: string) => this.normalizeLabel(t);
+      const textHasAny = (t: string | null | undefined, markers: string[]) => {
+        const n = norm(t || '');
+        return markers.some(m => n.includes(norm(m)));
+      };
+
+      // Verifica se la riga appartiene ad un contesto F1 usando caption e heading vicine
+      const isRowInF1Context = (rowEl: Element): boolean => {
+        const table = rowEl.closest('table');
+        if (!table) return false;
+
+        // Fallback: le righe dell'infobox sono considerate F1
+        const isInfobox = (table.classList.contains('infobox') ||
+          (table.getAttribute('class') || '').toLowerCase().includes('infobox'));
+        if (isInfobox) return true;
+
+        const isWikitable = (table.classList.contains('wikitable') ||
+          (table.getAttribute('class') || '').toLowerCase().includes('wikitable'));
+
+        const texts: string[] = [];
+        const caption = table.querySelector('caption');
+        if (caption) texts.push(caption.textContent || '');
+
+        // Considera anche tutti i th della tabella come contesto
+        const ths = Array.from(table.querySelectorAll('th'));
+        ths.forEach(th => texts.push(th.textContent || ''));
+
+        // Cerca heading (h2/h3/h4) immediatamente precedente nella gerarchia
+        const scanPrevForHeading = (el: Element | null, maxSteps = 12): void => {
+          let cur: Element | null = el;
+          let steps = 0;
+          while (cur && steps < maxSteps) {
+            const prev = cur.previousElementSibling as Element | null;
+            if (!prev) break;
+            const tag = (prev.tagName || '').toLowerCase();
+            if (tag === 'h2' || tag === 'h3' || tag === 'h4') {
+              texts.push(prev.textContent || '');
+              break;
+            }
+            cur = prev;
+            steps++;
+          }
+        };
+
+        scanPrevForHeading(table as Element);
+        // Tenta anche sui genitori per catturare heading di sezione
+        const parent = table.parentElement as Element | null;
+        if (parent) scanPrevForHeading(parent);
+
+        // Se il contesto contiene marker non-F1, scarta
+        if (texts.some(t => textHasAny(t, nonF1Markers))) return false;
+        // Se troviamo marker F1, accetta
+        if (texts.some(t => textHasAny(t, f1Markers))) return true;
+        // Per le wikitable senza marker F1, non accettare
+        if (isWikitable) return false;
+        // Altrimenti, fallback (non dovrebbe capitare poiché gestiamo infobox e wikitable)
+        return false;
+      };
+
+      const wanted: Record<'championships' | 'wins' | 'podiums' | 'poles' | 'fastestLaps' | 'teams' | 'debut' | 'races' | 'points' | 'country', readonly string[]> = {
+        championships: ['mondiali vinti', 'campionati', 'campionati mondiali', 'world championships', 'titoli', 'world champion', 'f1 championships', 'world drivers championship', 'wdc'],
+        wins: ['gp vinti', 'vittorie', 'wins', 'race wins', 'grand prix wins'],
         podiums: ['podi', 'podiums', 'podium finishes'],
         poles: ['pole position', 'pole positions', 'pole', 'poles'],
+        fastestLaps: ['giri veloci', 'giro veloce', 'fastest laps', 'fastest lap'],
         teams: ['scuderie', 'teams', 'squadre', 'racing teams', 'team'],
         debut: ['esordio', 'debut', 'debutto', 'first race', 'formula one debut'],
-        races: ['gp disputati', 'gare', 'races', 'gran premi', 'formula one entries'],
+        races: ['gp disputati', 'gare', 'races', 'gran premi', 'formula one entries', 'entries', 'starts', 'f1 starts', 'grand prix starts'],
         points: ['punti', 'points', 'punti ottenuti', 'career points', 'formula one points'],
         country: ['nazionalita', 'nationality', 'paese', 'country']
+      };
+      const extractNumber = (text: string, allowDecimal = false): string => {
+        const match = text.match(/[0-9][0-9\s\.,]*/);
+        if (!match) return text;
+        let s = match[0].replace(/\s/g, '');
+        if (allowDecimal) {
+          s = s.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+          const firstDot = s.indexOf('.');
+          if (firstDot !== -1) {
+            s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, '');
+          }
+        } else {
+          s = s.replace(/[^0-9]/g, '');
+        }
+        return s;
       };
 
       const found: any = {};
 
       rows.forEach(row => {
+        // Richiede contesto F1 (infobox accettato come fallback, altre tabelle devono avere marker F1)
+        if (!isRowInF1Context(row)) {
+          return;
+        }
         const th = row.querySelector('th');
         const td = row.querySelector('td');
         if (!th || !td) return;
         const label = this.normalizeLabel(th.textContent || '');
         const valueRaw = this.cleanWikiValue(td.innerHTML || td.textContent || '');
 
+        // Salta subito righe che contengono marcatori espliciti di serie non-F1
+        const rawLabel = th.textContent || '';
+        const rawValue = td.textContent || '';
+        const containsNonF1 = textHasAny(rawLabel, nonF1Markers) || textHasAny(rawValue, nonF1Markers);
+        if (containsNonF1) {
+          return;
+        }
+
         (Object.entries(wanted) as Array<[keyof typeof wanted, readonly string[]]>).forEach(([key, labels]) => {
           labels.forEach(lab => {
             if (label.includes(this.normalizeLabel(lab))) {
-              console.log(`[Wiki] Matched ${key}: "${th.textContent?.trim()}" = "${valueRaw}"`);
               if (key === 'teams') {
                 // Split quando troviamo pattern: "anno-anno Nome" o "anno- Nome"
                 // Es: "Toro Rosso 2015-2016 Red Bull 2016-" -> ["Toro Rosso 2015-2016", "Red Bull 2016-"]
-                const teamsArray = valueRaw
+                let teamsArray = valueRaw
                   .replace(/(\d{4}(?:-\d{4})?-?)\s+([A-Z])/g, '$1|||$2') // Inserisci separatore tra anno e nome maiuscolo
                   .split('|||')
                   .map(v => v.trim())
                   .filter(Boolean)
                   .map(team => this.formatTeamEntry(team));
+                // Filtra fuori riferimenti espliciti a serie non-F1
+                teamsArray = teamsArray.filter(entry => !textHasAny(entry, nonF1Markers));
                 
-                console.log(`[Wiki] Teams parsed:`, teamsArray);
                 found['teamsArray'] = teamsArray;
                 found[key] = teamsArray.join(' • ');
               } else if (key === 'championships') {
@@ -428,7 +541,6 @@ export class DriverDetailComponent implements OnInit {
                 if (match) {
                   found['championshipsCount'] = match[1];
                   found['championshipYears'] = match[2] ? match[2].split(',').map(y => y.trim()) : [];
-                  console.log(`[Wiki] Championships parsed: count=${match[1]}, years=${JSON.stringify(found['championshipYears'])}`);
                 }
               } else if (key === 'debut') {
                 // Pulisci esordio: rimuovi br e newline per avere tutto su una riga
@@ -440,6 +552,10 @@ export class DriverDetailComponent implements OnInit {
               } else if (key === 'country') {
                 // Estrai codice paese, cerca pattern come "Regno Unito", "GBR", etc.
                 found[key] = valueRaw.trim();
+              } else if (key === 'wins' || key === 'podiums' || key === 'poles' || key === 'races' || key === 'points' || key === 'fastestLaps') {
+                // Estrai il primo numero presente nel valore
+                const num = extractNumber(valueRaw);
+                found[key] = num;
               } else {
                 found[key] = valueRaw;
               }
@@ -449,20 +565,9 @@ export class DriverDetailComponent implements OnInit {
       });
 
       if (Object.keys(found).length === 0) return null;
-      console.log('[Wiki] parsed stats:', {
-        debut: found.debut,
-        championships: found.championshipsCount,
-        championshipYears: found.championshipYears,
-        races: found.races,
-        wins: found.wins,
-        podiums: found.podiums,
-        poles: found.poles,
-        points: found.points,
-        teams: found.teams
-      });
       return found;
     } catch (err) {
-      console.warn('parseWikipediaHtmlStats errore:', err);
+      // Silenzia errori di parsing Wikipedia
       return null;
     }
   }
@@ -526,18 +631,5 @@ export class DriverDetailComponent implements OnInit {
     return teamStr.trim();
   }
 
-  private async logWikipediaRaw(pageTitle: string, locale: string) {
-    try {
-      const wikitextUrl = `https://${locale}.wikipedia.org/w/api.php?action=query&origin=*&format=json&prop=revisions&rvprop=content&rvslots=main&formatversion=2&titles=${encodeURIComponent(pageTitle)}`;
-      const data: any = await this.http.get(wikitextUrl).toPromise();
-      const content = data?.query?.pages?.[0]?.revisions?.[0]?.slots?.main?.content;
-      if (content) {
-        console.log('[Wiki] raw wikitext sample:', content.slice(0, 400));
-      } else {
-        console.log('[Wiki] wikitext non trovato');
-      }
-    } catch (err) {
-      console.warn('[Wiki] errore nel log wikitext:', err);
-    }
-  }
+  // rimosso logging wikitext per prestazioni
 }

@@ -127,7 +127,7 @@ export class DriversComponent implements OnInit {
           // Piccola pausa tra le richieste per evitare rate limiting
           await new Promise(resolve => setTimeout(resolve, 200));
         } catch (err) {
-          console.warn(`Errore caricamento piloti per anno ${year}:`, err);
+          // Silenzia errori di caricamento per singolo anno
         }
       }
 
@@ -137,7 +137,6 @@ export class DriversComponent implements OnInit {
       // Inizialmente mostra tutti i piloti senza anno selezionato
       this.applyFilters();
     } catch (err: any) {
-      console.error('Errore caricamento piloti:', err);
       this.error = err?.message || 'Errore caricamento piloti';
     } finally {
       this.loading = false;
@@ -249,8 +248,6 @@ getTeamColor(driver: Driver): string {
 
   return color;
 }
-
-  // Metodi bandiere rimossi su richiesta
 
 getDriverImageWithTeamColor(driver: Driver): string {
   const teamColor = this.getTeamColor(driver).replace('#', '');
