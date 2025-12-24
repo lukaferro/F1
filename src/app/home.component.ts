@@ -1,8 +1,10 @@
-import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { Openf1ServiceService, Driver } from './services/openf1-service';
+import { Meeting } from './models/meeting';
 
 @Component({
   selector: 'app-home',
@@ -12,7 +14,7 @@ import { CardModule } from 'primeng/card';
     <div class="home-container">
       <section class="hero">
         <div class="hero-video">
-          <video #heroVideo autoplay loop muted playsinline preload="auto">
+          <video #heroVideo autoplay loop muted playsinline preload="auto" [muted]="true">
             <source src="assets/F1.mp4" type="video/mp4">
             Il tuo browser non supporta i video HTML5.
           </video>
@@ -32,7 +34,7 @@ import { CardModule } from 'primeng/card';
         <div class="feature-cards">
           <p-card header="Gran Premi" subheader="Calendario completo" [style]="{ width: '360px' }">
             <ng-template pTemplate="header">
-              <img alt="Gran Premi" src="https://www.datocms-assets.com/53444/1718265294-formula-one-vs-indycar-racing.jpg?auto=format&w=1200" [style]="{ width: '300px'}" />
+              <img alt="Gran Premi" src="https://www.datocms-assets.com/53444/1718265294-formula-one-vs-indycar-racing.jpg?auto=format&w=1200" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
             </ng-template>
             <p>Esplora tutti i Gran Premi della stagione, con date, circuiti e informazioni dettagliate.</p>
             <ng-template pTemplate="footer">
@@ -42,7 +44,7 @@ import { CardModule } from 'primeng/card';
 
           <p-card header="Circuiti" subheader="Tracciati iconici" [style]="{ width: '360px' }">
             <ng-template pTemplate="header">
-              <img alt="Circuiti" src="https://media.istockphoto.com/id/810900482/photo/empty-racing-track-with-sunlight.jpg?s=612x612&w=0&k=20&c=8ndE0gqBB_-zyzYLVtx-oOWRcR4a4HaInGs8IVhC0GA=" [style]="{ width: '300px'}" />
+              <img alt="Circuiti" src="https://media.istockphoto.com/id/810900482/photo/empty-racing-track-with-sunlight.jpg?s=612x612&w=0&k=20&c=8ndE0gqBB_-zyzYLVtx-oOWRcR4a4HaInGs8IVhC0GA=" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
             </ng-template>
             <p>Scopri i circuiti più iconici del mondo dove si svolgono le gare di Formula 1.</p>
             <ng-template pTemplate="footer">
@@ -52,7 +54,7 @@ import { CardModule } from 'primeng/card';
 
           <p-card header="Piloti" subheader="I protagonisti" [style]="{ width: '360px' }">
             <ng-template pTemplate="header">
-              <img alt="Piloti" src="https://img.freepik.com/foto-premium/ritratto-del-pilota-di-f1-che-indossa-il-casco-pilota-di-formula-uno-in-piedi-sulla-pista-dopo-la-competizione_46383-9870.jpg" [style]="{ width: '300px'}" />
+              <img alt="Piloti" src="https://img.freepik.com/foto-premium/ritratto-del-pilota-di-f1-che-indossa-il-casco-pilota-di-formula-uno-in-piedi-sulla-pista-dopo-la-competizione_46383-9870.jpg" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
             </ng-template>
             <p>Tutti i piloti che partecipano al campionato mondiale di Formula 1.</p>
             <ng-template pTemplate="footer">
@@ -69,32 +71,32 @@ import { CardModule } from 'primeng/card';
             <div class="stat-icon">
               <i class="pi pi-flag-fill"></i>
             </div>
-            <div class="stat-number">23</div>
-            <div class="stat-title">Gran Premi nel 2023</div>
+            <div class="stat-number">{{ grandPrixCount }}</div>
+            <div class="stat-title">Gran Premi {{ seasonYear }}</div>
           </div>
           
           <div class="stat-card">
             <div class="stat-icon">
               <i class="pi pi-users"></i>
             </div>
-            <div class="stat-number">20</div>
-            <div class="stat-title">Piloti</div>
+            <div class="stat-number">{{ driversCount }}</div>
+            <div class="stat-title">Piloti {{ seasonYear }}</div>
           </div>
           
           <div class="stat-card">
             <div class="stat-icon">
               <i class="pi pi-building"></i>
             </div>
-            <div class="stat-number">10</div>
-            <div class="stat-title">Team</div>
+            <div class="stat-number">{{ teamsCount }}</div>
+            <div class="stat-title">Team {{ seasonYear }}</div>
           </div>
           
           <div class="stat-card">
             <div class="stat-icon">
               <i class="pi pi-map"></i>
             </div>
-            <div class="stat-number">20+</div>
-            <div class="stat-title">Paesi</div>
+            <div class="stat-number">{{ countriesCount }}</div>
+            <div class="stat-title">Paesi ospitanti</div>
           </div>
         </div>
       </section>
@@ -292,20 +294,65 @@ import { CardModule } from 'primeng/card';
     }
   `]
 })
-export class HomeComponent implements AfterViewInit {
+export class HomeComponent implements AfterViewInit, OnInit {
   @ViewChild('heroVideo') heroVideo?: ElementRef<HTMLVideoElement>;
+
+  seasonYear = new Date().getFullYear();
+  grandPrixCount: string | number = '—';
+  driversCount: string | number = '—';
+  teamsCount: string | number = '—';
+  countriesCount: string | number = '—';
+
+  private readonly openF1 = inject(Openf1ServiceService);
+
+  async ngOnInit() {
+    await this.loadSeasonStats();
+  }
 
   ngAfterViewInit(): void {
     const video = this.heroVideo?.nativeElement;
     if (!video) {
       return;
     }
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        video.muted = true;
-        video.play().catch(() => {});
+    video.muted = true;
+    video.defaultMuted = true;
+    video.volume = 0;
+    video.play().catch(() => {});
+  }
+
+  private async loadSeasonStats() {
+    try {
+      const meetings: Meeting[] = await this.openF1.getMeetings(this.seasonYear);
+      const seasonMeetings = Array.isArray(meetings) ? meetings.filter(m => m.year === this.seasonYear) : [];
+      const meetingsToUse = seasonMeetings.length ? seasonMeetings : meetings;
+
+      this.grandPrixCount = meetingsToUse.length || '—';
+
+      const countries = new Set<string>();
+      meetingsToUse.forEach(m => {
+        if (m.country_code) {
+          countries.add(m.country_code);
+        }
       });
+      this.countriesCount = countries.size || (meetingsToUse.length ? '—' : 'N/D');
+
+      // Prova a ricavare piloti e team dal primo meeting disponibile
+      const referenceMeeting = meetingsToUse[0];
+      if (referenceMeeting) {
+        const drivers: Driver[] = await this.openF1.getDrivers(referenceMeeting.meeting_key, 'meeting');
+        const uniqueDrivers = new Map<number, Driver>();
+        const teams = new Set<string>();
+        drivers.forEach(d => {
+          uniqueDrivers.set(d.driver_number, d);
+          if (d.team_name) {
+            teams.add(d.team_name);
+          }
+        });
+        this.driversCount = uniqueDrivers.size || '—';
+        this.teamsCount = teams.size || '—';
+      }
+    } catch {
+      // Lascia valori di fallback
     }
   }
 }

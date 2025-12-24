@@ -14,6 +14,7 @@
       <ul class="footer-links">
         <li><a routerLink="/">Home</a></li>
         <li><a routerLink="/granpremi">Gran Premi</a></li>
+        <li><a routerLink="/drivers">Piloti</a></li>
         <li><a href="https://www.formula1.com" target="_blank">Sito Ufficiale F1</a></li>
       </ul>
     </div>
@@ -29,8 +30,8 @@
 
   <div class="footer-sponsors">
     <div class="sponsor-item" *ngFor="let sponsor of sponsorPartners">
-      <a [href]="sponsor.website" target="_blank" rel="noopener">
-        <img [src]="sponsor.logo" [alt]="sponsor.name">
+      <a [href]="sponsor.website" target="_blank" rel="noopener" [attr.aria-label]="'Visita ' + sponsor.name">
+        <img [src]="sponsor.logo" [alt]="sponsor.name" loading="lazy" decoding="async">
       </a>
     </div>
   </div>
