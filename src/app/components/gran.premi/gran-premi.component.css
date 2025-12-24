@@ -166,64 +166,6 @@
   letter-spacing: 0.015em;
 }
 
-:host-context(.light-theme) ::ng-deep .gp-dropdown .p-dropdown {
-  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-  border: 1px solid #dcdcdc;
-  border-radius: 20px;
-  padding: 0.75rem 1.1rem;
-  gap: 0.6rem;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
-}
-
-:host-context(.light-theme) ::ng-deep .gp-dropdown .p-dropdown:not(.p-disabled):hover {
-  border-color: #ff0000;
-  box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.15), 0 12px 26px rgba(0, 0, 0, 0.12);
-}
-
-:host-context(.light-theme) ::ng-deep .gp-dropdown .p-dropdown-label,
-:host-context(.light-theme) ::ng-deep .gp-dropdown .p-dropdown-trigger {
-  color: #222;
-}
-
-:host-context(.light-theme) ::ng-deep .gp-dropdown-panel {
-  background: radial-gradient(circle at top, #ffffff 0%, #f7f7f7 70%);
-  border: 1px solid #e3e3e3;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
-  border-radius: 20px;
-  padding: 1rem 0.75rem;
-}
-
-:host-context(.light-theme) ::ng-deep .gp-dropdown-panel .p-dropdown-items,
-:host-context(.light-theme) ::ng-deep .gp-dropdown-panel .p-dropdown-items-wrapper,
-:host-context(.light-theme) ::ng-deep .gp-dropdown-panel .p-dropdown-filter-container {
-  background-color: #ffffff;
-}
-
-:host-context(.light-theme) ::ng-deep .gp-dropdown-panel .p-dropdown-filter {
-  background-color: #f7f7f7;
-  color: #333;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  padding: 0.6rem 0.85rem;
-}
-
-:host-context(.light-theme) ::ng-deep .gp-dropdown-panel .p-dropdown-item {
-  color: #333;
-  padding: 0.85rem 1.4rem;
-  margin: 0.35rem 0.8rem;
-  border-radius: 12px;
-}
-
-:host-context(.light-theme) ::ng-deep .gp-dropdown-panel .p-dropdown-item:hover {
-  background-color: #f0f0f0;
-  transform: translateX(6px);
-  box-shadow: inset 5px 0 0 rgba(255, 0, 0, 0.2);
-}
-
-:host-context(.light-theme) ::ng-deep .gp-dropdown-panel .p-dropdown-item.p-highlight {
-  background: linear-gradient(135deg, rgba(255, 0, 0, 0.15) 0%, rgba(255, 0, 0, 0.25) 100%);
-  box-shadow: 0 6px 14px rgba(255, 0, 0, 0.12);
-}
 
 .filter-actions {
   margin-top: 2rem;

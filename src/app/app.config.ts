@@ -14,7 +14,10 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(), // necessario per i componenti di PrimeNG che usano le animazioni
     providePrimeNG({
       theme: {
-        preset: 'Aura'
+        preset: 'Aura',
+        options: {
+          darkModeSelector: '.dark'
+        }
       }
     })
   ]
