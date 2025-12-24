@@ -1,0 +1,87 @@
+<div class="circuits-container">
+  <div class="header">
+    <h1>Circuiti Formula 1</h1>
+    <p class="subtitle">I circuiti più iconici e leggendari della Formula 1</p>
+  </div>
+
+  <div class="circuits-grid">
+    @for (circuit of circuits; track circuit.id) {
+      <p-card class="circuit-card">
+        <ng-template pTemplate="header">
+          <div class="circuit-image-container">
+            <img 
+              [src]="circuit.image_url" 
+              [alt]="circuit.name"
+              class="circuit-image"
+              loading="lazy"
+              decoding="async">
+            <div class="circuit-overlay">
+              <span class="circuit-country">{{ circuit.country }}</span>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="circuit-content">
+          <h2 class="circuit-name">{{ circuit.name }}</h2>
+          <p class="circuit-location">
+            <i class="pi pi-map-marker"></i>
+            {{ circuit.location }}, {{ circuit.country }}
+          </p>
+
+          <div class="circuit-stats">
+            <div class="stat">
+              <span class="stat-label">Lunghezza</span>
+              <span class="stat-value">{{ circuit.length_km }} km</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Curve</span>
+              <span class="stat-value">{{ circuit.turns }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Primo GP</span>
+              <span class="stat-value">{{ circuit.first_grand_prix }}</span>
+            </div>
+          </div>
+
+          @if (circuit.lap_record) {
+            <div class="lap-record">
+              <i class="pi pi-stopwatch"></i>
+              <span>Record: {{ circuit.lap_record.time }} - {{ circuit.lap_record.driver }} ({{ circuit.lap_record.year }})</span>
+            </div>
+          }
+
+          <p class="circuit-description">{{ circuit.description }}</p>
+
+          <div class="circuit-links">
+            <a [href]="circuit.wikipedia_url" target="_blank" rel="noopener noreferrer" class="wiki-link">
+              <i class="pi pi-external-link"></i>
+              <span>Wikipedia</span>
+            </a>
+          </div>
+
+          <div class="expandable-section" [class.expanded]="isExpanded(circuit.id)">
+            <div class="expandable-content">
+              <div class="history-section">
+                <h3><i class="pi pi-book"></i> Storia</h3>
+                <p>{{ circuit.history }}</p>
+              </div>
+
+              <div class="memorable-section">
+                <h3><i class="pi pi-star-fill"></i> Momento Memorabile</h3>
+                <p>{{ circuit.memorable_moment }}</p>
+              </div>
+            </div>
+          </div>
+
+          <p-button 
+            [label]="isExpanded(circuit.id) ? 'Mostra meno' : 'Scopri di più'"
+            [icon]="isExpanded(circuit.id) ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+            (onClick)="toggleExpand(circuit.id)"
+            styleClass="p-button-outlined expand-button"
+            severity="secondary">
+          </p-button>
+        </div>
+      </p-card>
+    }
+  </div>
+</div>

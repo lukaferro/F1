@@ -1,0 +1,269 @@
+.circuits-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  color: #dc0000;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-color-secondary);
+}
+
+.circuits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.circuit-card {
+  background: var(--surface-card);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.circuit-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(220, 0, 0, 0.2);
+}
+
+.circuit-image-container {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.circuit-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 1rem;
+}
+
+.circuit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+}
+
+.circuit-country {
+  background: #dc0000;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.circuit-content {
+  padding: 1.5rem;
+}
+
+.circuit-name {
+  font-size: 1.5rem;
+  color: #dc0000;
+  margin-bottom: 0.5rem;
+}
+
+.circuit-location {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.circuit-location i {
+  color: #dc0000;
+}
+
+.circuit-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(220, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  font-weight: 700;
+}
+
+.lap-record {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(220, 0, 0, 0.1);
+  border-left: 3px solid #dc0000;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.lap-record i {
+  color: #dc0000;
+}
+
+.circuit-description {
+  line-height: 1.6;
+  color: var(--text-color-secondary);
+  margin-bottom: 1rem;
+}
+
+.circuit-links {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.wiki-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(220, 0, 0, 0.1);
+  color: #dc0000;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(220, 0, 0, 0.3);
+}
+
+.wiki-link:hover {
+  background: rgba(220, 0, 0, 0.2);
+  border-color: #dc0000;
+  transform: translateY(-2px);
+}
+
+.wiki-link i {
+  font-size: 1rem;
+}
+
+.expandable-section {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.expandable-section.expanded {
+  max-height: 1000px;
+  transition: max-height 0.5s ease-in;
+}
+
+.expandable-content {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.history-section,
+.memorable-section {
+  margin-bottom: 1.5rem;
+}
+
+.history-section h3,
+.memorable-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #dc0000;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.history-section i,
+.memorable-section i {
+  font-size: 1rem;
+}
+
+.history-section p,
+.memorable-section p {
+  line-height: 1.6;
+  color: var(--text-color-secondary);
+}
+
+.video-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.65rem 1.25rem;
+  background: #dc0000;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(220, 0, 0, 0.3);
+}
+
+.video-link:hover {
+  background: #b00000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 0, 0, 0.4);
+}
+
+.video-link i {
+  font-size: 1.1rem;
+}
+
+.expand-button {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .circuits-container {
+    padding: 1rem;
+  }
+
+  .circuits-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .header h1 {
+    font-size: 2rem;
+  }
+
+  .circuit-stats {
+    grid-template-columns: 1fr;
+  }
+}
