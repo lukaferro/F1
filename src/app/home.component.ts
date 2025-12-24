@@ -48,7 +48,7 @@ import { Meeting } from './models/meeting';
             </ng-template>
             <p>Scopri i circuiti più iconici del mondo dove si svolgono le gare di Formula 1.</p>
             <ng-template pTemplate="footer">
-              <p-button label="Prossimamente" icon="pi pi-clock" [disabled]="true"></p-button>
+              <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/circuits"></p-button>
             </ng-template>
           </p-card>
 
