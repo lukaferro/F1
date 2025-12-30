@@ -1,0 +1,90 @@
+<div class="home-container">
+  <section class="hero">
+    <div class="hero-video">
+      <video #heroVideo autoplay loop muted playsinline preload="auto" [muted]="true">
+        <source src="assets/F1.mp4" type="video/mp4">
+        Il tuo browser non supporta i video HTML5.
+      </video>
+      <div class="overlay"></div>
+    </div>
+    <div class="hero-content">
+      <h1>Benvenuto nel mondo della <span class="f1-text">Formula 1</span></h1>
+      <p>Scopri tutti i Gran Premi, i circuiti e le informazioni sulla stagione di Formula 1</p>
+      <div class="hero-buttons">
+        <p-button label="Esplora Gran Premi" icon="pi pi-flag-fill" routerLink="/granpremi" styleClass="p-button-raised"></p-button>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <h2>Scopri la Formula 1</h2>
+    <div class="feature-cards">
+      <p-card header="Gran Premi" subheader="Calendario completo" [style]="{ width: '360px' }">
+        <ng-template pTemplate="header">
+          <img alt="Gran Premi" src="https://www.datocms-assets.com/53444/1718265294-formula-one-vs-indycar-racing.jpg?auto=format&w=1200" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
+        </ng-template>
+        <p>Esplora tutti i Gran Premi della stagione, con date, circuiti e informazioni dettagliate.</p>
+        <ng-template pTemplate="footer">
+          <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/granpremi"></p-button>
+        </ng-template>
+      </p-card>
+
+      <p-card header="Circuiti" subheader="Tracciati iconici" [style]="{ width: '360px' }">
+        <ng-template pTemplate="header">
+          <img alt="Circuiti" src="https://media.istockphoto.com/id/810900482/photo/empty-racing-track-with-sunlight.jpg?s=612x612&w=0&k=20&c=8ndE0gqBB_-zyzYLVtx-oOWRcR4a4HaInGs8IVhC0GA=" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
+        </ng-template>
+        <p>Scopri i circuiti più iconici del mondo dove si svolgono le gare di Formula 1.</p>
+        <ng-template pTemplate="footer">
+          <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/circuits"></p-button>
+        </ng-template>
+      </p-card>
+
+      <p-card header="Piloti" subheader="I protagonisti" [style]="{ width: '360px' }">
+        <ng-template pTemplate="header">
+          <img alt="Piloti" src="https://img.freepik.com/foto-premium/ritratto-del-pilota-di-f1-che-indossa-il-casco-pilota-di-formula-uno-in-piedi-sulla-pista-dopo-la-competizione_46383-9870.jpg" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
+        </ng-template>
+        <p>Tutti i piloti che partecipano al campionato mondiale di Formula 1.</p>
+        <ng-template pTemplate="footer">
+          <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/drivers"></p-button>
+        </ng-template>
+      </p-card>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <h2>Statistiche F1</h2>
+    <div class="stats-container">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="pi pi-flag-fill"></i>
+        </div>
+        <div class="stat-number">{{ grandPrixCount }}</div>
+        <div class="stat-title">Gran Premi {{ seasonYear }}</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="pi pi-users"></i>
+        </div>
+        <div class="stat-number">{{ driversCount }}</div>
+        <div class="stat-title">Piloti {{ seasonYear }}</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="pi pi-building"></i>
+        </div>
+        <div class="stat-number">{{ teamsCount }}</div>
+        <div class="stat-title">Team {{ seasonYear }}</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="pi pi-map"></i>
+        </div>
+        <div class="stat-number">{{ countriesCount }}</div>
+        <div class="stat-title">Paesi ospitanti</div>
+      </div>
+    </div>
+  </section>
+</div>

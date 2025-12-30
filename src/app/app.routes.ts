@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './home.component';
+import { HomeComponent } from './components/home/home.component';
 import { GranPremiComponent } from './components/gran.premi/gran-premi.component';
 import { GranPremiDetailComponent } from './components/gran-premi-detail/gran-premi-detail.component';
 import { DriversComponent } from './components/drivers/drivers.component';
