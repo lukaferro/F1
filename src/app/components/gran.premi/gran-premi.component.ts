@@ -122,7 +122,8 @@ export class GranPremiComponent implements OnInit {
     'Las Vegas': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Las_Vegas_Circuit.png.transform/7col/image.png',
     'Losail': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Qatar_Circuit.png.transform/7col/image.png',
     'Red Bull Ring': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Austria_Circuit.png.transform/7col/image.png',
-    'Paul Ricard': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/France_Circuit.png.transform/7col/image.png'
+    'Paul Ricard': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/France_Circuit.png.transform/7col/image.png',
+    'Madrid': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Madring_%282026%29.svg/500px-Madring_%282026%29.svg.png'
   };
 
   async ngOnInit() {
@@ -198,6 +199,13 @@ export class GranPremiComponent implements OnInit {
       } else if (resp && Array.isArray((resp as any).data)) {
         meetings = (resp as any).data;
       }
+
+      // Filtra solo i meeting che sono già iniziati o in corso
+      const now = new Date();
+      meetings = meetings.filter(m => {
+        const startDate = new Date(m.date_start);
+        return startDate <= now;
+      });
 
       // Ordina per data (più recenti prima)
       meetings.sort((a, b) => {

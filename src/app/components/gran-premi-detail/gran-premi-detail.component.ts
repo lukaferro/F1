@@ -699,7 +699,9 @@ export class GranPremiDetailComponent implements OnInit {
         'Alfa Romeo': 'C92D4B',
         'Haas F1 Team': '9C9FA2',
         'Williams': '1868DB',
-        'Kick Sauber': '01C00E'
+        'Kick Sauber': '01C00E',
+        'Audi': '00A800',
+        'Cadillac': 'C41E3A'
       };
       
       // Apply default team colors if missing

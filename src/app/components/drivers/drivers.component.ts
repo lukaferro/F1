@@ -47,7 +47,9 @@ export class DriversComponent implements OnInit {
     'Haas F1 Team': '9C9FA2',
     'Williams': '1868DB',
     'RB': '6692FF',
-    'Kick Sauber': '01C00E'
+    'Kick Sauber': '01C00E',
+    'Audi': '00A800',
+    'Cadillac': 'C41E3A'
   };
   
   // Mappa dei piloti con foto ufficiali da Formula1.com (chiavi in MAIUSCOLO "Nome Cognome")
@@ -99,42 +101,58 @@ export class DriversComponent implements OnInit {
       // Carica tutti i meeting disponibili
       const allMeetings = await this.openF1Service.getMeetings();
 
-      // Raggruppa meeting per anno e prendi solo il primo meeting di ogni anno
-      const yearFirstMeeting = new Map<number, number>();
+      // Raggruppa meeting per anno e prendi il primo meeting di ogni anno
+      const yearMeetings = new Map<number, number[]>();
       allMeetings.forEach(meeting => {
-        if (!yearFirstMeeting.has(meeting.year)) {
-          yearFirstMeeting.set(meeting.year, meeting.meeting_key);
+        if (!yearMeetings.has(meeting.year)) {
+          yearMeetings.set(meeting.year, []);
         }
+        yearMeetings.get(meeting.year)!.push(meeting.meeting_key);
       });
 
-      // Carica i piloti per ogni anno (solo dal primo meeting) e rimuovi duplicati per numero
-      for (const [year, meetingKey] of yearFirstMeeting.entries()) {
-        try {
-          const driversOfYear = (await this.openF1Service.getDrivers(meetingKey, 'meeting'))
-            .filter(driver => !this.isExcluded(driver));
+      // Carica i piloti per ogni anno provando diversi meeting se necessario
+      for (const [year, meetingKeys] of yearMeetings.entries()) {
+        let driversLoaded = false;
+        
+        // Prova con i primi meeting dell'anno fino a trovare dati
+        for (const meetingKey of meetingKeys.slice(0, 3)) {
+          try {
+            const driversOfYear = (await this.openF1Service.getDrivers(meetingKey, 'meeting'))
+              .filter(driver => !this.isExcluded(driver));
 
-          // Deduplica per driver_number mantenendo l'entry con più info (es. team_color)
-          const yearDriversMap = new Map<number, Driver>();
-          driversOfYear.forEach(driver => {
-            const existing = yearDriversMap.get(driver.driver_number);
-            if (!existing || (driver.team_color && !existing.team_color)) {
-              yearDriversMap.set(
-                driver.driver_number,
-                {
-                  ...driver,
-                  team_color: driver.team_color || this.teamColors[driver.team_name] || 'FFFFFF'
-                }
-              );
+            if (driversOfYear.length === 0) {
+              continue; // Prova il prossimo meeting
             }
-          });
 
-          const processedDrivers = Array.from(yearDriversMap.values()).sort((a, b) => a.driver_number - b.driver_number);
-          this.allDrivers.set(year, processedDrivers);
+            // Deduplica per driver_number mantenendo l'entry con più info (es. team_color)
+            const yearDriversMap = new Map<number, Driver>();
+            driversOfYear.forEach(driver => {
+              const existing = yearDriversMap.get(driver.driver_number);
+              if (!existing || (driver.team_color && !existing.team_color)) {
+                yearDriversMap.set(
+                  driver.driver_number,
+                  {
+                    ...driver,
+                    team_color: driver.team_color || this.teamColors[driver.team_name] || 'FFFFFF'
+                  }
+                );
+              }
+            });
 
-          // Piccola pausa tra le richieste per evitare rate limiting
-          await new Promise(resolve => setTimeout(resolve, 200));
-        } catch (err) {
-          // Silenzia errori di caricamento per singolo anno
+            const processedDrivers = Array.from(yearDriversMap.values()).sort((a, b) => a.driver_number - b.driver_number);
+            this.allDrivers.set(year, processedDrivers);
+            driversLoaded = true;
+
+            // Piccola pausa tra le richieste per evitare rate limiting
+            await new Promise(resolve => setTimeout(resolve, 200));
+            break; // Trovati i piloti, passa all'anno successivo
+          } catch (err) {
+            // Prova il prossimo meeting
+          }
+        }
+        
+        if (!driversLoaded) {
+          // Se non ci sono piloti per l'anno corrente, non aggiungere l'anno
         }
       }
 
