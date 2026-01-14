@@ -22,6 +22,7 @@ interface YearOption {
 })
 export class DriversComponent implements OnInit {
   private readonly openF1Service = inject(Openf1ServiceService);
+  private readonly excludedDrivers = new Set<string>(['FELIPE DRUGOVICH']);
 
   drivers: Driver[] = [];
   allDrivers: Map<number, Driver[]> = new Map(); // Map<year, drivers[]>
@@ -85,6 +86,11 @@ export class DriversComponent implements OnInit {
     await this.loadAllDrivers();
   }
 
+  private isExcluded(driver: Driver): boolean {
+    const name = (driver.full_name || '').toUpperCase();
+    return this.excludedDrivers.has(name);
+  }
+
   private async loadAllDrivers() {
     this.loading = true;
     this.error = undefined;
@@ -104,7 +110,8 @@ export class DriversComponent implements OnInit {
       // Carica i piloti per ogni anno (solo dal primo meeting) e rimuovi duplicati per numero
       for (const [year, meetingKey] of yearFirstMeeting.entries()) {
         try {
-          const driversOfYear = await this.openF1Service.getDrivers(meetingKey, 'meeting');
+          const driversOfYear = (await this.openF1Service.getDrivers(meetingKey, 'meeting'))
+            .filter(driver => !this.isExcluded(driver));
 
           // Deduplica per driver_number mantenendo l'entry con più info (es. team_color)
           const yearDriversMap = new Map<number, Driver>();
