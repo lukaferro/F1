@@ -5,6 +5,7 @@ import { GranPremiDetailComponent } from './components/gran-premi-detail/gran-pr
 import { DriversComponent } from './components/drivers/drivers.component';
 import { DriverDetailComponent } from './components/driver-detail/driver-detail.component';
 import { CircuitsComponent } from './components/circuits/circuits.component';
+import { StandingsComponent } from './components/standings/standings.component';
 
 export const routes: Routes = [
   {
@@ -31,5 +32,9 @@ export const routes: Routes = [
   {
     path: 'circuits',
     component: CircuitsComponent,
+  },
+  {
+    path: 'classifiche',
+    component: StandingsComponent,
   }
 ];

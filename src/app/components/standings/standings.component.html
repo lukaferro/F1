@@ -1,0 +1,147 @@
+<div class="standings-container">
+  <header class="standings-header">
+    <div>
+      <h1 class="standings-title">Classifiche</h1>
+      <p class="standings-subtitle">Campionato piloti e costruttori di ogni stagione, dal 1950 a oggi.</p>
+    </div>
+    <div class="season-filter">
+      <label class="season-label" for="season">Stagione</label>
+      <p-select
+        inputId="season"
+        [options]="seasonOptions"
+        [ngModel]="selectedSeason"
+        (ngModelChange)="selectSeason($event)"
+        optionLabel="label"
+        optionValue="value"
+        [disabled]="!seasonOptions.length"
+        class="gp-dropdown"
+        panelStyleClass="gp-dropdown-panel">
+      </p-select>
+    </div>
+  </header>
+
+  <div class="standings-tabs" role="tablist">
+    <button class="tab-button" role="tab" [class.active]="tab === 'drivers'" [attr.aria-selected]="tab === 'drivers'" (click)="setTab('drivers')">Piloti</button>
+    <button class="tab-button" role="tab" [class.active]="tab === 'constructors'" [attr.aria-selected]="tab === 'constructors'" (click)="setTab('constructors')">Costruttori</button>
+  </div>
+
+  <!-- altezza minima: cambiando stagione o tab l'area non si richiude -->
+  <section class="standings-content">
+    @if (loading) {
+      <div aria-busy="true" aria-label="Caricamento classifica">
+        <div class="podium">
+          @for (h of [190, 230, 170]; track $index) {
+            <div class="skeleton podium-skeleton" [style.height.px]="h"></div>
+          }
+        </div>
+        <div class="skeleton" style="height: 44px; margin-bottom: 0.5rem;"></div>
+        @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+          <div class="skeleton" style="height: 40px; margin-bottom: 0.4rem; opacity: 0.7;"></div>
+        }
+      </div>
+    } @else if (error) {
+      <app-api-unavailable source="jolpica" (retry)="load()"></app-api-unavailable>
+    } @else if (tab === 'drivers') {
+      @if (!driverStandings.length) {
+        <p class="standings-status">Classifica non ancora disponibile per questa stagione.</p>
+      } @else {
+        <div class="podium">
+          @for (s of driverPodium; track s.driverId) {
+            <div class="podium-item" [class.first]="s.position === 1" [class.second]="s.position === 2" [class.third]="s.position === 3"
+              [style.--team-color]="'#' + driverColor(s)">
+              <div class="podium-visual">
+                @if (photoFor(s); as photo) {
+                  <img [src]="photo" [alt]="s.fullName" (error)="onPhotoError(s)" />
+                } @else {
+                  <span class="podium-initials">{{ initials(s.fullName) }}</span>
+                }
+              </div>
+              <span class="podium-position">{{ s.position }}</span>
+              @if (driverLink(s); as link) {
+                <a class="podium-name" [routerLink]="link">{{ s.fullName }}</a>
+              } @else {
+                <span class="podium-name">{{ s.fullName }}</span>
+              }
+              <span class="podium-team">{{ s.constructorName }}</span>
+              <span class="podium-points">{{ s.points }} pt</span>
+              <span class="podium-wins">{{ s.wins }} {{ s.wins === 1 ? 'vittoria' : 'vittorie' }}</span>
+            </div>
+          }
+        </div>
+
+        @if (driverStandings.length > 3) {
+          <table class="standings-table">
+            <colgroup>
+              <col style="width: 9%" /><col style="width: 37%" /><col style="width: 28%" /><col style="width: 12%" /><col style="width: 14%" />
+            </colgroup>
+            <thead>
+              <tr><th>Pos</th><th>Pilota</th><th>Team</th><th>Vittorie</th><th>Punti</th></tr>
+            </thead>
+            <tbody>
+              @for (s of driverStandings.slice(3); track s.driverId) {
+                <tr [style]="rowStyle(driverColor(s))">
+                  <td class="cell-pos">{{ s.position }}</td>
+                  <td>
+                    <span class="team-dot" [style.background]="'#' + driverColor(s)"></span>
+                    @if (driverLink(s); as link) {
+                      <a class="row-link" [routerLink]="link">{{ s.fullName }}</a>
+                    } @else {
+                      {{ s.fullName }}
+                    }
+                  </td>
+                  <td>{{ s.constructorName }}</td>
+                  <td class="cell-num">{{ s.wins }}</td>
+                  <td class="cell-num cell-points">{{ s.points }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    } @else {
+      @if (constructorsNotYetAwarded) {
+        <p class="standings-status">Il campionato costruttori è stato istituito nel 1958.</p>
+      } @else if (!constructorStandings.length) {
+        <p class="standings-status">Classifica non ancora disponibile per questa stagione.</p>
+      } @else {
+        <div class="podium">
+          @for (c of constructorPodium; track c.constructorId) {
+            <div class="podium-item" [class.first]="c.position === 1" [class.second]="c.position === 2" [class.third]="c.position === 3"
+              [style.--team-color]="'#' + colorFor(c.constructorId)">
+              <div class="podium-visual">
+                <span class="podium-initials">{{ initials(c.name) }}</span>
+              </div>
+              <span class="podium-position">{{ c.position }}</span>
+              <span class="podium-name">{{ c.name }}</span>
+              <span class="podium-team">{{ c.nationality }}</span>
+              <span class="podium-points">{{ c.points }} pt</span>
+              <span class="podium-wins">{{ c.wins }} {{ c.wins === 1 ? 'vittoria' : 'vittorie' }}</span>
+            </div>
+          }
+        </div>
+
+        @if (constructorStandings.length > 3) {
+          <table class="standings-table">
+            <colgroup>
+              <col style="width: 9%" /><col style="width: 45%" /><col style="width: 20%" /><col style="width: 12%" /><col style="width: 14%" />
+            </colgroup>
+            <thead>
+              <tr><th>Pos</th><th>Costruttore</th><th>Nazionalità</th><th>Vittorie</th><th>Punti</th></tr>
+            </thead>
+            <tbody>
+              @for (c of constructorStandings.slice(3); track c.constructorId) {
+                <tr [style]="rowStyle(colorFor(c.constructorId))">
+                  <td class="cell-pos">{{ c.position }}</td>
+                  <td><span class="team-dot" [style.background]="'#' + colorFor(c.constructorId)"></span>{{ c.name }}</td>
+                  <td>{{ c.nationality }}</td>
+                  <td class="cell-num">{{ c.wins }}</td>
+                  <td class="cell-num cell-points">{{ c.points }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    }
+  </section>
+</div>

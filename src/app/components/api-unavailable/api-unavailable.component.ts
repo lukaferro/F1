@@ -1,7 +1,7 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 
-// Avviso mostrato al centro della pagina quando le API di OpenF1 non rispondono
+// Avviso mostrato al centro della pagina quando un'API esterna (OpenF1 o Jolpica) non risponde
 @Component({
   selector: 'app-api-unavailable',
   standalone: true,
@@ -10,5 +10,6 @@ import { ButtonModule } from 'primeng/button';
   styleUrls: ['./api-unavailable.component.css']
 })
 export class ApiUnavailableComponent {
+  @Input() source: 'openf1' | 'jolpica' = 'openf1';
   @Output() retry = new EventEmitter<void>();
 }
