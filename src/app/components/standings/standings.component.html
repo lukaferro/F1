@@ -21,14 +21,17 @@
   </header>
 
   <div class="standings-tabs" role="tablist">
-    <button class="tab-button" role="tab" [class.active]="tab === 'drivers'" [attr.aria-selected]="tab === 'drivers'" (click)="setTab('drivers')">Piloti</button>
-    <button class="tab-button" role="tab" [class.active]="tab === 'constructors'" [attr.aria-selected]="tab === 'constructors'" (click)="setTab('constructors')">Costruttori</button>
+    <button class="tab-button" role="tab" id="tab-drivers" aria-controls="standings-panel" [class.active]="tab === 'drivers'" [attr.aria-selected]="tab === 'drivers'" (click)="setTab('drivers')">Piloti</button>
+    <button class="tab-button" role="tab" id="tab-constructors" aria-controls="standings-panel" [class.active]="tab === 'constructors'" [attr.aria-selected]="tab === 'constructors'" (click)="setTab('constructors')">Costruttori</button>
   </div>
 
   <!-- altezza minima: cambiando stagione o tab l'area non si richiude -->
-  <section class="standings-content">
+  <section class="standings-content" id="standings-panel" role="tabpanel" [attr.aria-labelledby]="tab === 'drivers' ? 'tab-drivers' : 'tab-constructors'">
     @if (loading) {
       <div aria-busy="true" aria-label="Caricamento classifica">
+        @if (slowLoading) {
+          <p class="standings-status slow-hint">Molte richieste in corso: la classifica arriva tra poco…</p>
+        }
         <div class="podium">
           @for (h of [190, 230, 170]; track $index) {
             <div class="skeleton podium-skeleton" [style.height.px]="h"></div>
@@ -78,7 +81,7 @@
               <tr><th>Pos</th><th>Pilota</th><th>Team</th><th>Vittorie</th><th>Punti</th></tr>
             </thead>
             <tbody>
-              @for (s of driverStandings.slice(3); track s.driverId) {
+              @for (s of driverRows; track s.driverId) {
                 <tr [style]="rowStyle(driverColor(s))">
                   <td class="cell-pos">{{ s.position }}</td>
                   <td>
@@ -129,7 +132,7 @@
               <tr><th>Pos</th><th>Costruttore</th><th>Nazionalità</th><th>Vittorie</th><th>Punti</th></tr>
             </thead>
             <tbody>
-              @for (c of constructorStandings.slice(3); track c.constructorId) {
+              @for (c of constructorRows; track c.constructorId) {
                 <tr [style]="rowStyle(colorFor(c.constructorId))">
                   <td class="cell-pos">{{ c.position }}</td>
                   <td><span class="team-dot" [style.background]="'#' + colorFor(c.constructorId)"></span>{{ c.name }}</td>

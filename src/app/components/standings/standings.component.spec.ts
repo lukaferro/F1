@@ -7,6 +7,7 @@ import { StandingsComponent } from './standings.component';
 import { ConstructorStanding, DriverStanding, JolpicaService } from '../../services/jolpica.service';
 import { Openf1ServiceService } from '../../services/openf1-service';
 import { ApiStatus } from '../../services/http-cache';
+import { HttpErrorResponse } from '@angular/common/http';
 
 const driver = (position: number, fullName: string, extra: Partial<DriverStanding> = {}): DriverStanding => ({
   position, points: 100 - position, wins: 0, driverId: `d${position}`, fullName, nationality: 'Italian',
@@ -18,6 +19,7 @@ interface Setup {
   drivers?: (season: number) => Promise<DriverStanding[]>;
   constructors?: (season: number) => Promise<ConstructorStanding[]>;
   failInit?: boolean;
+  grid?: object[];
   status?: ApiStatus;
 }
 
@@ -39,7 +41,7 @@ describe('StandingsComponent', () => {
       providers: [
         provideRouter([]),
         { provide: JolpicaService, useValue: jolpica },
-        { provide: Openf1ServiceService, useValue: { getLatestDrivers: () => Promise.resolve([]) } }
+        { provide: Openf1ServiceService, useValue: { getLatestDrivers: () => Promise.resolve(setup.grid ?? []) } }
       ]
     }).compileComponents();
 
@@ -146,6 +148,59 @@ describe('StandingsComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('app-api-unavailable')).toBeNull();
     expect(el.querySelectorAll('.podium-item').length).toBe(1);
+  });
+
+  const headshot = (code: string) =>
+    `https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/X/${code}_X/${code}.png.transform/1col/image.png`;
+
+  it('uses the OpenF1 photo only when the OpenF1 team matches the season team', async () => {
+    await create({
+      grid: [
+        { name_acronym: 'HAM', team_name: 'Ferrari', team_color: 'ED1131', headshot_url: headshot('lewham01') },
+        { name_acronym: 'RUS', team_name: 'Mercedes', team_color: '00D7B6', headshot_url: headshot('georus01') }
+      ],
+      drivers: () => Promise.resolve([
+        driver(1, 'Lewis Hamilton', { code: 'HAM', constructorId: 'ferrari' }),
+        driver(2, 'George Russell', { code: 'RUS', constructorId: 'williams' })
+      ])
+    });
+
+    const ham = component.driverStandings[0];
+    const rus = component.driverStandings[1];
+    expect(component.photoFor(ham)).toContain('lewham01');
+    expect(component.photoFor(rus)).toBeUndefined();
+    expect(component.driverColor(rus)).toBe(component.colorFor('williams'));
+  });
+
+  it('treats a season Jolpica does not have (404) as no standings, not as an outage', async () => {
+    await create({ drivers: () => Promise.reject(new HttpErrorResponse({ status: 404, statusText: 'Not Found' })) });
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-api-unavailable')).toBeNull();
+    expect(text()).toContain('Classifica non ancora disponibile per questa stagione.');
+  });
+
+  it('says requests are queued when loading takes more than 3 seconds', async () => {
+    await create({ drivers: () => Promise.resolve([driver(1, 'Andrea Kimi Antonelli')]) });
+    vi.useFakeTimers();
+    try {
+      component['jolpica'].getDriverStandings = () => new Promise(() => {});
+      component.selectSeason(2025);
+      fixture.detectChanges();
+      expect(text()).not.toContain('Molte richieste in corso');
+      await vi.advanceTimersByTimeAsync(3000);
+      fixture.detectChanges();
+      expect(text()).toContain('Molte richieste in corso');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('links each tab to its panel for screen readers', async () => {
+    await create({ drivers: () => Promise.resolve([driver(1, 'Andrea Kimi Antonelli')]) });
+    const el = fixture.nativeElement as HTMLElement;
+    const tab = el.querySelector('[role=tab][aria-selected=true]');
+    const panel = el.querySelector('[role=tabpanel]');
+    expect(panel?.id).toBeTruthy();
+    expect(tab?.getAttribute('aria-controls')).toBe(panel?.id);
   });
 
   it('shows the Jolpica notice when the API is down', async () => {

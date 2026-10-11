@@ -373,3 +373,7 @@ a.podium-name:hover,
 .standings-table th:nth-child(5) {
   text-align: right;
 }
+
+.slow-hint {
+  padding: 0 0 1rem;
+}

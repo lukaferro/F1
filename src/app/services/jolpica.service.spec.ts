@@ -96,11 +96,26 @@ describe('JolpicaService', () => {
 
   it('lists seasons newest first', async () => {
     const result = service.getSeasons();
-    (await request(`${API}/seasons/?limit=100`)).flush({
+    (await request(`${API}/seasons/?limit=100&offset=0`)).flush({
       MRData: { total: '3', SeasonTable: { Seasons: [{ season: '1950' }, { season: '1951' }, { season: '2026' }] } }
     });
 
     expect(await result).toEqual([2026, 1951, 1950]);
+  });
+
+  it('pages through more than 100 seasons', async () => {
+    const result = service.getSeasons();
+    const season = (y: number) => ({ season: String(y) });
+    (await request(`${API}/seasons/?limit=100&offset=0`)).flush({
+      MRData: { total: '102', SeasonTable: { Seasons: Array.from({ length: 100 }, (_, i) => season(1950 + i)) } }
+    });
+    (await request(`${API}/seasons/?limit=100&offset=100`)).flush({
+      MRData: { total: '102', SeasonTable: { Seasons: [season(2050), season(2051)] } }
+    });
+
+    const seasons = await result;
+    expect(seasons.length).toBe(102);
+    expect(seasons[0]).toBe(2051);
   });
 
   it('keeps finished seasons for a week and the current season for an hour', () => {

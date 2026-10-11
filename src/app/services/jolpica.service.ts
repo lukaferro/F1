@@ -41,7 +41,7 @@ interface StandingsResponse<Row> {
     StandingsTable: { season: string; StandingsLists: Array<{ DriverStandings?: Row[]; ConstructorStandings?: Row[] }> };
   };
 }
-interface SeasonsResponse { MRData: { SeasonTable: { Seasons: Array<{ season: string }> } }; }
+interface SeasonsResponse { MRData: { total?: string; SeasonTable: { Seasons: Array<{ season: string }> } }; }
 
 /** Le stagioni concluse non cambiano più (7 giorni); stagione in corso ed elenchi generali 1 ora */
 export function jolpicaTtl(url: string, currentYear: number): number {
@@ -70,8 +70,18 @@ export class JolpicaService {
 
   /** Tutte le stagioni, dalla più recente */
   async getSeasons(): Promise<number[]> {
-    const res = await this.cache.get<SeasonsResponse>(`${BASE_URL}/seasons/?limit=${PAGE_SIZE}`);
-    return res.MRData.SeasonTable.Seasons.map(s => Number(s.season)).sort((a, b) => b - a);
+    const pages = await this.getAllPages<SeasonsResponse>(offset => `${BASE_URL}/seasons/?limit=${PAGE_SIZE}&offset=${offset}`);
+    return pages.flatMap(p => p.MRData.SeasonTable.Seasons).map(s => Number(s.season)).sort((a, b) => b - a);
+  }
+
+  // Prima pagina, poi (se MRData.total supera la pagina) le restanti in parallelo
+  private async getAllPages<R extends { MRData: { total?: string } }>(pageUrl: (offset: number) => string): Promise<R[]> {
+    const first = await this.cache.get<R>(pageUrl(0));
+    const total = Number(first.MRData.total) || 0;
+    const offsets: number[] = [];
+    for (let offset = PAGE_SIZE; offset < total; offset += PAGE_SIZE) offsets.push(offset);
+    const others = await Promise.all(offsets.map(o => this.cache.get<R>(pageUrl(o))));
+    return [first, ...others];
   }
 
   /** Stagione più recente con una classifica: a inizio anno, prima della prima gara, è quella precedente */
@@ -83,16 +93,10 @@ export class JolpicaService {
   }
 
   async getDriverStandings(season: number): Promise<DriverStanding[]> {
-    const pageUrl = (offset: number) => `${BASE_URL}/${season}/driverstandings/?limit=${PAGE_SIZE}&offset=${offset}`;
-    const first = await this.cache.get<StandingsResponse<JolpicaDriverRow>>(pageUrl(0));
-    const total = Number(first.MRData.total);
-
-    // Alcune stagioni degli anni '50 superano le 100 righe: le pagine successive in parallelo
-    const offsets: number[] = [];
-    for (let offset = PAGE_SIZE; offset < total; offset += PAGE_SIZE) offsets.push(offset);
-    const others = await Promise.all(offsets.map(o => this.cache.get<StandingsResponse<JolpicaDriverRow>>(pageUrl(o))));
-
-    const rows = [first, ...others].flatMap(r => r.MRData.StandingsTable.StandingsLists[0]?.DriverStandings ?? []);
+    // Alcune stagioni degli anni '50 superano le 100 righe
+    const pages = await this.getAllPages<StandingsResponse<JolpicaDriverRow>>(
+      offset => `${BASE_URL}/${season}/driverstandings/?limit=${PAGE_SIZE}&offset=${offset}`);
+    const rows = pages.flatMap(r => r.MRData.StandingsTable.StandingsLists[0]?.DriverStandings ?? []);
     return rows.map((row, i) => {
       const team = row.Constructors[row.Constructors.length - 1];
       return {

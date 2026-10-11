@@ -36,7 +36,7 @@ Criteri di riuscita:
 
 ### `HttpCache` (nuovo, `src/app/services/http-cache.ts`)
 
-Classe senza dipendenze da Angular, istanziata da ciascun service con la propria configurazione. Contiene la logica che oggi sta dentro `Openf1ServiceService`, spostata senza cambiarne il comportamento:
+Classe semplice (non un service iniettabile): riceve `HttpClient` nel costruttore, espone lo stato come `signal` Angular ed è istanziata da ciascun service con la propria configurazione. Contiene la logica che oggi sta dentro `Openf1ServiceService`, spostata senza cambiarne il comportamento:
 
 - cache in memoria e in `localStorage` con prefisso configurabile (`openf1:`, `jolpica:`), TTL calcolato da una funzione passata dal service, limite di dimensione per voce e rimozione delle voci più vecchie quando lo spazio finisce;
 - richieste identiche in corso condivise (una sola chiamata HTTP);

@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SelectModule } from 'primeng/select';
@@ -15,6 +16,27 @@ const FIRST_OPENF1_SEASON = 2023;
 // Anno di nascita del campionato costruttori
 const FIRST_CONSTRUCTORS_SEASON = 1958;
 const NEUTRAL_COLOR = '666666';
+// Oltre questo tempo di caricamento avvisiamo che le richieste sono in coda (limiti dell'API)
+const SLOW_LOADING_MS = 3000;
+
+// Nome del team in OpenF1 per ogni constructorId Jolpica: foto e colori OpenF1 si usano solo se
+// la squadra coincide (fuori stagione la griglia OpenF1 può già essere quella dell'anno dopo)
+const OPENF1_TEAMS: Record<string, string[]> = {
+  mercedes: ['Mercedes'],
+  ferrari: ['Ferrari'],
+  mclaren: ['McLaren'],
+  red_bull: ['Red Bull Racing'],
+  rb: ['Racing Bulls', 'RB'],
+  aston_martin: ['Aston Martin'],
+  alpine: ['Alpine'],
+  williams: ['Williams'],
+  haas: ['Haas F1 Team'],
+  sauber: ['Kick Sauber'],
+  audi: ['Audi'],
+  cadillac: ['Cadillac']
+};
+
+const isNotFound = (err: unknown) => err instanceof HttpErrorResponse && err.status === 404;
 
 @Component({
   selector: 'app-standings',
@@ -23,7 +45,7 @@ const NEUTRAL_COLOR = '666666';
   templateUrl: './standings.component.html',
   styleUrl: './standings.component.css'
 })
-export class StandingsComponent implements OnInit {
+export class StandingsComponent implements OnInit, OnDestroy {
   private readonly jolpica = inject(JolpicaService);
   private readonly openF1 = inject(Openf1ServiceService);
 
@@ -35,9 +57,14 @@ export class StandingsComponent implements OnInit {
 
   driverStandings: DriverStanding[] = [];
   constructorStandings: ConstructorStanding[] = [];
+  // Righe della tabella (dalla 4ª posizione), calcolate una volta quando arrivano i dati
+  driverRows: DriverStanding[] = [];
+  constructorRows: ConstructorStanding[] = [];
   private constructorsLoadedFor: number | null = null;
 
   loading = true;
+  slowLoading = false;
+  private slowTimer?: ReturnType<typeof setTimeout>;
   // errori separati: caricamento iniziale, classifica piloti, classifica costruttori
   private initError = false;
   private driversError = false;
@@ -50,6 +77,10 @@ export class StandingsComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.load();
+  }
+
+  ngOnDestroy(): void {
+    clearTimeout(this.slowTimer);
   }
 
   async load(): Promise<void> {
@@ -79,8 +110,8 @@ export class StandingsComponent implements OnInit {
 
   async selectSeason(year: number): Promise<void> {
     this.selectedSeason = year;
-    this.driverStandings = [];
-    this.constructorStandings = [];
+    this.setDrivers([]);
+    this.setConstructors([]);
     this.constructorsLoadedFor = null;
     this.driversError = false;
     this.constructorsError = false;
@@ -106,20 +137,38 @@ export class StandingsComponent implements OnInit {
   // Mostra lo skeleton finché il lavoro non è finito, se nel frattempo la stagione non è cambiata
   private async withLoading(year: number, work: () => Promise<unknown>): Promise<void> {
     this.loading = true;
+    this.slowLoading = false;
+    clearTimeout(this.slowTimer);
+    this.slowTimer = setTimeout(() => this.slowLoading = this.loading, SLOW_LOADING_MS);
     try {
       await work();
     } finally {
-      if (this.selectedSeason === year) this.loading = false;
+      if (this.selectedSeason === year) {
+        this.loading = false;
+        this.slowLoading = false;
+        clearTimeout(this.slowTimer);
+      }
     }
+  }
+
+  private setDrivers(standings: DriverStanding[]): void {
+    this.driverStandings = standings;
+    this.driverRows = standings.slice(3);
+  }
+
+  private setConstructors(standings: ConstructorStanding[]): void {
+    this.constructorStandings = standings;
+    this.constructorRows = standings.slice(3);
   }
 
   // Ogni risposta controlla che la stagione sia ancora quella scelta: altrimenti non serve più
   private async fetchDrivers(year: number): Promise<void> {
     try {
       const standings = await this.jolpica.getDriverStandings(year);
-      if (this.selectedSeason === year) this.driverStandings = standings;
-    } catch {
-      if (this.selectedSeason === year) this.driversError = true;
+      if (this.selectedSeason === year) this.setDrivers(standings);
+    } catch (err) {
+      // 404: Jolpica non ha questa stagione, non è un'interruzione del servizio
+      if (this.selectedSeason === year && !isNotFound(err)) this.driversError = true;
     }
   }
 
@@ -129,10 +178,10 @@ export class StandingsComponent implements OnInit {
       // Prima del 1958 il campionato costruttori non esisteva: nessuna richiesta
       const standings = year < FIRST_CONSTRUCTORS_SEASON ? [] : await this.jolpica.getConstructorStandings(year);
       if (this.selectedSeason !== year) return;
-      this.constructorStandings = standings;
+      this.setConstructors(standings);
       this.constructorsLoadedFor = year;
-    } catch {
-      if (this.selectedSeason === year) this.constructorsError = true;
+    } catch (err) {
+      if (this.selectedSeason === year && !isNotFound(err)) this.constructorsError = true;
     }
   }
 
@@ -174,9 +223,16 @@ export class StandingsComponent implements OnInit {
     return ['/drivers', standing.code];
   }
 
-  photoFor(standing: DriverStanding): string | undefined {
-    if (!this.isCurrentSeason || !standing.code || this.failedPhotos.has(standing.code)) return undefined;
+  // Pilota della griglia OpenF1 attuale, solo se è la stagione in corso e la squadra coincide
+  private gridDriverFor(standing: DriverStanding): Driver | undefined {
+    if (!this.isCurrentSeason || !standing.code) return undefined;
     const driver = this.currentGrid.get(standing.code.toUpperCase());
+    return driver && (OPENF1_TEAMS[standing.constructorId] ?? []).includes(driver.team_name) ? driver : undefined;
+  }
+
+  photoFor(standing: DriverStanding): string | undefined {
+    if (!standing.code || this.failedPhotos.has(standing.code)) return undefined;
+    const driver = this.gridDriverFor(standing);
     return driver ? currentSeasonPhotoUrl(driver) : undefined;
   }
 
@@ -186,8 +242,7 @@ export class StandingsComponent implements OnInit {
 
   /** Colore del pilota: quello ufficiale di OpenF1 nella stagione in corso, altrimenti per costruttore */
   driverColor(standing: DriverStanding): string {
-    const driver = this.isCurrentSeason && standing.code ? this.currentGrid.get(standing.code.toUpperCase()) : undefined;
-    return (driver?.team_color || this.colorFor(standing.constructorId)).replace('#', '');
+    return (this.gridDriverFor(standing)?.team_color || this.colorFor(standing.constructorId)).replace('#', '');
   }
 
   colorFor(constructorId: string): string {
