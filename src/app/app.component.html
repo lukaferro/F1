@@ -11,6 +11,16 @@
     
   </div>
 </nav>
+@if (apiStatus() !== 'ok') {
+  <div class="api-banner" [class.api-banner--error]="apiStatus() === 'error'" role="status">
+    @if (apiStatus() === 'stale') {
+      Le API di OpenF1 non sono raggiungibili in questo momento (probabilmente è in corso una sessione live): stai vedendo i dati salvati.
+    } @else {
+      Le API di OpenF1 non sono raggiungibili in questo momento. Durante le sessioni live l'accesso è riservato agli utenti a pagamento: riprova a fine sessione.
+    }
+  </div>
+}
+
 
 <main class="app-content">
   <router-outlet></router-outlet>

@@ -41,3 +41,4 @@ testem.log
 .DS_Store
 Thumbs.db
 public/assets/F1.mp4  # Video pesante da non includere nel repository per motivi di dimensione
+.vercel

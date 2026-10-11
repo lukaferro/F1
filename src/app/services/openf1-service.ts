@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { Meeting } from '../models/meeting';
 import { firstValueFrom } from 'rxjs';
 
@@ -117,20 +117,74 @@ export interface Result {
 export class Openf1ServiceService {
   private readonly http = inject(HttpClient); //importare funzionalità per chiamate HTTP
   private readonly baseUrl = 'https://api.openf1.org/v1'; //base URL per le API di OpenF1
+  private readonly cachePrefix = 'openf1:';
+  private readonly cacheTtlMs = 30 * 60 * 1000; // dopo 30 minuti la cache viene riaggiornata dall'API
+
+  /**
+   * Stato dell'ultima chiamata all'API:
+   * - 'ok': dati aggiornati
+   * - 'stale': API non raggiungibile, mostriamo dati salvati in cache
+   * - 'error': API non raggiungibile e nessun dato in cache
+   */
+  readonly apiStatus = signal<'ok' | 'stale' | 'error'>('ok');
+
+  // GET con cache in localStorage: usa la cache se recente, altrimenti chiama l'API
+  // e, se l'API fallisce (es. sessione live in corso), ripiega sulla cache anche se vecchia.
+  private async get<T>(url: string): Promise<T> {
+    const key = this.cachePrefix + url;
+    const cached = this.readCache<T>(key);
+    if (cached && Date.now() - cached.savedAt < this.cacheTtlMs) {
+      return cached.data;
+    }
+
+    try {
+      const data = await firstValueFrom(this.http.get<T>(url));
+      this.writeCache(key, data);
+      this.apiStatus.set('ok');
+      return data;
+    } catch (err) {
+      if (cached) {
+        this.apiStatus.set('stale');
+        return cached.data;
+      }
+      this.apiStatus.set('error');
+      throw err;
+    }
+  }
+
+  private readCache<T>(key: string): { savedAt: number; data: T } | null {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private writeCache(key: string, data: unknown): void {
+    try {
+      localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), data }));
+    } catch {
+      // localStorage pieno o non disponibile: svuotiamo la nostra cache e andiamo avanti senza
+      try {
+        Object.keys(localStorage)
+          .filter(k => k.startsWith(this.cachePrefix))
+          .forEach(k => localStorage.removeItem(k));
+      } catch { /* ignorato */ }
+    }
+  }
 
   async getMeetings(year?: number) : Promise<Meeting[]> {
     const url = year
       ? `${this.baseUrl}/meetings?year=${year}`
       : `${this.baseUrl}/meetings`;
 
-      const response = this.http.get<Meeting[]>(url);
-    return firstValueFrom(response);
+      return this.get<Meeting[]>(url);
   }
 
     async getMeeting(meetingKey: number): Promise<Session[]> {
     const url = `${this.baseUrl}/meetings?meeting_key=${meetingKey}`;
-    const response = this.http.get<Session[]>(url);
-    return firstValueFrom(response);
+    return this.get<Session[]>(url);
   }
   
   /**
@@ -145,76 +199,70 @@ export class Openf1ServiceService {
         : `${this.baseUrl}/drivers?meeting_key=${key}`;
     }
 
-    const response = this.http.get<Driver[]>(url);
-    return firstValueFrom(response);
+    return this.get<Driver[]>(url);
   }
 
   async getDriverByNumber(driverNumber: number): Promise<Driver | null> {
     const url = `${this.baseUrl}/drivers?driver_number=${driverNumber}`;
-    const response = this.http.get<Driver[]>(url);
-    const list = await firstValueFrom(response);
+    const list = await this.get<Driver[]>(url);
     return list && list.length ? list[0] : null;
   }
 
   async getDriverByAcronym(acronym: string): Promise<Driver | null> {
     const url = `${this.baseUrl}/drivers?name_acronym=${acronym.toUpperCase()}`;
-    const response = this.http.get<Driver[]>(url);
-    const list = await firstValueFrom(response);
+    const list = await this.get<Driver[]>(url);
     return list && list.length ? list[0] : null;
   }
 
   async getDriverByFullName(fullName: string): Promise<Driver | null> {
     const url = `${this.baseUrl}/drivers?full_name=${encodeURIComponent(fullName)}`;
-    const response = this.http.get<Driver[]>(url);
-    const list = await firstValueFrom(response);
+    const list = await this.get<Driver[]>(url);
     return list && list.length ? list[0] : null;
   }
 
   // Additional useful endpoints that appear in the data samples the UI may consume.
   async getStartingGrid(sessionKey: number): Promise<StartingGrid[]> {
     const url = `${this.baseUrl}/starting_grid?session_key=${sessionKey}`;
-    return firstValueFrom(this.http.get<StartingGrid[]>(url));
+    return this.get<StartingGrid[]>(url);
   }
 
   async getStints(sessionKey: number): Promise<Stint[]> {
     const url = `${this.baseUrl}/stints?session_key=${sessionKey}`;
-    return firstValueFrom(this.http.get<Stint[]>(url));
+    return this.get<Stint[]>(url);
   }
 
   async getTeamRadio(sessionKey: number): Promise<TeamRadio[]> {
     const url = `${this.baseUrl}/team_radio?session_key=${sessionKey}`;
-    return firstValueFrom(this.http.get<TeamRadio[]>(url));
+    return this.get<TeamRadio[]>(url);
   }
 
   async getWeather(sessionKey: number): Promise<Weather[]> {
     const url = `${this.baseUrl}/weather?session_key=${sessionKey}`;
-    return firstValueFrom(this.http.get<Weather[]>(url));
+    return this.get<Weather[]>(url);
   }
 
   async getPits(sessionKey: number): Promise<Pit[]> {
     const url = `${this.baseUrl}/pits?session_key=${sessionKey}`;
-    return firstValueFrom(this.http.get<Pit[]>(url));
+    return this.get<Pit[]>(url);
   }
 
   async getPositions(sessionKey: number): Promise<Position[]> {
     const url = `${this.baseUrl}/positions?session_key=${sessionKey}`;
-    return firstValueFrom(this.http.get<Position[]>(url));
+    return this.get<Position[]>(url);
   }
 
   async getOvertakes(sessionKey: number): Promise<Overtake[]> {
     const url = `${this.baseUrl}/overtakes?session_key=${sessionKey}`;
-    return firstValueFrom(this.http.get<Overtake[]>(url));
+    return this.get<Overtake[]>(url);
   }
   
   async getSessions(meetingKey: number): Promise<Session[]> {
     const url = `${this.baseUrl}/sessions?meeting_key=${meetingKey}`;
-    const response = this.http.get<Session[]>(url);
-    return firstValueFrom(response);
+    return this.get<Session[]>(url);
   }
   
   async getResults(sessionKey: number): Promise<Result[]> {
     const url = `${this.baseUrl}/session_result?session_key=${sessionKey}`;
-    const response = this.http.get<Result[]>(url);
-    return firstValueFrom(response);
+    return this.get<Result[]>(url);
   }
 }

@@ -119,3 +119,19 @@ footer::before {
       rgba(255, 0, 0, 0) 80%);
   z-index: 1;
 }
+
+.api-banner {
+  margin: 1rem auto 0;
+  max-width: 1100px;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #f5a623;
+  background: rgba(245, 166, 35, 0.12);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.api-banner--error {
+  border-left-color: #e10600;
+  background: rgba(225, 6, 0, 0.12);
+}
