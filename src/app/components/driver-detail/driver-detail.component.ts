@@ -29,6 +29,8 @@ export class DriverDetailComponent implements OnInit {
   wikiExtract = '';
   wikiUrl = '';
   loadingWiki = false;
+  // URL della bandiera già caricata: finché non coincide con quella attuale si vede lo skeleton
+  flagLoadedUrl?: string;
   careerStats: any = null;
   loadingStats = false;
 
@@ -286,6 +288,12 @@ export class DriverDetailComponent implements OnInit {
     const first = parts.shift();
     const initial = first ? first.charAt(0).toUpperCase() + '.' : '';
     return `${initial} ${last}`.trim();
+  }
+
+  // Bandiera non disponibile: niente skeleton infinito, lo spazio resta vuoto
+  onFlagError(event: Event, url: string): void {
+    (event.target as HTMLImageElement).style.display = 'none';
+    this.flagLoadedUrl = url;
   }
 
   getFlagUrl(driver: Driver | null): string {

@@ -35,6 +35,16 @@
   min-height: 67px;
   display: flex;
   align-items: center;
+  position: relative;
+}
+.flag-skeleton {
+  width: 100px;
+  height: 67px;
+}
+/* in caricamento: invisibile e fuori dal flusso, così non spinge lo skeleton */
+.country-flag.flag-pending {
+  position: absolute;
+  opacity: 0;
 }
 .country-flag {
   width: 100px;

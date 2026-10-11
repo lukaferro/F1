@@ -5,8 +5,18 @@
     </div>
     <div class="hero">
       <div class="flag-container">
-        @if (getFlagUrl(driver)) {
-          <img [src]="getFlagUrl(driver)" [alt]="'Bandiera ' + (driver.country_code || '')" class="country-flag" decoding="async">
+        @if (getFlagUrl(driver); as flagUrl) {
+          <!-- skeleton finché l'immagine non è arrivata; la bandiera resta invisibile ma già al suo posto -->
+          @if (flagLoadedUrl !== flagUrl) {
+            <div class="skeleton flag-skeleton"></div>
+          }
+          <img [src]="flagUrl" [alt]="'Bandiera ' + (driver.country_code || '')" class="country-flag" decoding="async"
+            [class.flag-pending]="flagLoadedUrl !== flagUrl"
+            (load)="flagLoadedUrl = flagUrl"
+            (error)="onFlagError($event, flagUrl)">
+        } @else if (loadingStats) {
+          <!-- la nazionalità può arrivare dopo, dalle statistiche di Wikipedia -->
+          <div class="skeleton flag-skeleton"></div>
         }
       </div>
       <div class="hero-content">
