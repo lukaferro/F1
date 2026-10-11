@@ -40,7 +40,7 @@
         }
       </div>
     } @else if (error) {
-      <app-api-unavailable source="jolpica" (retry)="load()"></app-api-unavailable>
+      <app-api-unavailable source="jolpica" (retry)="retry()"></app-api-unavailable>
     } @else if (tab === 'drivers') {
       @if (!driverStandings.length) {
         <p class="standings-status">Classifica non ancora disponibile per questa stagione.</p>

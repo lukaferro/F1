@@ -38,7 +38,10 @@ export class StandingsComponent implements OnInit {
   private constructorsLoadedFor: number | null = null;
 
   loading = true;
-  error = false;
+  // errori separati: caricamento iniziale, classifica piloti, classifica costruttori
+  private initError = false;
+  private driversError = false;
+  private constructorsError = false;
 
   // Griglia attuale di OpenF1 (per sigla): foto e colori ufficiali della stagione in corso
   private readonly currentGrid = new Map<string, Driver>();
@@ -51,7 +54,7 @@ export class StandingsComponent implements OnInit {
 
   async load(): Promise<void> {
     this.loading = true;
-    this.error = false;
+    this.initError = false;
     try {
       const [seasons, latest] = await Promise.all([this.jolpica.getSeasons(), this.jolpica.getLatestSeasonWithStandings()]);
       this.seasons = seasons;
@@ -60,53 +63,77 @@ export class StandingsComponent implements OnInit {
       this.loadCurrentGrid();
       await this.selectSeason(latest);
     } catch {
-      this.error = true;
+      this.initError = true;
       this.loading = false;
     }
   }
 
+  /** "Riprova" ripete solo ciò che è fallito, senza cambiare stagione o tab */
+  async retry(): Promise<void> {
+    if (this.initError || this.selectedSeason === null) return this.load();
+    if (this.tab === 'constructors' && this.constructorsError && !this.driversError) {
+      return this.withLoading(this.selectedSeason, () => this.fetchConstructors(this.selectedSeason!));
+    }
+    return this.selectSeason(this.selectedSeason);
+  }
+
   async selectSeason(year: number): Promise<void> {
     this.selectedSeason = year;
-    this.loading = true;
-    this.error = false;
     this.driverStandings = [];
     this.constructorStandings = [];
     this.constructorsLoadedFor = null;
+    this.driversError = false;
+    this.constructorsError = false;
 
-    try {
-      const standings = await this.jolpica.getDriverStandings(year);
-      // Nel frattempo è stata scelta un'altra stagione: questa risposta non serve più
-      if (this.selectedSeason !== year) return;
-      this.driverStandings = standings;
-      if (this.tab === 'constructors') await this.loadConstructors(year);
-    } catch {
-      if (this.selectedSeason === year) this.error = true;
-    } finally {
-      if (this.selectedSeason === year) this.loading = false;
-    }
+    // Piloti e (se il tab è aperto) costruttori sono indipendenti: un errore non blocca l'altro
+    await this.withLoading(year, () => Promise.all([
+      this.fetchDrivers(year),
+      this.tab === 'constructors' ? this.fetchConstructors(year) : Promise.resolve()
+    ]));
   }
 
   async setTab(tab: StandingsTab): Promise<void> {
     this.tab = tab;
     const year = this.selectedSeason;
     if (tab !== 'constructors' || year === null || this.constructorsLoadedFor === year) return;
+    await this.withLoading(year, () => this.fetchConstructors(year));
+  }
 
+  get error(): boolean {
+    return this.initError || (this.tab === 'drivers' ? this.driversError : this.constructorsError);
+  }
+
+  // Mostra lo skeleton finché il lavoro non è finito, se nel frattempo la stagione non è cambiata
+  private async withLoading(year: number, work: () => Promise<unknown>): Promise<void> {
     this.loading = true;
     try {
-      await this.loadConstructors(year);
-    } catch {
-      if (this.selectedSeason === year) this.error = true;
+      await work();
     } finally {
       if (this.selectedSeason === year) this.loading = false;
     }
   }
 
-  private async loadConstructors(year: number): Promise<void> {
-    // Prima del 1958 il campionato costruttori non esisteva: nessuna richiesta
-    const standings = year < FIRST_CONSTRUCTORS_SEASON ? [] : await this.jolpica.getConstructorStandings(year);
-    if (this.selectedSeason !== year) return;
-    this.constructorStandings = standings;
-    this.constructorsLoadedFor = year;
+  // Ogni risposta controlla che la stagione sia ancora quella scelta: altrimenti non serve più
+  private async fetchDrivers(year: number): Promise<void> {
+    try {
+      const standings = await this.jolpica.getDriverStandings(year);
+      if (this.selectedSeason === year) this.driverStandings = standings;
+    } catch {
+      if (this.selectedSeason === year) this.driversError = true;
+    }
+  }
+
+  private async fetchConstructors(year: number): Promise<void> {
+    this.constructorsError = false;
+    try {
+      // Prima del 1958 il campionato costruttori non esisteva: nessuna richiesta
+      const standings = year < FIRST_CONSTRUCTORS_SEASON ? [] : await this.jolpica.getConstructorStandings(year);
+      if (this.selectedSeason !== year) return;
+      this.constructorStandings = standings;
+      this.constructorsLoadedFor = year;
+    } catch {
+      if (this.selectedSeason === year) this.constructorsError = true;
+    }
   }
 
   private async loadCurrentGrid(): Promise<void> {

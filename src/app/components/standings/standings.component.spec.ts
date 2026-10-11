@@ -111,6 +111,43 @@ describe('StandingsComponent', () => {
     expect(component.driverStandings.map(d => d.fullName)).toEqual(['Max Verstappen']);
   });
 
+  it('retry keeps the season the user picked', async () => {
+    let calls1988 = 0;
+    await create({
+      drivers: season => {
+        if (season !== 1988) return Promise.resolve([driver(1, 'Andrea Kimi Antonelli')]);
+        calls1988++;
+        return calls1988 === 1 ? Promise.reject(new Error('down')) : Promise.resolve([driver(1, 'Ayrton Senna')]);
+      }
+    });
+
+    await component.selectSeason(1988);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-api-unavailable')).not.toBeNull();
+
+    await component.retry();
+    fixture.detectChanges();
+    expect(component.selectedSeason).toBe(1988);
+    expect(component.driverStandings.map(d => d.fullName)).toEqual(['Ayrton Senna']);
+  });
+
+  it('a failed constructors load does not block the drivers tab', async () => {
+    await create({
+      drivers: () => Promise.resolve([driver(1, 'Andrea Kimi Antonelli')]),
+      constructors: () => Promise.reject(new Error('down'))
+    });
+
+    await component.setTab('constructors');
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-api-unavailable')).not.toBeNull();
+
+    await component.setTab('drivers');
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('app-api-unavailable')).toBeNull();
+    expect(el.querySelectorAll('.podium-item').length).toBe(1);
+  });
+
   it('shows the Jolpica notice when the API is down', async () => {
     await create({ failInit: true, status: 'error' });
     const notice = (fixture.nativeElement as HTMLElement).querySelector('app-api-unavailable');
