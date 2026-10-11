@@ -65,7 +65,12 @@
               } @else {
                 <span class="podium-name">{{ s.fullName }}</span>
               }
-              <span class="podium-team">{{ s.constructorName }}</span>
+              <span class="podium-team">
+                @if (logoFor(s.constructorId); as logo) {
+                  <img class="team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" (error)="onLogoError(s.constructorId)" />
+                }
+                {{ s.constructorName }}
+              </span>
               <span class="podium-points">{{ s.points }} pt</span>
               <span class="podium-wins">{{ s.wins }} {{ s.wins === 1 ? 'vittoria' : 'vittorie' }}</span>
             </div>
@@ -92,7 +97,12 @@
                       {{ s.fullName }}
                     }
                   </td>
-                  <td>{{ s.constructorName }}</td>
+                  <td>
+                    @if (logoFor(s.constructorId); as logo) {
+                      <img class="team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" (error)="onLogoError(s.constructorId)" />
+                    }
+                    {{ s.constructorName }}
+                  </td>
                   <td class="cell-num">{{ s.wins }}</td>
                   <td class="cell-num cell-points">{{ s.points }}</td>
                 </tr>
@@ -112,7 +122,11 @@
             <div class="podium-item" [class.first]="c.position === 1" [class.second]="c.position === 2" [class.third]="c.position === 3"
               [style.--team-color]="'#' + colorFor(c.constructorId)">
               <div class="podium-visual">
-                <span class="podium-initials">{{ initials(c.name) }}</span>
+                @if (logoFor(c.constructorId); as logo) {
+                  <img class="podium-logo" [class.on-light]="logo.onLight" [src]="logo.url" [alt]="'Logo ' + c.name" (error)="onLogoError(c.constructorId)" />
+                } @else {
+                  <span class="podium-initials">{{ initials(c.name) }}</span>
+                }
               </div>
               <span class="podium-position">{{ c.position }}</span>
               <span class="podium-name">{{ c.name }}</span>
@@ -135,7 +149,14 @@
               @for (c of constructorRows; track c.constructorId) {
                 <tr [style]="rowStyle(colorFor(c.constructorId))">
                   <td class="cell-pos">{{ c.position }}</td>
-                  <td><span class="team-dot" [style.background]="'#' + colorFor(c.constructorId)"></span>{{ c.name }}</td>
+                  <td>
+                    @if (logoFor(c.constructorId); as logo) {
+                      <img class="team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" (error)="onLogoError(c.constructorId)" />
+                    } @else {
+                      <span class="team-dot" [style.background]="'#' + colorFor(c.constructorId)"></span>
+                    }
+                    {{ c.name }}
+                  </td>
                   <td>{{ c.nationality }}</td>
                   <td class="cell-num">{{ c.wins }}</td>
                   <td class="cell-num cell-points">{{ c.points }}</td>

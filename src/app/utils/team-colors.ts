@@ -17,25 +17,3 @@ export const TEAM_COLORS: Record<string, string> = {
   'Cadillac': '909090'
 };
 
-// Colori per costruttore indicizzati per constructorId di Jolpica (esadecimale senza #).
-// Le squadre storiche non elencate usano il grigio neutro scelto da chi le mostra.
-export const CONSTRUCTOR_COLORS: Record<string, string> = {
-  mercedes: '00D7B6',
-  ferrari: 'ED1131',
-  mclaren: 'F47600',
-  red_bull: '4781D7',
-  rb: '6C98FF',
-  alphatauri: '6C98FF',
-  toro_rosso: '469BFF',
-  alpine: '00A1E8',
-  renault: 'FFF500',
-  aston_martin: '229971',
-  racing_point: 'F596C8',
-  force_india: 'F596C8',
-  williams: '1868DB',
-  haas: '9C9FA2',
-  sauber: '01C00E',
-  alfa: 'C92D4B',
-  audi: 'F50537',
-  cadillac: '909090'
-};

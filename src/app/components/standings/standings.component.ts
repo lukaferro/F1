@@ -6,7 +6,7 @@ import { SelectModule } from 'primeng/select';
 import { ConstructorStanding, DriverStanding, JolpicaService } from '../../services/jolpica.service';
 import { Driver, Openf1ServiceService } from '../../services/openf1-service';
 import { currentSeasonPhotoUrl } from '../../utils/f1-media';
-import { CONSTRUCTOR_COLORS } from '../../utils/team-colors';
+import { constructorColor, ConstructorLogo, constructorLogo } from '../../utils/constructor-branding';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 
 type StandingsTab = 'drivers' | 'constructors';
@@ -15,7 +15,6 @@ type StandingsTab = 'drivers' | 'constructors';
 const FIRST_OPENF1_SEASON = 2023;
 // Anno di nascita del campionato costruttori
 const FIRST_CONSTRUCTORS_SEASON = 1958;
-const NEUTRAL_COLOR = '666666';
 // Oltre questo tempo di caricamento avvisiamo che le richieste sono in coda (limiti dell'API)
 const SLOW_LOADING_MS = 3000;
 
@@ -72,8 +71,9 @@ export class StandingsComponent implements OnInit, OnDestroy {
 
   // Griglia attuale di OpenF1 (per sigla): foto e colori ufficiali della stagione in corso
   private readonly currentGrid = new Map<string, Driver>();
-  // Foto che non si sono caricate: al loro posto le iniziali
+  // Foto e loghi che non si sono caricati: al loro posto le iniziali
   private readonly failedPhotos = new Set<string>();
+  private readonly failedLogos = new Set<string>();
 
   async ngOnInit(): Promise<void> {
     await this.load();
@@ -246,7 +246,15 @@ export class StandingsComponent implements OnInit, OnDestroy {
   }
 
   colorFor(constructorId: string): string {
-    return CONSTRUCTOR_COLORS[constructorId] ?? NEUTRAL_COLOR;
+    return constructorColor(constructorId);
+  }
+
+  logoFor(constructorId: string): ConstructorLogo | undefined {
+    return this.failedLogos.has(constructorId) ? undefined : constructorLogo(constructorId);
+  }
+
+  onLogoError(constructorId: string): void {
+    this.failedLogos.add(constructorId);
   }
 
   /** Iniziali di nome e cognome: "Ayrton Senna" → "AS" */

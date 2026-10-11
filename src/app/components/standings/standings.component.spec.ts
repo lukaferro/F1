@@ -79,7 +79,7 @@ describe('StandingsComponent', () => {
 
     const winner = (fixture.nativeElement as HTMLElement).querySelector('.podium-item.first');
     expect(winner?.querySelector('.podium-initials')?.textContent?.trim()).toBe('AS');
-    expect(winner?.querySelector('img')).toBeNull();
+    expect(winner?.querySelector('.podium-visual img')).toBeNull(); // nessuna foto (il logo della squadra può esserci)
   });
 
   it('says when a season has no standings yet', async () => {
@@ -201,6 +201,34 @@ describe('StandingsComponent', () => {
     const panel = el.querySelector('[role=tabpanel]');
     expect(panel?.id).toBeTruthy();
     expect(tab?.getAttribute('aria-controls')).toBe(panel?.id);
+  });
+
+  it('shows constructor logos on the podium, initials when there is none', async () => {
+    const team = (position: number, constructorId: string, name: string) =>
+      ({ position, points: 100 - position, wins: 0, constructorId, name, nationality: 'British' });
+    await create({
+      drivers: () => Promise.resolve([driver(1, 'Andrea Kimi Antonelli')]),
+      constructors: () => Promise.resolve([team(1, 'mercedes', 'Mercedes'), team(2, 'ferrari', 'Ferrari'), team(3, 'tyrrell', 'Tyrrell')])
+    });
+    await component.setTab('constructors');
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.podium-item.first img.podium-logo')?.getAttribute('src')).toContain('2026mercedeslogowhite');
+    expect(el.querySelector('.podium-item.third .podium-initials')?.textContent?.trim()).toBe('T');
+  });
+
+  it('shows the team logo next to each driver in the table', async () => {
+    const five = [1, 2, 3, 4, 5].map(p => driver(p, `Pilota ${p}`, { constructorId: 'ferrari' }));
+    await create({ drivers: () => Promise.resolve(five) });
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody img.team-logo').length).toBe(2);
+  });
+
+  it('colours historic drivers with their team colour', async () => {
+    await create({ latest: 1988, drivers: () => Promise.resolve([driver(1, 'Nelson Piquet', { constructorId: 'brabham-bmw' })]) });
+    const piquet = component.driverStandings[0];
+    expect(component.driverColor(piquet)).toBe(component.colorFor('brabham'));
+    expect(component.colorFor('brabham')).not.toBe('666666');
   });
 
   it('shows the Jolpica notice when the API is down', async () => {
