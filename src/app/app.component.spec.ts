@@ -22,5 +22,6 @@ describe('AppComponent', () => {
     expect(nav).toContain('Gran Premi');
     expect(nav).toContain('Circuiti');
     expect(nav).toContain('Drivers');
+    expect(nav).toContain('Classifiche');
   });
 });

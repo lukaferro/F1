@@ -367,3 +367,9 @@ a.podium-name:hover,
     font-size: 0.9rem;
   }
 }
+
+/* intestazioni delle colonne numeriche allineate come i valori */
+.standings-table th:nth-child(4),
+.standings-table th:nth-child(5) {
+  text-align: right;
+}
