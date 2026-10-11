@@ -317,7 +317,7 @@ getDriverImageWithTeamColor(driver: Driver): string {
 }
 
 // TrackBy per evitare duplicati nel rendering
-trackByDriverNumber(index: number, driver: Driver): string {
-  return this.photoKey(driver); // il nome, perché lo stesso numero può appartenere a piloti di anni diversi
-}
+// Arrow function: Angular chiama trackBy senza "this", così resta legata al componente
+trackByDriverNumber = (index: number, driver: Driver): string =>
+  this.photoKey(driver); // il nome, perché lo stesso numero può appartenere a piloti di anni diversi
 }
