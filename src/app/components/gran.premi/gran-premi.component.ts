@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { Meeting } from '../../models/meeting';
 import { Openf1ServiceService } from '../../services/openf1-service';
@@ -77,7 +77,7 @@ const countryCodeMapping: Record<string, string> = {
 @Component({
   selector: 'app-gran-premi',
   standalone: true,
-  imports: [CommonModule, FormsModule, DropdownModule, RouterLink, ButtonModule, ApiUnavailableComponent],
+  imports: [CommonModule, FormsModule, SelectModule, RouterLink, ButtonModule, ApiUnavailableComponent],
   templateUrl: './gran-premi.component.html',
   styleUrls: ['./gran-premi.component.css']
 })

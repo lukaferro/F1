@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -8,7 +8,7 @@ import { CircuitsService } from '../../services/circuits.service';
 
 @Component({
   selector: 'app-circuits',
-  imports: [CommonModule, CardModule, ButtonModule, TagModule],
+  imports: [CardModule, ButtonModule, TagModule],
   templateUrl: './circuits.component.html',
   styleUrl: './circuits.component.css'
 })

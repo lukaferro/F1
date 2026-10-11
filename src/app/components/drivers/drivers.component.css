@@ -81,7 +81,7 @@
   width: 100%;
 }
 
-:host ::ng-deep .gp-dropdown .p-dropdown {
+:host ::ng-deep .gp-dropdown .p-select {
   width: 100%;
   border-radius: 16px;
   background: linear-gradient(135deg, #202020 0%, #2e2e2e 100%);
@@ -92,18 +92,18 @@
   gap: 0.5rem;
 }
 
-:host ::ng-deep .gp-dropdown .p-dropdown:not(.p-disabled):hover {
+:host ::ng-deep .gp-dropdown .p-select:not(.p-disabled):hover {
   border-color: #ff0000;
   box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.2);
 }
 
-:host ::ng-deep .gp-dropdown .p-dropdown-label {
+:host ::ng-deep .gp-dropdown .p-select-label {
   color: #f5f5f5;
   letter-spacing: 0.01em;
   padding: 0;
 }
 
-:host ::ng-deep .gp-dropdown .p-dropdown-trigger {
+:host ::ng-deep .gp-dropdown .p-select-trigger {
   color: #f5f5f5;
 }
 
@@ -117,17 +117,17 @@
   backdrop-filter: blur(8px);
 }
 
-:host ::ng-deep .gp-dropdown-panel .p-dropdown-items,
-:host ::ng-deep .gp-dropdown-panel .p-dropdown-items-wrapper,
-:host ::ng-deep .gp-dropdown-panel .p-dropdown-filter-container {
+:host ::ng-deep .gp-dropdown-panel .p-select-list,
+:host ::ng-deep .gp-dropdown-panel .p-select-list-container,
+:host ::ng-deep .gp-dropdown-panel .p-select-header {
   background-color: transparent;
 }
 
-:host ::ng-deep .gp-dropdown-panel .p-dropdown-filter-container {
+:host ::ng-deep .gp-dropdown-panel .p-select-header {
   padding: 0 1.25rem 0.85rem;
 }
 
-:host ::ng-deep .gp-dropdown-panel .p-dropdown-filter {
+:host ::ng-deep .gp-dropdown-panel .p-select-filter {
   background-color: #333;
   color: #fff;
   border-radius: 10px;
@@ -135,11 +135,11 @@
   border: 1px solid #444;
 }
 
-:host ::ng-deep .gp-dropdown-panel .p-dropdown-items-wrapper {
+:host ::ng-deep .gp-dropdown-panel .p-select-list-container {
   padding: 0.35rem 0.25rem 0.75rem;
 }
 
-:host ::ng-deep .gp-dropdown-panel .p-dropdown-item {
+:host ::ng-deep .gp-dropdown-panel .p-select-option {
   color: #fff;
   padding: 0.95rem 1.6rem;
   margin: 0.4rem 1rem;
@@ -147,13 +147,13 @@
   transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-:host ::ng-deep .gp-dropdown-panel .p-dropdown-item:hover {
+:host ::ng-deep .gp-dropdown-panel .p-select-option:hover {
   background-color: rgba(255, 0, 0, 0.15);
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2);
 }
 
-:host ::ng-deep .gp-dropdown-panel .p-dropdown-item.p-highlight {
+:host ::ng-deep .gp-dropdown-panel .p-select-option.p-select-option-selected {
   background-color: rgba(255, 0, 0, 0.25);
   color: #fff;
   box-shadow: 0 4px 16px rgba(255, 0, 0, 0.3);

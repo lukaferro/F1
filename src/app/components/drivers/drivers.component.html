@@ -3,15 +3,17 @@
   <aside class="drivers-sidebar">
     <div class="filter-section">
       <h3 class="filter-title">Filtri</h3>
-      
+
       <div class="filter-group">
         <div class="filter-header">
           <label class="filter-label">Anno</label>
-          <button *ngIf="selectedYear" class="reset-filter" (click)="resetFilters()">
-            <i class="pi pi-times"></i>
-          </button>
+          @if (selectedYear) {
+            <button class="reset-filter" (click)="resetFilters()">
+              <i class="pi pi-times"></i>
+            </button>
+          }
         </div>
-        <p-dropdown
+        <p-select
           [options]="years"
           [(ngModel)]="selectedYear"
           optionLabel="label"
@@ -20,7 +22,7 @@
           (ngModelChange)="onYearSelect($event)"
           class="gp-dropdown"
           panelStyleClass="gp-dropdown-panel">
-        </p-dropdown>
+        </p-select>
       </div>
     </div>
   </aside>
@@ -30,66 +32,81 @@
     <div class="drivers-header">
       <div class="header-left">
         <h1><i class="pi pi-users"></i> Piloti Formula 1</h1>
-        <p *ngIf="selectedYear">Piloti della stagione {{ selectedYear }}</p>
-        <p *ngIf="!selectedYear">Tutti i piloti di tutte le stagioni</p>
+        @if (selectedYear) {
+          <p>Piloti della stagione {{ selectedYear }}</p>
+        }
+        @if (!selectedYear) {
+          <p>Tutti i piloti di tutte le stagioni</p>
+        }
       </div>
-      
+
       <div class="header-right">
         <span class="p-input-icon-left search-container">
           <i class="pi pi-search"></i>
-          <input 
-            type="text" 
-            pInputText 
+          <input
+            type="text"
+            pInputText
             [(ngModel)]="searchQuery"
             (ngModelChange)="onSearch()"
-            placeholder="Cerca pilota..." 
+            placeholder="Cerca pilota..."
             class="search-input" />
-        </span>
+          </span>
+        </div>
       </div>
-    </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading-container">
-    <i class="pi pi-spin pi-spinner loading-spinner"></i>
-    <p>Caricamento piloti...</p>
-  </div>
-
-  <!-- Errore -->
-  <app-api-unavailable *ngIf="error && !loading" (retry)="loadAllDrivers()"></app-api-unavailable>
-
-    <!-- Griglia piloti -->
-    <div *ngIf="!loading && !error" class="drivers-grid">
-      <a *ngFor="let driver of drivers; trackBy: trackByDriverNumber" class="driver-card" [routerLink]="['/drivers', driver.name_acronym || driver.driver_number]">
-        <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + getTeamColor(driver) + '33, #' + getTeamColor(driver) + '66)'">
-          <div class="driver-number" [style.color]="'#ffffff'">#{{ driver.driver_number }}</div>
-          <!-- bandiere rimosse su richiesta -->
+      <!-- Loading -->
+      @if (loading) {
+        <div class="loading-container">
+          <i class="pi pi-spin pi-spinner loading-spinner"></i>
+          <p>Caricamento piloti...</p>
         </div>
-        
-        <div class="driver-body">
-          <div class="driver-image-container">
-            <img [src]="getDriverImage(driver)" (error)="onDriverImageError($event, driver)" [alt]="driver.full_name" class="driver-image" />
-          </div>
-          
-          <div class="driver-info">
-            <h3>
-              {{ driver.full_name }}
-            </h3>
-            <div class="driver-acronym">{{ driver.name_acronym }}</div>
-            <div *ngIf="driver.team_name" class="driver-team" [style.color]="'#ffffff'">
-              <i class="pi pi-building"></i>
-              {{ driver.team_name }}
-            </div>
-          </div>
-        </div>
-        
-        <div *ngIf="getTeamColor(driver) !== '555555'" class="driver-accent" [style.background-color]="'#' + getTeamColor(driver)"></div>
-        </a>
-    </div>
+      }
 
-    <!-- Nessun pilota trovato -->
-    <div *ngIf="!loading && !error && drivers.length === 0" class="no-drivers">
-      <i class="pi pi-info-circle"></i>
-      <p>Nessun pilota trovato con i filtri selezionati</p>
+      <!-- Errore -->
+      @if (error && !loading) {
+        <app-api-unavailable (retry)="loadAllDrivers()"></app-api-unavailable>
+      }
+
+      <!-- Griglia piloti -->
+      @if (!loading && !error) {
+        <div class="drivers-grid">
+          @for (driver of drivers; track trackByDriverNumber($index, driver)) {
+            <a class="driver-card" [routerLink]="['/drivers', driver.name_acronym || driver.driver_number]">
+              <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + getTeamColor(driver) + '33, #' + getTeamColor(driver) + '66)'">
+                <div class="driver-number" [style.color]="'#ffffff'">#{{ driver.driver_number }}</div>
+                <!-- bandiere rimosse su richiesta -->
+              </div>
+              <div class="driver-body">
+                <div class="driver-image-container">
+                  <img [src]="getDriverImage(driver)" (error)="onDriverImageError($event, driver)" [alt]="driver.full_name" class="driver-image" />
+                </div>
+                <div class="driver-info">
+                  <h3>
+                    {{ driver.full_name }}
+                  </h3>
+                  <div class="driver-acronym">{{ driver.name_acronym }}</div>
+                  @if (driver.team_name) {
+                    <div class="driver-team" [style.color]="'#ffffff'">
+                      <i class="pi pi-building"></i>
+                      {{ driver.team_name }}
+                    </div>
+                  }
+                </div>
+              </div>
+              @if (getTeamColor(driver) !== '555555') {
+                <div class="driver-accent" [style.background-color]="'#' + getTeamColor(driver)"></div>
+              }
+            </a>
+          }
+        </div>
+      }
+
+      <!-- Nessun pilota trovato -->
+      @if (!loading && !error && drivers.length === 0) {
+        <div class="no-drivers">
+          <i class="pi pi-info-circle"></i>
+          <p>Nessun pilota trovato con i filtri selezionati</p>
+        </div>
+      }
     </div>
   </div>
-</div>

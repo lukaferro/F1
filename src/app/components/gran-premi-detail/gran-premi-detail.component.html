@@ -1,381 +1,432 @@
-<div class="detail-container" *ngIf="meeting; else loading">
-  <div class="detail-header">
-    <div class="back-button">
-      <p-button icon="pi pi-arrow-left" styleClass="p-button-text" label="Torna ai Gran Premi" routerLink="/granpremi"></p-button>
-    </div>
-
-    <div class="header-content">
-      <div class="flag-container">
-        <img [src]="'https://flagcdn.com/w320/' + getCountryFlagCode(meeting.country_code) + '.png'" [alt]="meeting.country_name" class="country-flag">
+@if (meeting) {
+  <div class="detail-container">
+    <div class="detail-header">
+      <div class="back-button">
+        <p-button icon="pi pi-arrow-left" styleClass="p-button-text" label="Torna ai Gran Premi" routerLink="/granpremi"></p-button>
       </div>
-
-      <div class="title-container">
-        <h1 class="gp-title">{{ meeting.meeting_official_name }}</h1>
-        <div class="gp-subtitle">
-          <span class="gp-year">{{ meeting.year }}</span>
-          <span class="gp-location">{{ meeting.location }}, {{ meeting.country_name }}</span>
+      <div class="header-content">
+        <div class="flag-container">
+          <img [src]="'https://flagcdn.com/w320/' + getCountryFlagCode(meeting.country_code) + '.png'" [alt]="meeting.country_name" class="country-flag">
+        </div>
+        <div class="title-container">
+          <h1 class="gp-title">{{ meeting.meeting_official_name }}</h1>
+          <div class="gp-subtitle">
+            <span class="gp-year">{{ meeting.year }}</span>
+            <span class="gp-location">{{ meeting.location }}, {{ meeting.country_name }}</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="detail-content">
-    <div class="detail-main">
-      <section class="circuit-section">
-        <h2>Circuito</h2>
-        <div class="circuit-container">
-          <div class="circuit-image">
-            <img [src]="getCircuitImage(meeting)" (error)="onCircuitImageError($event, meeting)" [alt]="meeting.circuit_short_name" class="circuit-map">
-          </div>
-          <div class="circuit-info">
-            <h3>{{ meeting.circuit_short_name }}</h3>
-            <p class="circuit-location">{{ meeting.location }}, {{ meeting.country_name }}</p>
-            <div class="circuit-meta">
-              <div class="meta-item">
-                <i class="pi pi-calendar"></i>
-                <span>Data: {{ meeting.date_start | date:'fullDate' }}</span>
-              </div>
-              <div class="meta-item">
-                <i class="pi pi-globe"></i>
-                <span>Fuso orario: {{ formatTimeOffset(meeting.gmt_offset) }}</span>
-              </div>
+    <div class="detail-content">
+      <div class="detail-main">
+        <section class="circuit-section">
+          <h2>Circuito</h2>
+          <div class="circuit-container">
+            <div class="circuit-image">
+              <img [src]="getCircuitImage(meeting)" (error)="onCircuitImageError($event, meeting)" [alt]="meeting.circuit_short_name" class="circuit-map">
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="info-section">
-        <h2>Informazioni</h2>
-        <div class="info-grid">
-          <div class="info-card">
-            <div class="info-icon">
-              <i class="pi pi-id-card"></i>
-            </div>
-            <div class="info-content">
-              <h3>Nome Ufficiale</h3>
-              <p>{{ meeting.meeting_official_name }}</p>
-            </div>
-          </div>
-
-          <div class="info-card">
-            <div class="info-icon">
-              <i class="pi pi-tag"></i>
-            </div>
-            <div class="info-content">
-              <h3>Nome Evento</h3>
-              <p>{{ meeting.meeting_name }}</p>
-            </div>
-          </div>
-
-          <div class="info-card">
-            <div class="info-icon">
-              <i class="pi pi-map-marker"></i>
-            </div>
-            <div class="info-content">
-              <h3>Località</h3>
-              <p>{{ meeting.location }}, {{ meeting.country_name }}</p>
-            </div>
-          </div>
-
-          <div class="info-card">
-            <div class="info-icon">
-              <i class="pi pi-calendar"></i>
-            </div>
-            <div class="info-content">
-              <h3>Data</h3>
-              <p>{{ meeting.date_start | date:'fullDate' }}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="sponsor-section" *ngIf="currentSponsor">
-        <div class="sponsor-card">
-          <div class="sponsor-media">
-            <img [src]="currentSponsor.logo" [alt]="currentSponsor.name" class="sponsor-logo" />
-          </div>
-          <div class="sponsor-info">
-            <div class="sponsor-label">Title sponsor</div>
-            <h3 class="sponsor-name">{{ currentSponsor.name }}</h3>
-            <p class="sponsor-tagline">Sponsor principale di questo Gran Premio</p>
-            <a *ngIf="currentSponsor.website" [href]="currentSponsor.website" target="_blank" rel="noopener" class="sponsor-link">
-              Scopri di più
-              <i class="pi pi-external-link"></i>
-            </a>
-          </div>
-        </div>
-      </section>
-
-        <h2>Risultati Sessioni</h2>
-      <section class="session-accordion" *ngIf="sessions && sessions.length">
-        <div *ngFor="let session of sessions" class="session-panel">
-          <div class="session-header" (click)="toggleSession(session.session_key)">
-            <div class="session-left">{{ session.session_name }}</div>
-            <div class="session-right">
-              <div class="session-time">{{ formatSessionDate(session.date_start) }}</div>
-              <i class="pi pi-chevron-down chevron" [class.rotated]="expandedSessionKey === session.session_key"></i>
-            </div>
-          </div>
-
-          <div class="session-body" *ngIf="expandedSessionKey === session.session_key">
-            <!-- Tab menu -->
-            <div class="session-tabs">
-              <button *ngFor="let tab of sessionTabs" class="tab-button"
-                [class.active]="activeTab[session.session_key] === tab.id"
-                (click)="setActiveTab(session.session_key, tab.id)">
-                {{ tab.label }}
-              </button>
-            </div>
-
-            <div *ngIf="isTabLoading(session.session_key, activeTab[session.session_key])" class="tab-status">
-              <i class="pi pi-spin pi-spinner"></i> Caricamento...
-            </div>
-
-            <!-- Results tab -->
-            <div *ngIf="activeTab[session.session_key] === 'results' && !isTabLoading(session.session_key, 'results')">
-              <p *ngIf="!sessionResultsNormalized[session.session_key]?.length" class="tab-status">Risultati non disponibili per questa sessione.</p>
-              <p-table *ngIf="sessionResultsNormalized[session.session_key]?.length"
-                [value]="sessionResultsNormalized[session.session_key]"
-                styleClass="results-table"
-                responsiveLayout="scroll"
-              >
-              <ng-template pTemplate="header">
-                <!-- Qualifying header: show Q1/Q2/Q3 -->
-                <tr *ngIf="getSessionName(session).toLowerCase().includes('qual')">
-                  <th style="width: 8%;">Pos</th>
-                  <th style="width: 29%;">Pilota</th>
-                  <th style="width: 21%;">Team</th>
-                  <th style="width: 14%;">Q1</th>
-                  <th style="width: 14%;">Q2</th>
-                  <th style="width: 14%;">Q3</th>
-                  <th *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="width: 80px;">Punti</th>
-                </tr>
-
-                <!-- Default header for non-qualifying sessions -->
-                <tr *ngIf="!getSessionName(session).toLowerCase().includes('qual')">
-                  <th style="width: 9%;">Pos</th>
-                  <th style="width: 27%;">Pilota</th>
-                  <th style="width: 16%;">Team</th>
-                  <th style="width: 8%;">Giri</th>
-                  <th style="width: 14%;">Gap</th>
-                  <th style="width: 17%;" title="Tempo totale o stato (DNF, DNS, DSQ)">Tempo</th>
-                  <th *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="width: 9%;">Punti</th>
-                </tr>
-              </ng-template>
-
-              <ng-template pTemplate="body" let-result>
-                <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(result.driver_number))">
-                  <td style="text-align: center; font-weight: bold; font-size: 1.1rem; white-space: nowrap;">
-                    {{ result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : (result.position ?? '-'))) }}
-                  </td>
-
-                  <td>
-                    <div class="driver-info">
-                      <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(result.driver_number)" [style.color]="'#000'">{{ result.driver_number }}</span>
-                      <span class="driver-name">{{ getDriverName(result.driver_number) }}</span>
-                    </div>
-                  </td>
-
-                  <td style="font-weight: 500;">{{ getDriverTeam(result.driver_number) }}</td>
-
-                  <!-- Qualifying columns: reading arrays if present -->
-                  <td *ngIf="getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ getQualDuration(result, 0) }}</td>
-                  <td *ngIf="getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ getQualDuration(result, 1) }}</td>
-                  <td *ngIf="getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ getQualDuration(result, 2) }}</td>
-
-                  <!-- Non-qualifying columns -->
-                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="text-align: center; font-weight: 500;">{{ result.number_of_laps || '-' }}</td>
-                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ formatGapForDisplay(result) }}</td>
-                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500; white-space: nowrap;">{{ formatPrimaryDuration(result) }}</td>
-
-                  <td *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="text-align: center; font-weight: bold;">{{ result.points || '-' }}</td>
-                </tr>
-              </ng-template>
-            </p-table>
-            </div>
-
-            <!-- Stints tab -->
-            <div *ngIf="activeTab[session.session_key] === 'stints' && !isTabLoading(session.session_key, 'stints')">
-              <p *ngIf="!groupedStints[session.session_key]?.length" class="tab-status">Dati sulle gomme non disponibili per questa sessione.</p>
-              <div *ngIf="groupedStints[session.session_key]?.length" class="tyre-legend">
-                <span class="tyre-legend-item"><span class="tyre-dot soft"></span>Soft</span>
-                <span class="tyre-legend-item"><span class="tyre-dot medium"></span>Medium</span>
-                <span class="tyre-legend-item"><span class="tyre-dot hard"></span>Hard</span>
-                <span class="tyre-legend-item"><span class="tyre-dot intermediate"></span>Intermedie</span>
-                <span class="tyre-legend-item"><span class="tyre-dot wet"></span>Da bagnato</span>
-                <span class="tyre-legend-hint">Passa il mouse su un segmento per i dettagli</span>
-              </div>
-              <p-table *ngIf="groupedStints[session.session_key]?.length" [value]="groupedStints[session.session_key]" styleClass="compact-table">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th style="width: 8%;">Pos</th>
-                    <th style="width: 24%;">Pilota</th>
-                    <th style="width: 16%;">Team</th>
-                    <th style="width: 52%;">Strategia gomme</th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-driverStint>
-                  <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(driverStint.driver_number))">
-                    <td style="text-align: center; font-weight: bold; white-space: nowrap;">{{ driverStint.positionLabel }}</td>
-                    <td>
-                      <div class="driver-info">
-                        <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(driverStint.driver_number)" [style.color]="'#000'">{{ driverStint.driver_number }}</span>
-                        <span class="driver-name">{{ getDriverName(driverStint.driver_number) }}</span>
-                      </div>
-                    </td>
-                    <td>{{ getDriverTeam(driverStint.driver_number) }}</td>
-                    <td>
-                      <div class="tyre-bar">
-                        <div *ngFor="let seg of driverStint.segments" class="tyre-segment" [ngClass]="seg.compound"
-                          [style.width.%]="seg.widthPct" [title]="seg.tooltip">{{ seg.widthPct >= 4 ? seg.short : '' }}</div>
-                      </div>
-                    </td>
-                  </tr>
-                </ng-template>
-              </p-table>
-            </div>
-
-            <!-- Team Radio tab -->
-            <div *ngIf="activeTab[session.session_key] === 'radio' && !isTabLoading(session.session_key, 'radio')">
-              <p *ngIf="!teamRadios[session.session_key]?.length" class="tab-status">Nessun team radio disponibile per questa sessione.</p>
-              <div class="radio-list">
-                <div *ngFor="let radio of teamRadios[session.session_key]" class="radio-item">
-                  <div class="radio-header">
-                    <div class="driver-info">
-                      <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(radio.driver_number)" [style.color]="'#000'">{{ radio.driver_number }}</span>
-                      <span class="driver-name">{{ getDriverName(radio.driver_number) }}</span>
-                    </div>
-                    <span class="radio-time">{{ radio.date | date:'HH:mm:ss' }}</span>
-                  </div>
-                  <audio controls [src]="radio.recording_url" class="radio-player"></audio>
+            <div class="circuit-info">
+              <h3>{{ meeting.circuit_short_name }}</h3>
+              <p class="circuit-location">{{ meeting.location }}, {{ meeting.country_name }}</p>
+              <div class="circuit-meta">
+                <div class="meta-item">
+                  <i class="pi pi-calendar"></i>
+                  <span>Data: {{ meeting.date_start | date:'fullDate' }}</span>
+                </div>
+                <div class="meta-item">
+                  <i class="pi pi-globe"></i>
+                  <span>Fuso orario: {{ formatTimeOffset(meeting.gmt_offset) }}</span>
                 </div>
               </div>
             </div>
-
-            <!-- Weather tab -->
-            <div *ngIf="activeTab[session.session_key] === 'weather' && !isTabLoading(session.session_key, 'weather')">
-              <p *ngIf="!filteredWeather[session.session_key]?.length" class="tab-status">Dati meteo non disponibili per questa sessione.</p>
-              <p-table *ngIf="filteredWeather[session.session_key]?.length" [value]="filteredWeather[session.session_key]" styleClass="compact-table">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th style="width: 20%;">Orario</th>
-                    <th style="width: 20%;">Temp. Aria</th>
-                    <th style="width: 20%;">Temp. Pista</th>
-                    <th style="width: 20%;">Umidità</th>
-                    <th style="width: 20%;">Vento</th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-w>
-                  <tr>
-                    <td>{{ w.date | date:'HH:mm:ss' }}</td>
-                    <td>{{ w.air_temperature }}°C</td>
-                    <td>{{ w.track_temperature }}°C</td>
-                    <td>{{ w.humidity }}%</td>
-                    <td>{{ w.wind_speed }} km/h</td>
-                  </tr>
-                </ng-template>
-              </p-table>
+          </div>
+        </section>
+        <section class="info-section">
+          <h2>Informazioni</h2>
+          <div class="info-grid">
+            <div class="info-card">
+              <div class="info-icon">
+                <i class="pi pi-id-card"></i>
+              </div>
+              <div class="info-content">
+                <h3>Nome Ufficiale</h3>
+                <p>{{ meeting.meeting_official_name }}</p>
+              </div>
             </div>
-
-            <!-- Pit Stops tab -->
-            <div *ngIf="activeTab[session.session_key] === 'pits' && !isTabLoading(session.session_key, 'pits')">
-              <p *ngIf="!pits[session.session_key]?.length" class="tab-status">Nessun pit stop in questa sessione.</p>
-              <p-table *ngIf="pits[session.session_key]?.length" [value]="pits[session.session_key]" styleClass="compact-table">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th style="width: 32%;">Pilota</th>
-                    <th style="width: 26%;">Team</th>
-                    <th style="width: 12%;">Giro</th>
-                    <th style="width: 15%;">Durata</th>
-                    <th style="width: 15%;">Orario</th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-pit>
-                  <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(pit.driver_number))">
-                    <td>
-                      <div class="driver-info">
-                        <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(pit.driver_number)" [style.color]="'#000'">{{ pit.driver_number }}</span>
-                        <span class="driver-name">{{ getDriverName(pit.driver_number) }}</span>
-                      </div>
-                    </td>
-                    <td>{{ getDriverTeam(pit.driver_number) }}</td>
-                    <td>{{ pit.lap_number }}</td>
-                    <td>{{ pit.pit_duration.toFixed(3) }}s</td>
-                    <td>{{ pit.date | date:'HH:mm:ss' }}</td>
-                  </tr>
-                </ng-template>
-              </p-table>
+            <div class="info-card">
+              <div class="info-icon">
+                <i class="pi pi-tag"></i>
+              </div>
+              <div class="info-content">
+                <h3>Nome Evento</h3>
+                <p>{{ meeting.meeting_name }}</p>
+              </div>
             </div>
-
-            <!-- Overtakes tab -->
-            <div *ngIf="activeTab[session.session_key] === 'overtakes' && !isTabLoading(session.session_key, 'overtakes')">
-              <p *ngIf="!overtakes[session.session_key]?.length" class="tab-status">Dati sui sorpassi non disponibili per questa sessione (OpenF1 li fornisce solo per le gare).</p>
-              <p-table *ngIf="overtakes[session.session_key]?.length" [value]="overtakes[session.session_key]" styleClass="compact-table">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th style="width: 15%;">Orario</th>
-                    <th style="width: 70%;">Sorpasso</th>
-                    <th style="width: 15%;">Posizione</th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-overtake>
-                  <tr>
-                    <td>{{ overtake.date | date:'HH:mm:ss' }}</td>
-                    <td>
-                      <div class="overtake-info">
-                        <span class="overtaking-driver">
-                          <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaking_driver_number)" [style.color]="'#000'">{{ overtake.overtaking_driver_number }}</span>
-                          <span class="driver-name">{{ getDriverName(overtake.overtaking_driver_number) }}</span>
-                        </span>
-                        <i class="pi pi-arrow-right"></i>
-                        <span class="overtaken-driver">
-                          <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaken_driver_number)" [style.color]="'#000'">{{ overtake.overtaken_driver_number }}</span>
-                          <span class="driver-name">{{ getDriverName(overtake.overtaken_driver_number) }}</span>
-                        </span>
-                      </div>
-                    </td>
-                    <td>P{{ overtake.position }}</td>
-                  </tr>
-                </ng-template>
-              </p-table>
+            <div class="info-card">
+              <div class="info-icon">
+                <i class="pi pi-map-marker"></i>
+              </div>
+              <div class="info-content">
+                <h3>Località</h3>
+                <p>{{ meeting.location }}, {{ meeting.country_name }}</p>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-icon">
+                <i class="pi pi-calendar"></i>
+              </div>
+              <div class="info-content">
+                <h3>Data</h3>
+                <p>{{ meeting.date_start | date:'fullDate' }}</p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-    </div>
-
-    <aside class="detail-sidebar">
-      <div class="sidebar-card">
-        <h3>Dettagli Evento</h3>
-        <ul class="detail-list">
-          <li>
-            <span class="detail-label">Abbreviazione:</span>
-            <span class="detail-value">{{ meeting.meeting_code }}</span>
-          </li>
-          <li>
-            <span class="detail-label">Circuito:</span>
-            <span class="detail-value">{{ meeting.circuit_short_name }}</span>
-          </li>
-          <li>
-            <span class="detail-label">Paese:</span>
-            <span class="detail-value">{{ meeting.country_name }}</span>
-          </li>
-          <li>
-            <span class="detail-label">Fuso Orario:</span>
-            <span class="detail-value">{{ formatTimeOffset(meeting.gmt_offset) }}</span>
-          </li>
-
-        </ul>
+        </section>
+        @if (currentSponsor) {
+          <section class="sponsor-section">
+            <div class="sponsor-card">
+              <div class="sponsor-media">
+                <img [src]="currentSponsor.logo" [alt]="currentSponsor.name" class="sponsor-logo" />
+              </div>
+              <div class="sponsor-info">
+                <div class="sponsor-label">Title sponsor</div>
+                <h3 class="sponsor-name">{{ currentSponsor.name }}</h3>
+                <p class="sponsor-tagline">Sponsor principale di questo Gran Premio</p>
+                @if (currentSponsor.website) {
+                  <a [href]="currentSponsor.website" target="_blank" rel="noopener" class="sponsor-link">
+                    Scopri di più
+                    <i class="pi pi-external-link"></i>
+                  </a>
+                }
+              </div>
+            </div>
+          </section>
+        }
+        <h2>Risultati Sessioni</h2>
+        @if (sessions && sessions.length) {
+          <section class="session-accordion">
+            @for (session of sessions; track session) {
+              <div class="session-panel">
+                <div class="session-header" (click)="toggleSession(session.session_key)">
+                  <div class="session-left">{{ session.session_name }}</div>
+                  <div class="session-right">
+                    <div class="session-time">{{ formatSessionDate(session.date_start) }}</div>
+                    <i class="pi pi-chevron-down chevron" [class.rotated]="expandedSessionKey === session.session_key"></i>
+                  </div>
+                </div>
+                @if (expandedSessionKey === session.session_key) {
+                  <div class="session-body">
+                    <!-- Tab menu -->
+                    <div class="session-tabs">
+                      @for (tab of sessionTabs; track tab) {
+                        <button class="tab-button"
+                          [class.active]="activeTab[session.session_key] === tab.id"
+                          (click)="setActiveTab(session.session_key, tab.id)">
+                          {{ tab.label }}
+                        </button>
+                      }
+                    </div>
+                    @if (isTabLoading(session.session_key, activeTab[session.session_key])) {
+                      <div class="tab-status">
+                        <i class="pi pi-spin pi-spinner"></i> Caricamento...
+                      </div>
+                    }
+                    <!-- Results tab -->
+                    @if (activeTab[session.session_key] === 'results' && !isTabLoading(session.session_key, 'results')) {
+                      <div>
+                        @if (!sessionResultsNormalized[session.session_key]?.length) {
+                          <p class="tab-status">Risultati non disponibili per questa sessione.</p>
+                        }
+                        @if (sessionResultsNormalized[session.session_key]?.length) {
+                          <p-table
+                            [value]="sessionResultsNormalized[session.session_key]"
+                            styleClass="results-table"
+                            responsiveLayout="scroll"
+                            >
+                            <ng-template pTemplate="header">
+                              <!-- Qualifying header: show Q1/Q2/Q3 -->
+                              @if (getSessionName(session).toLowerCase().includes('qual')) {
+                                <tr>
+                                  <th style="width: 8%;">Pos</th>
+                                  <th style="width: 29%;">Pilota</th>
+                                  <th style="width: 21%;">Team</th>
+                                  <th style="width: 14%;">Q1</th>
+                                  <th style="width: 14%;">Q2</th>
+                                  <th style="width: 14%;">Q3</th>
+                                  @if (getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')) {
+                                    <th style="width: 80px;">Punti</th>
+                                  }
+                                </tr>
+                              }
+                              <!-- Default header for non-qualifying sessions -->
+                              @if (!getSessionName(session).toLowerCase().includes('qual')) {
+                                <tr>
+                                  <th style="width: 9%;">Pos</th>
+                                  <th style="width: 27%;">Pilota</th>
+                                  <th style="width: 16%;">Team</th>
+                                  <th style="width: 8%;">Giri</th>
+                                  <th style="width: 14%;">Gap</th>
+                                  <th style="width: 17%;" title="Tempo totale o stato (DNF, DNS, DSQ)">Tempo</th>
+                                  @if (getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')) {
+                                    <th style="width: 9%;">Punti</th>
+                                  }
+                                </tr>
+                              }
+                            </ng-template>
+                            <ng-template pTemplate="body" let-result>
+                              <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(result.driver_number))">
+                                <td style="text-align: center; font-weight: bold; font-size: 1.1rem; white-space: nowrap;">
+                                  {{ result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : (result.position ?? '-'))) }}
+                                </td>
+                                <td>
+                                  <div class="driver-info">
+                                    <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(result.driver_number)" [style.color]="'#000'">{{ result.driver_number }}</span>
+                                    <span class="driver-name">{{ getDriverName(result.driver_number) }}</span>
+                                  </div>
+                                </td>
+                                <td style="font-weight: 500;">{{ getDriverTeam(result.driver_number) }}</td>
+                                <!-- Qualifying columns: reading arrays if present -->
+                                @if (getSessionName(session).toLowerCase().includes('qual')) {
+                                  <td style="font-weight: 500;">{{ getQualDuration(result, 0) }}</td>
+                                }
+                                @if (getSessionName(session).toLowerCase().includes('qual')) {
+                                  <td style="font-weight: 500;">{{ getQualDuration(result, 1) }}</td>
+                                }
+                                @if (getSessionName(session).toLowerCase().includes('qual')) {
+                                  <td style="font-weight: 500;">{{ getQualDuration(result, 2) }}</td>
+                                }
+                                <!-- Non-qualifying columns -->
+                                @if (!getSessionName(session).toLowerCase().includes('qual')) {
+                                  <td style="text-align: center; font-weight: 500;">{{ result.number_of_laps || '-' }}</td>
+                                }
+                                @if (!getSessionName(session).toLowerCase().includes('qual')) {
+                                  <td style="font-weight: 500;">{{ formatGapForDisplay(result) }}</td>
+                                }
+                                @if (!getSessionName(session).toLowerCase().includes('qual')) {
+                                  <td style="font-weight: 500; white-space: nowrap;">{{ formatPrimaryDuration(result) }}</td>
+                                }
+                                @if (getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')) {
+                                  <td style="text-align: center; font-weight: bold;">{{ result.points || '-' }}</td>
+                                }
+                              </tr>
+                            </ng-template>
+                          </p-table>
+                        }
+                      </div>
+                    }
+                    <!-- Stints tab -->
+                    @if (activeTab[session.session_key] === 'stints' && !isTabLoading(session.session_key, 'stints')) {
+                      <div>
+                        @if (!groupedStints[session.session_key]?.length) {
+                          <p class="tab-status">Dati sulle gomme non disponibili per questa sessione.</p>
+                        }
+                        @if (groupedStints[session.session_key]?.length) {
+                          <div class="tyre-legend">
+                            <span class="tyre-legend-item"><span class="tyre-dot soft"></span>Soft</span>
+                            <span class="tyre-legend-item"><span class="tyre-dot medium"></span>Medium</span>
+                            <span class="tyre-legend-item"><span class="tyre-dot hard"></span>Hard</span>
+                            <span class="tyre-legend-item"><span class="tyre-dot intermediate"></span>Intermedie</span>
+                            <span class="tyre-legend-item"><span class="tyre-dot wet"></span>Da bagnato</span>
+                            <span class="tyre-legend-hint">Passa il mouse su un segmento per i dettagli</span>
+                          </div>
+                        }
+                        @if (groupedStints[session.session_key]?.length) {
+                          <p-table [value]="groupedStints[session.session_key]" styleClass="compact-table">
+                            <ng-template pTemplate="header">
+                              <tr>
+                                <th style="width: 8%;">Pos</th>
+                                <th style="width: 24%;">Pilota</th>
+                                <th style="width: 16%;">Team</th>
+                                <th style="width: 52%;">Strategia gomme</th>
+                              </tr>
+                            </ng-template>
+                            <ng-template pTemplate="body" let-driverStint>
+                              <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(driverStint.driver_number))">
+                                <td style="text-align: center; font-weight: bold; white-space: nowrap;">{{ driverStint.positionLabel }}</td>
+                                <td>
+                                  <div class="driver-info">
+                                    <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(driverStint.driver_number)" [style.color]="'#000'">{{ driverStint.driver_number }}</span>
+                                    <span class="driver-name">{{ getDriverName(driverStint.driver_number) }}</span>
+                                  </div>
+                                </td>
+                                <td>{{ getDriverTeam(driverStint.driver_number) }}</td>
+                                <td>
+                                  <div class="tyre-bar">
+                                    @for (seg of driverStint.segments; track seg) {
+                                      <div class="tyre-segment" [ngClass]="seg.compound"
+                                      [style.width.%]="seg.widthPct" [title]="seg.tooltip">{{ seg.widthPct >= 4 ? seg.short : '' }}</div>
+                                    }
+                                  </div>
+                                </td>
+                              </tr>
+                            </ng-template>
+                          </p-table>
+                        }
+                      </div>
+                    }
+                    <!-- Team Radio tab -->
+                    @if (activeTab[session.session_key] === 'radio' && !isTabLoading(session.session_key, 'radio')) {
+                      <div>
+                        @if (!teamRadios[session.session_key]?.length) {
+                          <p class="tab-status">Nessun team radio disponibile per questa sessione.</p>
+                        }
+                        <div class="radio-list">
+                          @for (radio of teamRadios[session.session_key]; track radio) {
+                            <div class="radio-item">
+                              <div class="radio-header">
+                                <div class="driver-info">
+                                  <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(radio.driver_number)" [style.color]="'#000'">{{ radio.driver_number }}</span>
+                                  <span class="driver-name">{{ getDriverName(radio.driver_number) }}</span>
+                                </div>
+                                <span class="radio-time">{{ radio.date | date:'HH:mm:ss' }}</span>
+                              </div>
+                              <audio controls [src]="radio.recording_url" class="radio-player"></audio>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                    <!-- Weather tab -->
+                    @if (activeTab[session.session_key] === 'weather' && !isTabLoading(session.session_key, 'weather')) {
+                      <div>
+                        @if (!filteredWeather[session.session_key]?.length) {
+                          <p class="tab-status">Dati meteo non disponibili per questa sessione.</p>
+                        }
+                        @if (filteredWeather[session.session_key]?.length) {
+                          <p-table [value]="filteredWeather[session.session_key]" styleClass="compact-table">
+                            <ng-template pTemplate="header">
+                              <tr>
+                                <th style="width: 20%;">Orario</th>
+                                <th style="width: 20%;">Temp. Aria</th>
+                                <th style="width: 20%;">Temp. Pista</th>
+                                <th style="width: 20%;">Umidità</th>
+                                <th style="width: 20%;">Vento</th>
+                              </tr>
+                            </ng-template>
+                            <ng-template pTemplate="body" let-w>
+                              <tr>
+                                <td>{{ w.date | date:'HH:mm:ss' }}</td>
+                                <td>{{ w.air_temperature }}°C</td>
+                                <td>{{ w.track_temperature }}°C</td>
+                                <td>{{ w.humidity }}%</td>
+                                <td>{{ w.wind_speed }} km/h</td>
+                              </tr>
+                            </ng-template>
+                          </p-table>
+                        }
+                      </div>
+                    }
+                    <!-- Pit Stops tab -->
+                    @if (activeTab[session.session_key] === 'pits' && !isTabLoading(session.session_key, 'pits')) {
+                      <div>
+                        @if (!pits[session.session_key]?.length) {
+                          <p class="tab-status">Nessun pit stop in questa sessione.</p>
+                        }
+                        @if (pits[session.session_key]?.length) {
+                          <p-table [value]="pits[session.session_key]" styleClass="compact-table">
+                            <ng-template pTemplate="header">
+                              <tr>
+                                <th style="width: 32%;">Pilota</th>
+                                <th style="width: 26%;">Team</th>
+                                <th style="width: 12%;">Giro</th>
+                                <th style="width: 15%;">Durata</th>
+                                <th style="width: 15%;">Orario</th>
+                              </tr>
+                            </ng-template>
+                            <ng-template pTemplate="body" let-pit>
+                              <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(pit.driver_number))">
+                                <td>
+                                  <div class="driver-info">
+                                    <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(pit.driver_number)" [style.color]="'#000'">{{ pit.driver_number }}</span>
+                                    <span class="driver-name">{{ getDriverName(pit.driver_number) }}</span>
+                                  </div>
+                                </td>
+                                <td>{{ getDriverTeam(pit.driver_number) }}</td>
+                                <td>{{ pit.lap_number }}</td>
+                                <td>{{ pit.pit_duration.toFixed(3) }}s</td>
+                                <td>{{ pit.date | date:'HH:mm:ss' }}</td>
+                              </tr>
+                            </ng-template>
+                          </p-table>
+                        }
+                      </div>
+                    }
+                    <!-- Overtakes tab -->
+                    @if (activeTab[session.session_key] === 'overtakes' && !isTabLoading(session.session_key, 'overtakes')) {
+                      <div>
+                        @if (!overtakes[session.session_key]?.length) {
+                          <p class="tab-status">Dati sui sorpassi non disponibili per questa sessione (OpenF1 li fornisce solo per le gare).</p>
+                        }
+                        @if (overtakes[session.session_key]?.length) {
+                          <p-table [value]="overtakes[session.session_key]" styleClass="compact-table">
+                            <ng-template pTemplate="header">
+                              <tr>
+                                <th style="width: 15%;">Orario</th>
+                                <th style="width: 70%;">Sorpasso</th>
+                                <th style="width: 15%;">Posizione</th>
+                              </tr>
+                            </ng-template>
+                            <ng-template pTemplate="body" let-overtake>
+                              <tr>
+                                <td>{{ overtake.date | date:'HH:mm:ss' }}</td>
+                                <td>
+                                  <div class="overtake-info">
+                                    <span class="overtaking-driver">
+                                      <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaking_driver_number)" [style.color]="'#000'">{{ overtake.overtaking_driver_number }}</span>
+                                      <span class="driver-name">{{ getDriverName(overtake.overtaking_driver_number) }}</span>
+                                    </span>
+                                    <i class="pi pi-arrow-right"></i>
+                                    <span class="overtaken-driver">
+                                      <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaken_driver_number)" [style.color]="'#000'">{{ overtake.overtaken_driver_number }}</span>
+                                      <span class="driver-name">{{ getDriverName(overtake.overtaken_driver_number) }}</span>
+                                    </span>
+                                  </div>
+                                </td>
+                                <td>P{{ overtake.position }}</td>
+                              </tr>
+                            </ng-template>
+                          </p-table>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </section>
+        }
       </div>
-    </aside>
+      <aside class="detail-sidebar">
+        <div class="sidebar-card">
+          <h3>Dettagli Evento</h3>
+          <ul class="detail-list">
+            <li>
+              <span class="detail-label">Abbreviazione:</span>
+              <span class="detail-value">{{ meeting.meeting_code }}</span>
+            </li>
+            <li>
+              <span class="detail-label">Circuito:</span>
+              <span class="detail-value">{{ meeting.circuit_short_name }}</span>
+            </li>
+            <li>
+              <span class="detail-label">Paese:</span>
+              <span class="detail-value">{{ meeting.country_name }}</span>
+            </li>
+            <li>
+              <span class="detail-label">Fuso Orario:</span>
+              <span class="detail-value">{{ formatTimeOffset(meeting.gmt_offset) }}</span>
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </div>
   </div>
-</div>
-
-<ng-template #loading>
+} @else {
   <div class="loading-container">
     <div class="loading-spinner">
       <i class="pi pi-spin pi-spinner" style="font-size: 3rem"></i>
     </div>
     <p>Caricamento informazioni del Gran Premio...</p>
   </div>
-</ng-template>
+}
+

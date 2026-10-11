@@ -81,9 +81,9 @@ app-root, body > app-root {
   border-top: 1px solid rgba(255,255,255,0.03);
 }
 
-/* make p-dropdown label visible on dark sidebar */
-.gp-sidebar .p-dropdown,
-.gp-dropdown .p-dropdown-label {
+/* make p-select label visible on dark sidebar */
+.gp-sidebar .p-select,
+.gp-dropdown .p-select-label {
   color: #fff;
 }
 

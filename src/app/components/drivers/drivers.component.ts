@@ -1,10 +1,10 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
@@ -19,7 +19,7 @@ interface YearOption {
 @Component({
   selector: 'app-drivers',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, CardModule, ButtonModule, DropdownModule, InputTextModule, ApiUnavailableComponent],
+  imports: [FormsModule, RouterModule, CardModule, ButtonModule, SelectModule, InputTextModule, ApiUnavailableComponent],
   templateUrl: './drivers.component.html',
   styleUrls: ['./drivers.component.css']
 })

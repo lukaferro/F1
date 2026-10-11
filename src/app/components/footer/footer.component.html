@@ -31,11 +31,13 @@
   </div>
 
   <div class="footer-sponsors">
-    <div class="sponsor-item" *ngFor="let sponsor of sponsorPartners">
-      <a [href]="sponsor.website" target="_blank" rel="noopener" [attr.aria-label]="'Visita ' + sponsor.name">
-        <img [src]="sponsor.logo" [alt]="sponsor.name" loading="lazy" decoding="async">
-      </a>
-    </div>
+    @for (sponsor of sponsorPartners; track sponsor) {
+      <div class="sponsor-item">
+        <a [href]="sponsor.website" target="_blank" rel="noopener" [attr.aria-label]="'Visita ' + sponsor.name">
+          <img [src]="sponsor.logo" [alt]="sponsor.name" loading="lazy" decoding="async">
+        </a>
+      </div>
+    }
   </div>
 
   <div class="footer-bottom">

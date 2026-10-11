@@ -1,6 +1,6 @@
 import { Component, ElementRef, ViewChild, AfterViewInit, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
@@ -9,7 +9,7 @@ import { Meeting } from '../../models/meeting';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonModule, CardModule],
+  imports: [RouterLink, ButtonModule, CardModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })

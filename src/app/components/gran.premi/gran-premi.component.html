@@ -2,15 +2,17 @@
   <aside class="gp-sidebar">
     <div class="filter-section">
       <h3 class="filter-title">Filtri</h3>
-      
+
       <div class="filter-group">
         <div class="filter-header">
           <label class="gp-label">Anno</label>
-          <button *ngIf="selectedYear" class="reset-filter" (click)="resetSingleFilter('year')">
-            <i class="pi pi-times"></i>
-          </button>
+          @if (selectedYear) {
+            <button class="reset-filter" (click)="resetSingleFilter('year')">
+              <i class="pi pi-times"></i>
+            </button>
+          }
         </div>
-        <p-dropdown
+        <p-select
           [options]="years"
           [(ngModel)]="selectedYear"
           optionLabel="name"
@@ -20,17 +22,19 @@
           (ngModelChange)="onYearChange($event)"
           class="gp-dropdown"
           panelStyleClass="gp-dropdown-panel">
-        </p-dropdown>
+        </p-select>
       </div>
-      
+
       <div class="filter-group">
         <div class="filter-header">
           <label class="gp-label">Paese</label>
-          <button *ngIf="selectedCountry" class="reset-filter" (click)="resetSingleFilter('country')">
-            <i class="pi pi-times"></i>
-          </button>
+          @if (selectedCountry) {
+            <button class="reset-filter" (click)="resetSingleFilter('country')">
+              <i class="pi pi-times"></i>
+            </button>
+          }
         </div>
-        <p-dropdown
+        <p-select
           [options]="countries"
           [(ngModel)]="selectedCountry"
           optionLabel="name"
@@ -40,17 +44,19 @@
           (ngModelChange)="onCountryChange($event)"
           class="gp-dropdown"
           panelStyleClass="gp-dropdown-panel">
-        </p-dropdown>
+        </p-select>
       </div>
-      
+
       <div class="filter-group">
         <div class="filter-header">
           <label class="gp-label">Circuito</label>
-          <button *ngIf="selectedCircuit" class="reset-filter" (click)="resetSingleFilter('circuit')">
-            <i class="pi pi-times"></i>
-          </button>
+          @if (selectedCircuit) {
+            <button class="reset-filter" (click)="resetSingleFilter('circuit')">
+              <i class="pi pi-times"></i>
+            </button>
+          }
         </div>
-        <p-dropdown
+        <p-select
           [options]="circuits"
           [(ngModel)]="selectedCircuit"
           optionLabel="name"
@@ -60,14 +66,14 @@
           (ngModelChange)="onCircuitChange($event)"
           class="gp-dropdown"
           panelStyleClass="gp-dropdown-panel">
-        </p-dropdown>
+        </p-select>
       </div>
-      
+
       <div class="filter-actions">
-        <p-button 
-          label="Resetta filtri" 
-          icon="pi pi-refresh" 
-          styleClass="p-button-outlined p-button-sm" 
+        <p-button
+          label="Resetta filtri"
+          icon="pi pi-refresh"
+          styleClass="p-button-outlined p-button-sm"
           (click)="resetFilters()">
         </p-button>
       </div>
@@ -80,52 +86,54 @@
       <p class="gp-description">Esplora tutti i Gran Premi della Formula 1. Utilizza i filtri per trovare eventi specifici.</p>
     </div>
 
-    <app-api-unavailable *ngIf="error && !loading" (retry)="loadMeetings()"></app-api-unavailable>
+    @if (error && !loading) {
+      <app-api-unavailable (retry)="loadMeetings()"></app-api-unavailable>
+    }
 
-    <div *ngIf="!error && meetings.length; else emptyList" class="cards-grid">
-      <article 
-        *ngFor="let meeting of meetings; trackBy: trackById" 
-        class="gp-card" 
-        [routerLink]="['/granpremi', meeting.meeting_key]"
-      >
-        <div class="gp-card-content">
-          <div class="gp-card-header">
-            <div class="gp-country">
-              <img 
-                [src]="'https://flagcdn.com/24x18/' + getCountryFlagCode(meeting.country_code) + '.png'" 
-                [alt]="meeting.country_name" 
-                class="country-flag"
-              />
-              {{ meeting.location }}
-            </div>
-            <div class="gp-year">{{ meeting.year }}</div>
-          </div>
-
-          <h3 class="gp-official">{{ meeting.meeting_official_name }}</h3>
-
-          <div class="gp-sub">
-            <span class="gp-name">{{ meeting.meeting_name }}</span>
-            <span class="gp-date">{{ meeting.date_start | date:'mediumDate' }}</span>
-          </div>
-
-          <div class="gp-meta">
-            <span class="chip">{{ meeting.circuit_short_name || 'Circuit' }}</span>
-            <span class="chip">{{ meeting.country_name }}</span>
-          </div>
-          
-          <div class="gp-view-details">
-            <i class="pi pi-arrow-right"></i> Visualizza dettagli
-          </div>
+    @if (!error && meetings.length) {
+      <div class="cards-grid">
+        @for (meeting of meetings; track trackById($index, meeting)) {
+          <article
+            class="gp-card"
+            [routerLink]="['/granpremi', meeting.meeting_key]"
+            >
+            <div class="gp-card-content">
+              <div class="gp-card-header">
+                <div class="gp-country">
+                  <img
+                    [src]="'https://flagcdn.com/24x18/' + getCountryFlagCode(meeting.country_code) + '.png'"
+                    [alt]="meeting.country_name"
+                    class="country-flag"
+                    />
+                    {{ meeting.location }}
+                  </div>
+                  <div class="gp-year">{{ meeting.year }}</div>
+                </div>
+                <h3 class="gp-official">{{ meeting.meeting_official_name }}</h3>
+                <div class="gp-sub">
+                  <span class="gp-name">{{ meeting.meeting_name }}</span>
+                  <span class="gp-date">{{ meeting.date_start | date:'mediumDate' }}</span>
+                </div>
+                <div class="gp-meta">
+                  <span class="chip">{{ meeting.circuit_short_name || 'Circuit' }}</span>
+                  <span class="chip">{{ meeting.country_name }}</span>
+                </div>
+                <div class="gp-view-details">
+                  <i class="pi pi-arrow-right"></i> Visualizza dettagli
+                </div>
+              </div>
+            </article>
+          }
         </div>
-      </article>
-    </div>
+      } @else {
+        @if (!error && !loading) {
+          <div class="empty">
+            <i class="pi pi-exclamation-circle empty-icon"></i>
+            <p>Nessun Gran Premio disponibile con i filtri selezionati.</p>
+            <p-button label="Mostra tutti" icon="pi pi-refresh" (click)="resetFilters()"></p-button>
+          </div>
+        }
+      }
 
-    <ng-template #emptyList>
-      <div *ngIf="!error && !loading" class="empty">
-        <i class="pi pi-exclamation-circle empty-icon"></i>
-        <p>Nessun Gran Premio disponibile con i filtri selezionati.</p>
-        <p-button label="Mostra tutti" icon="pi pi-refresh" (click)="resetFilters()"></p-button>
-      </div>
-    </ng-template>
-  </section>
-</div>
+    </section>
+  </div>

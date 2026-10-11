@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { HttpClient } from '@angular/common/http';
@@ -12,7 +12,7 @@ import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
 @Component({
   selector: 'app-driver-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonModule, CardModule, TagModule],
+  imports: [RouterLink, ButtonModule, CardModule, TagModule],
   templateUrl: './driver-detail.component.html',
   styleUrls: ['./driver-detail.component.css']
 })

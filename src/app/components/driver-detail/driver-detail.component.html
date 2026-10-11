@@ -1,192 +1,221 @@
-<div class="driver-detail" *ngIf="!loading && driver; else loadingTpl">
-  <div class="back-button">
-    <p-button icon="pi pi-arrow-left" styleClass="p-button-text" label="Torna ai Piloti" routerLink="/drivers"></p-button>
-  </div>
-
-  <div class="hero">
-    <div class="flag-container">
-      <img *ngIf="getFlagUrl(driver)" [src]="getFlagUrl(driver)" [alt]="'Bandiera ' + (driver.country_code || '')" class="country-flag" loading="lazy" decoding="async">
+@if (!loading && driver) {
+  <div class="driver-detail">
+    <div class="back-button">
+      <p-button icon="pi pi-arrow-left" styleClass="p-button-text" label="Torna ai Piloti" routerLink="/drivers"></p-button>
     </div>
-    
-    <div class="hero-content">
-      <div class="hero-left">
-        <img class="portrait" [src]="getDriverImage(driver)" (error)="onDriverImageError($event)" [alt]="driver.full_name" loading="lazy" decoding="async" />
+    <div class="hero">
+      <div class="flag-container">
+        @if (getFlagUrl(driver)) {
+          <img [src]="getFlagUrl(driver)" [alt]="'Bandiera ' + (driver.country_code || '')" class="country-flag" loading="lazy" decoding="async">
+        }
       </div>
-      <div class="hero-right">
-        <h1>{{ getInitialLast(driver) }}</h1>
-        <div class="meta">
-          <span class="badge">#{{ driver.driver_number }}</span>
-          <span
-            *ngIf="driver.team_name"
-            class="badge team"
-            [style.background]="'rgba(0,0,0,0.25)'"
-            [style.border]="'1px solid #' + (driver.team_color || '333')"
-            [style.color]="'#' + (driver.team_color || 'f7f7f7')"
-          >
-            {{ driver.team_name }}
-          </span>
-          <span *ngIf="!driver.team_name" class="badge" title="Team non ancora assegnato">
-            <i class="pi pi-question-circle"></i> Team TBD
-          </span>
-          <span *ngIf="driver.country_code" class="badge">{{ driver.country_code }}</span>
-          <span *ngIf="!driver.country_code" class="badge" title="Nazionalità non specificata">
-            <i class="pi pi-globe"></i>
-          </span>
+      <div class="hero-content">
+        <div class="hero-left">
+          <img class="portrait" [src]="getDriverImage(driver)" (error)="onDriverImageError($event)" [alt]="driver.full_name" loading="lazy" decoding="async" />
         </div>
-        <p class="fullname">{{ driver.full_name }}</p>
+        <div class="hero-right">
+          <h1>{{ getInitialLast(driver) }}</h1>
+          <div class="meta">
+            <span class="badge">#{{ driver.driver_number }}</span>
+            @if (driver.team_name) {
+              <span
+                class="badge team"
+                [style.background]="'rgba(0,0,0,0.25)'"
+                [style.border]="'1px solid #' + (driver.team_color || '333')"
+                [style.color]="'#' + (driver.team_color || 'f7f7f7')"
+                >
+                {{ driver.team_name }}
+              </span>
+            }
+            @if (!driver.team_name) {
+              <span class="badge" title="Team non ancora assegnato">
+                <i class="pi pi-question-circle"></i> Team TBD
+              </span>
+            }
+            @if (driver.country_code) {
+              <span class="badge">{{ driver.country_code }}</span>
+            }
+            @if (!driver.country_code) {
+              <span class="badge" title="Nazionalità non specificata">
+                <i class="pi pi-globe"></i>
+              </span>
+            }
+          </div>
+          <p class="fullname">{{ driver.full_name }}</p>
+        </div>
       </div>
     </div>
-  </div>
-
-  <div class="content-grid">
-    <section class="panel bio-panel">
-      <h2>Profilo</h2>
-      <p *ngIf="driver.team_name && driver.country_code">
-        Corre per <strong>{{ driver.team_name }}</strong> con il numero <strong>{{ driver.driver_number }}</strong> e rappresenta <strong>{{ driver.country_code }}</strong>.
-      </p>
-      <p *ngIf="!driver.team_name && driver.country_code">
-        Pilota con numero <strong>{{ driver.driver_number }}</strong> che rappresenta <strong>{{ driver.country_code }}</strong>. Team non ancora confermato per questa stagione.
-      </p>
-      <p *ngIf="driver.team_name && !driver.country_code">
-        Corre per <strong>{{ driver.team_name }}</strong> con il numero <strong>{{ driver.driver_number }}</strong>.
-      </p>
-      <p *ngIf="!driver.team_name && !driver.country_code">
-        Pilota con numero <strong>{{ driver.driver_number }}</strong>. Informazioni complete non ancora disponibili per questa stagione.
-      </p>
-      
-      <div *ngIf="loadingWiki" class="wiki-loading">
-        <i class="pi pi-spin pi-spinner"></i> Caricamento biografia...
-      </div>
-      
-      <div *ngIf="!loadingWiki && wikiExtract" class="wiki-content">
-        <p>{{ wikiExtract }}</p>
-        <a [href]="wikiUrl" target="_blank" rel="noopener" class="wiki-link">
-          <i class="pi pi-external-link"></i> Leggi su Wikipedia
-        </a>
-      </div>
-      
-      <p *ngIf="!loadingWiki && !wikiExtract" class="muted">
-        <i class="pi pi-info-circle"></i>
-        Dati biografici non ancora disponibili. Questo pilota potrebbe essere nuovo in F1 o i dati non sono ancora su Wikipedia.
-      </p>
-    </section>
-
-    <section class="panel stats-panel">
-      <h2>Informazioni Attuali</h2>
-      <div class="stats-grid">
-        <div class="stat-card" *ngFor="let stat of stats">
-          <span class="stat-label">{{ stat.label }}</span>
-          <span class="stat-value">{{ stat.value || '—' }}</span>
-        </div>
-      </div>
-      <p *ngIf="!driver.team_name" class="muted" style="margin-top: 1rem;">
-        <i class="pi pi-info-circle"></i> Alcuni dati potrebbero non essere disponibili. Il pilota potrebbe essere in attesa di conferma per la stagione corrente.
-      </p>
-    </section>
-
-    <section class="panel career-panel">
-      <h2>Statistiche Carriera</h2>
-      <div *ngIf="loadingStats" class="stats-loading">
-        <i class="pi pi-spin pi-spinner"></i> Caricamento statistiche...
-      </div>
-      <div *ngIf="!loadingStats && careerStats" class="career-grid">
-        <div class="career-item">
-          <i class="pi pi-calendar"></i>
-          <div>
-            <span class="career-label">Esordio</span>
-            <span class="career-value">{{ careerStats.debut }}</span>
+    <div class="content-grid">
+      <section class="panel bio-panel">
+        <h2>Profilo</h2>
+        @if (driver.team_name && driver.country_code) {
+          <p>
+            Corre per <strong>{{ driver.team_name }}</strong> con il numero <strong>{{ driver.driver_number }}</strong> e rappresenta <strong>{{ driver.country_code }}</strong>.
+          </p>
+        }
+        @if (!driver.team_name && driver.country_code) {
+          <p>
+            Pilota con numero <strong>{{ driver.driver_number }}</strong> che rappresenta <strong>{{ driver.country_code }}</strong>. Team non ancora confermato per questa stagione.
+          </p>
+        }
+        @if (driver.team_name && !driver.country_code) {
+          <p>
+            Corre per <strong>{{ driver.team_name }}</strong> con il numero <strong>{{ driver.driver_number }}</strong>.
+          </p>
+        }
+        @if (!driver.team_name && !driver.country_code) {
+          <p>
+            Pilota con numero <strong>{{ driver.driver_number }}</strong>. Informazioni complete non ancora disponibili per questa stagione.
+          </p>
+        }
+        @if (loadingWiki) {
+          <div class="wiki-loading">
+            <i class="pi pi-spin pi-spinner"></i> Caricamento biografia...
           </div>
-        </div>
-
-        <div class="career-item">
-          <i class="pi pi-list"></i>
-          <div>
-            <span class="career-label">GP Disputati</span>
-            <span class="career-value">{{ careerStats.races }}</span>
+        }
+        @if (!loadingWiki && wikiExtract) {
+          <div class="wiki-content">
+            <p>{{ wikiExtract }}</p>
+            <a [href]="wikiUrl" target="_blank" rel="noopener" class="wiki-link">
+              <i class="pi pi-external-link"></i> Leggi su Wikipedia
+            </a>
           </div>
-        </div>
-
-        <div class="career-item">
-          <i class="pi pi-chart-bar"></i>
-          <div>
-            <span class="career-label">Punti Totali</span>
-            <span class="career-value">{{ careerStats.points }}</span>
-          </div>
-        </div>
-
-        <div class="career-item">
-          <i class="pi pi-bolt"></i>
-          <div>
-            <span class="career-label">Pole Position</span>
-            <span class="career-value">{{ careerStats.poles }}</span>
-          </div>
-        </div>
-
-        <div class="career-item highlight">
-          <i class="pi pi-trophy"></i>
-          <div>
-            <span class="career-label">Vittorie</span>
-            <span class="career-value">{{ careerStats.wins }}</span>
-          </div>
-        </div>
-
-        <div class="career-item highlight">
-          <i class="pi pi-star"></i>
-          <div>
-            <span class="career-label">Podi</span>
-            <span class="career-value">{{ careerStats.podiums }}</span>
-          </div>
-        </div>
-
-        <div class="career-item highlight">
-          <i class="pi pi-forward"></i>
-          <div>
-            <span class="career-label">Giri Veloci</span>
-            <span class="career-value">{{ careerStats.fastestLaps }}</span>
-          </div>
-        </div>
-
-        <div class="career-item stat-champs">
-          <i class="pi pi-crown champs-icon" aria-hidden="true"></i>
-          <div>
-            <span class="career-label">Titoli Mondiali</span>
-            <span class="career-value">{{ careerStats.championshipsCount }}</span>
-          </div>
-        </div>
-
-        <div class="career-item full-width scuderie-item">
-          <i class="pi pi-building"></i>
-          <div>
-            <span class="career-label">Scuderie</span>
-            <div *ngIf="careerStats.teamsArray?.length" class="teams-years">
-              <span *ngFor="let team of careerStats.teamsArray" class="team-badge">{{ team }}</span>
+        }
+        @if (!loadingWiki && !wikiExtract) {
+          <p class="muted">
+            <i class="pi pi-info-circle"></i>
+            Dati biografici non ancora disponibili. Questo pilota potrebbe essere nuovo in F1 o i dati non sono ancora su Wikipedia.
+          </p>
+        }
+      </section>
+      <section class="panel stats-panel">
+        <h2>Informazioni Attuali</h2>
+        <div class="stats-grid">
+          @for (stat of stats; track stat) {
+            <div class="stat-card">
+              <span class="stat-label">{{ stat.label }}</span>
+              <span class="stat-value">{{ stat.value || '—' }}</span>
             </div>
-            <span *ngIf="!careerStats.teamsArray?.length && careerStats.teams && careerStats.teams !== '—'" class="career-value">{{ careerStats.teams }}</span>
-            <span *ngIf="(!careerStats.teamsArray?.length && (!careerStats.teams || careerStats.teams === '—'))" class="muted">N/D</span>
-          </div>
+          }
         </div>
-
-        <div class="career-item full-width championships-years-item" *ngIf="careerStats.championshipYears?.length">
-          <i class="pi pi-history"></i>
-          <div>
-            <span class="career-label">Anni Titoli</span>
-            <div class="championship-years">
-              <span *ngFor="let year of careerStats.championshipYears" class="year">{{ year }}</span>
+        @if (!driver.team_name) {
+          <p class="muted" style="margin-top: 1rem;">
+            <i class="pi pi-info-circle"></i> Alcuni dati potrebbero non essere disponibili. Il pilota potrebbe essere in attesa di conferma per la stagione corrente.
+          </p>
+        }
+      </section>
+      <section class="panel career-panel">
+        <h2>Statistiche Carriera</h2>
+        @if (loadingStats) {
+          <div class="stats-loading">
+            <i class="pi pi-spin pi-spinner"></i> Caricamento statistiche...
+          </div>
+        }
+        @if (!loadingStats && careerStats) {
+          <div class="career-grid">
+            <div class="career-item">
+              <i class="pi pi-calendar"></i>
+              <div>
+                <span class="career-label">Esordio</span>
+                <span class="career-value">{{ careerStats.debut }}</span>
+              </div>
             </div>
+            <div class="career-item">
+              <i class="pi pi-list"></i>
+              <div>
+                <span class="career-label">GP Disputati</span>
+                <span class="career-value">{{ careerStats.races }}</span>
+              </div>
+            </div>
+            <div class="career-item">
+              <i class="pi pi-chart-bar"></i>
+              <div>
+                <span class="career-label">Punti Totali</span>
+                <span class="career-value">{{ careerStats.points }}</span>
+              </div>
+            </div>
+            <div class="career-item">
+              <i class="pi pi-bolt"></i>
+              <div>
+                <span class="career-label">Pole Position</span>
+                <span class="career-value">{{ careerStats.poles }}</span>
+              </div>
+            </div>
+            <div class="career-item highlight">
+              <i class="pi pi-trophy"></i>
+              <div>
+                <span class="career-label">Vittorie</span>
+                <span class="career-value">{{ careerStats.wins }}</span>
+              </div>
+            </div>
+            <div class="career-item highlight">
+              <i class="pi pi-star"></i>
+              <div>
+                <span class="career-label">Podi</span>
+                <span class="career-value">{{ careerStats.podiums }}</span>
+              </div>
+            </div>
+            <div class="career-item highlight">
+              <i class="pi pi-forward"></i>
+              <div>
+                <span class="career-label">Giri Veloci</span>
+                <span class="career-value">{{ careerStats.fastestLaps }}</span>
+              </div>
+            </div>
+            <div class="career-item stat-champs">
+              <i class="pi pi-crown champs-icon" aria-hidden="true"></i>
+              <div>
+                <span class="career-label">Titoli Mondiali</span>
+                <span class="career-value">{{ careerStats.championshipsCount }}</span>
+              </div>
+            </div>
+            <div class="career-item full-width scuderie-item">
+              <i class="pi pi-building"></i>
+              <div>
+                <span class="career-label">Scuderie</span>
+                @if (careerStats.teamsArray?.length) {
+                  <div class="teams-years">
+                    @for (team of careerStats.teamsArray; track team) {
+                      <span class="team-badge">{{ team }}</span>
+                    }
+                  </div>
+                }
+                @if (!careerStats.teamsArray?.length && careerStats.teams && careerStats.teams !== '—') {
+                  <span class="career-value">{{ careerStats.teams }}</span>
+                }
+                @if ((!careerStats.teamsArray?.length && (!careerStats.teams || careerStats.teams === '—'))) {
+                  <span class="muted">N/D</span>
+                }
+              </div>
+            </div>
+            @if (careerStats.championshipYears?.length) {
+              <div class="career-item full-width championships-years-item">
+                <i class="pi pi-history"></i>
+                <div>
+                  <span class="career-label">Anni Titoli</span>
+                  <div class="championship-years">
+                    @for (year of careerStats.championshipYears; track year) {
+                      <span class="year">{{ year }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
           </div>
-        </div>
-      </div>
-      <p *ngIf="!loadingStats && !careerStats" class="muted">
-        <i class="pi pi-info-circle"></i>
-        Statistiche carriera non disponibili. Per piloti nuovi o senza pagina Wikipedia completa, i dati potrebbero non essere ancora presenti.
-      </p>
-    </section>
+        }
+        @if (!loadingStats && !careerStats) {
+          <p class="muted">
+            <i class="pi pi-info-circle"></i>
+            Statistiche carriera non disponibili. Per piloti nuovi o senza pagina Wikipedia completa, i dati potrebbero non essere ancora presenti.
+          </p>
+        }
+      </section>
+    </div>
   </div>
-</div>
-
-<ng-template #loadingTpl>
+} @else {
   <div class="loading">
     <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
     <p>Caricamento pilota...</p>
   </div>
-</ng-template>
+}
+
