@@ -79,7 +79,7 @@
       @if (!loading && !error) {
         <div class="drivers-grid">
           @for (driver of drivers; track trackByDriverNumber($index, driver)) {
-            <a class="driver-card" [routerLink]="['/drivers', driver.name_acronym || driver.driver_number]">
+            <a class="driver-card" [style.--i]="$index" [routerLink]="['/drivers', driver.name_acronym || driver.driver_number]">
               <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + getTeamColor(driver) + '33, #' + getTeamColor(driver) + '66)'">
                 <div class="driver-number" [style.color]="'#ffffff'">#{{ driver.driver_number }}</div>
                 <!-- bandiere rimosse su richiesta -->

@@ -225,3 +225,88 @@ body .p-select.gp-dropdown .p-overlay {
 .gp-dropdown .p-select-open .p-select-dropdown .p-icon {
   transform: rotate(180deg);
 }
+
+/* ---------- Animazioni ----------
+   Brevi (200-500 ms) e solo all'entrata dei contenuti; disattivate con "riduci movimento". */
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes podium-rise {
+  from { opacity: 0; transform: translateY(40px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ogni pagina compare con una breve dissolvenza quando si cambia rotta */
+main.app-content > :not(router-outlet) {
+  animation: page-enter 0.35s ease both;
+}
+
+/* card che entrano una dopo l'altra (ritardo limitato alle prime 12) */
+.driver-card,
+.gp-card,
+.circuit-card {
+  animation: rise-in 0.4s ease both;
+  animation-delay: calc(min(var(--i, 0), 12) * 45ms);
+}
+
+/* podio: salgono terzo, secondo e primo */
+.podium-item {
+  animation: podium-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.podium-item.second { animation-delay: 0.1s; }
+.podium-item.first { animation-delay: 0.2s; }
+
+/* righe delle tabelle in dissolvenza (in sequenza nelle Classifiche) */
+.standings-table tbody tr,
+.p-datatable-tbody > tr {
+  animation: fade-in 0.3s ease both;
+  animation-delay: calc(min(var(--i, 0), 20) * 20ms);
+}
+
+/* i blocchi skeleton spariscono e il contenuto vero sfuma al loro posto */
+.tab-status,
+.standings-status {
+  animation: fade-in 0.3s ease both;
+}
+
+/* tab: la sottolineatura rossa si allarga dal centro */
+.tab-button {
+  position: relative;
+}
+.tab-button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 3px;
+  background: #ff0000;
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+}
+.tab-button.active::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+  }
+}

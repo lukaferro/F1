@@ -1019,7 +1019,6 @@ Stili per i tab di PrimeNG
 
 .tab-button.active {
   color: #ff0000;
-  border-bottom-color: #ff0000;
   background: rgba(255, 0, 0, 0.1);
 }
 /* Messaggi dentro i tab delle sessioni (caricamento, dati assenti) */

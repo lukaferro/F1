@@ -110,6 +110,7 @@
         @for (meeting of meetings; track trackById($index, meeting)) {
           <article
             class="gp-card"
+            [style.--i]="$index"
             [routerLink]="['/granpremi', meeting.meeting_key]"
             >
             <div class="gp-card-content">

@@ -87,7 +87,7 @@
             </thead>
             <tbody>
               @for (s of driverRows; track s.driverId) {
-                <tr [style]="rowStyle(driverColor(s))">
+                <tr [style]="rowStyle(driverColor(s))" [style.--i]="$index">
                   <td class="cell-pos">{{ s.position }}</td>
                   <td>
                     <span class="team-dot" [style.background]="'#' + driverColor(s)"></span>
@@ -147,7 +147,7 @@
             </thead>
             <tbody>
               @for (c of constructorRows; track c.constructorId) {
-                <tr [style]="rowStyle(colorFor(c.constructorId))">
+                <tr [style]="rowStyle(colorFor(c.constructorId))" [style.--i]="$index">
                   <td class="cell-pos">{{ c.position }}</td>
                   <td>
                     @if (logoFor(c.constructorId); as logo) {

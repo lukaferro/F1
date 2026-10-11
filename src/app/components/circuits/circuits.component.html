@@ -6,7 +6,7 @@
 
   <div class="circuits-grid">
     @for (circuit of circuits; track circuit.id) {
-      <p-card class="circuit-card">
+      <p-card class="circuit-card" [style.--i]="$index">
         <ng-template pTemplate="header">
           <div class="circuit-image-container">
             <img 

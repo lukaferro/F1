@@ -135,7 +135,17 @@ const CONSTRUCTOR_COLORS: Record<string, string> = {
   leyton: '00A3AD',
   simtek: '6A1B9A',
   pacific: '1E88E5',
-  forti: 'F9D71C'
+  forti: 'F9D71C',
+  rial: '1E4FA3',
+  ags: 'BDBDBD',
+  coloni: 'FFD54F',
+  eurobrun: '4FC3F7',
+  lds: 'E57373',
+  re: '8D6E63',
+  parnelli: 'D84315',
+  hill: 'D6D6D6',
+  lyncar: 'A1887F',
+  maki: 'FFB300'
 };
 
 // "brabham-repco" -> "brabham"
