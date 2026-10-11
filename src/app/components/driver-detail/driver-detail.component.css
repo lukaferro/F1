@@ -27,8 +27,14 @@
   height: 4px;
   background: #e63946;
 }
+/* Spazio riservato anche prima che la bandiera si carichi: altrimenti foto e nome
+   partono più a sinistra e scivolano a destra quando l'immagine arriva */
 .flag-container {
   flex-shrink: 0;
+  width: 100px;
+  min-height: 67px;
+  display: flex;
+  align-items: center;
 }
 .country-flag {
   width: 100px;

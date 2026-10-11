@@ -6,7 +6,7 @@
     <div class="hero">
       <div class="flag-container">
         @if (getFlagUrl(driver)) {
-          <img [src]="getFlagUrl(driver)" [alt]="'Bandiera ' + (driver.country_code || '')" class="country-flag" loading="lazy" decoding="async">
+          <img [src]="getFlagUrl(driver)" [alt]="'Bandiera ' + (driver.country_code || '')" class="country-flag" decoding="async">
         }
       </div>
       <div class="hero-content">
