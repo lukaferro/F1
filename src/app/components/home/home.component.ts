@@ -36,7 +36,8 @@ export class HomeComponent implements AfterViewInit, OnInit {
     video.muted = true;
     video.defaultMuted = true;
     video.volume = 0;
-    video.play().catch(() => {});
+    // play() non restituisce sempre una Promise (browser datati, ambiente dei test)
+    video.play()?.catch(() => {});
   }
 
   private async loadSeasonStats() {
