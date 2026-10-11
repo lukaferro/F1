@@ -194,7 +194,7 @@ h2::after {
   width: 160px;
   height: 160px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: #ffffff; /* sfondo chiaro: molti loghi sono scuri */
   display: flex;
   align-items: center;
   justify-content: center;

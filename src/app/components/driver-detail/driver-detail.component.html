@@ -10,7 +10,7 @@
     
     <div class="hero-content">
       <div class="hero-left">
-        <img class="portrait" [src]="getDriverImage(driver)" [alt]="driver.full_name" loading="lazy" decoding="async" />
+        <img class="portrait" [src]="getDriverImage(driver)" (error)="onDriverImageError($event)" [alt]="driver.full_name" loading="lazy" decoding="async" />
       </div>
       <div class="hero-right">
         <h1>{{ getInitialLast(driver) }}</h1>
@@ -147,7 +147,7 @@
         </div>
 
         <div class="career-item stat-champs">
-          <span class="laurel-icon career-icon" aria-hidden="true"></span>
+          <i class="pi pi-crown champs-icon" aria-hidden="true"></i>
           <div>
             <span class="career-label">Titoli Mondiali</span>
             <span class="career-value">{{ careerStats.championshipsCount }}</span>

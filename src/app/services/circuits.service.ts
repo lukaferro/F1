@@ -24,7 +24,7 @@ export class CircuitsService {
       history: 'Inaugurato nel 1922, Monza è il circuito più antico ancora in uso nel calendario F1. Ha ospitato il Gran Premio d\'Italia ininterrottamente dal 1950, ad eccezione del 1980. Il circuito è stato teatro delle battaglie più epiche della storia della Formula 1.',
       memorable_moment: 'Nel 2020, Pierre Gasly conquista la sua prima vittoria in carriera con AlphaTauri in una gara caotica, segnando uno dei momenti più emozionanti della stagione.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Autodromo_nazionale_di_Monza',
-      image_url: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Italy_Circuit.png.transform/7col/image.png'
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackmonzadetailed.webp'
     },
     {
       id: 'spa',
@@ -44,7 +44,7 @@ export class CircuitsService {
       history: 'Spa è considerato uno dei circuiti più belli e impegnativi al mondo. La sua combinazione unica di velocità, dislivelli e condizioni meteo variabili lo rendono una sfida completa per i piloti.',
       memorable_moment: 'La rimonta di Michael Schumacher nel 1995 dalla 16ª posizione alla vittoria su pista bagnata è entrata nella leggenda della Formula 1.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Spa-Francorchamps',
-      image_url: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Belgium_Circuit.png.transform/7col/image.png'
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackspafrancorchampsdetailed.webp'
     },
     {
       id: 'monaco',
@@ -64,7 +64,7 @@ export class CircuitsService {
       history: 'Monaco è sinonimo di glamour e prestigio. Vincere qui è considerato l\'apice della carriera di un pilota. Il circuito è rimasto sostanzialmente invariato dal 1929.',
       memorable_moment: 'Il sorpasso impossibile di Ayrton Senna su 5 piloti al primo giro nel 1992, sotto la pioggia, dimostrando il suo talento soprannaturale.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Monaco',
-      image_url: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Monaco_Circuit.png.transform/7col/image.png'
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackmontecarlodetailed.webp'
     },
     {
       id: 'silverstone',
@@ -84,7 +84,7 @@ export class CircuitsService {
       history: 'Silverstone ha ospitato la prima gara del Mondiale di Formula 1 nel 1950. Ex aeroporto militare, è diventato uno dei circuiti più amati dai piloti per le sue curve veloci e fluide.',
       memorable_moment: 'Il duello Hamilton-Verstappen nel 2021 che ha visto un contatto controverso a Copse, simbolo della battaglia per il titolo di quella stagione.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Silverstone',
-      image_url: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Great_Britain_Circuit.png.transform/7col/image.png'
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026tracksilverstonedetailed.webp'
     },
     {
       id: 'suzuka',
@@ -104,7 +104,7 @@ export class CircuitsService {
       history: 'Progettato dal leggendario pilota olandese John Hugenholtz, Suzuka è considerato uno dei circuiti più tecnici e completi. È stato teatro di numerosi titoli mondiali decisi all\'ultima gara.',
       memorable_moment: 'Lo scontro Senna-Prost del 1990 che decise il campionato al primo tornante, uno dei momenti più controversi della F1.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Suzuka_International_Racing_Course',
-      image_url: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Japan_Circuit.png.transform/7col/image.png'
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026tracksuzukadetailed.webp'
     },
     {
       id: 'interlagos',
@@ -124,7 +124,7 @@ export class CircuitsService {
       history: 'Intitolato al pilota brasiliano José Carlos Pace, Interlagos ha ospitato momenti indimenticabili. Il layout compatto e i dislivelli lo rendono una delle piste più spettacolari.',
       memorable_moment: 'La vittoria di Ayrton Senna nel 1991, la sua prima in casa, dove vinse praticamente svenuto per lo sforzo, bloccato in sesta marcia.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Aut%C3%B3dromo_Jos%C3%A9_Carlos_Pace',
-      image_url: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Brazil_Circuit.png.transform/7col/image.png'
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackinterlagosdetailed.webp'
     },
     {
       id: 'yas-marina',
@@ -144,7 +144,7 @@ export class CircuitsService {
       history: 'Inaugurato nel 2009, Yas Marina rappresenta il lusso e la modernità dei circuiti del Medio Oriente. Ha subito modifiche nel 2021 per migliorare i sorpassi.',
       memorable_moment: 'Il controverso finale del 2021, dove Verstappen ha superato Hamilton all\'ultimo giro dell\'ultima gara per conquistare il suo primo titolo mondiale.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Yas_Marina_Circuit',
-      image_url: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Abu_Dhabi_Circuit.png.transform/7col/image.png'
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackyasmarinacircuitdetailed.webp'
     },
     {
       id: 'melbourne',
@@ -164,7 +164,7 @@ export class CircuitsService {
       history: 'Melbourne ha sostituito Adelaide come sede del GP d\'Australia nel 1996. Il circuito offre un mix di sezioni veloci e tecniche, circondato da uno scenario naturale spettacolare.',
       memorable_moment: 'Il dominio di Michael Schumacher che qui vinse 4 volte consecutive dal 2000 al 2004, inaugurando campionati leggendari.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Albert_Park',
-      image_url: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Australia_Circuit.png.transform/7col/image.png'
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackmelbournedetailed.webp'
     }
   ];
 

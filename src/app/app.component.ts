@@ -1,7 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { FooterComponent } from "./components/footer/footer.component";
-import { Openf1ServiceService } from './services/openf1-service';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +9,4 @@ import { Openf1ServiceService } from './services/openf1-service';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
-  readonly apiStatus = inject(Openf1ServiceService).apiStatus;
-}
+export class AppComponent {}

@@ -55,10 +55,7 @@
   </div>
 
   <!-- Errore -->
-  <div *ngIf="error && !loading" class="error-container">
-    <i class="pi pi-exclamation-triangle"></i>
-    <p>{{ error }}</p>
-  </div>
+  <app-api-unavailable *ngIf="error && !loading" (retry)="loadAllDrivers()"></app-api-unavailable>
 
     <!-- Griglia piloti -->
     <div *ngIf="!loading && !error" class="drivers-grid">
@@ -70,7 +67,7 @@
         
         <div class="driver-body">
           <div class="driver-image-container">
-            <img [src]="getDriverImage(driver)" [alt]="driver.full_name" class="driver-image" />
+            <img [src]="getDriverImage(driver)" (error)="onDriverImageError($event, driver)" [alt]="driver.full_name" class="driver-image" />
           </div>
           
           <div class="driver-info">

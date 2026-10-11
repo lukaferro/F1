@@ -80,7 +80,9 @@
       <p class="gp-description">Esplora tutti i Gran Premi della Formula 1. Utilizza i filtri per trovare eventi specifici.</p>
     </div>
 
-    <div *ngIf="meetings.length; else emptyList" class="cards-grid">
+    <app-api-unavailable *ngIf="error && !loading" (retry)="loadMeetings()"></app-api-unavailable>
+
+    <div *ngIf="!error && meetings.length; else emptyList" class="cards-grid">
       <article 
         *ngFor="let meeting of meetings; trackBy: trackById" 
         class="gp-card" 
@@ -119,7 +121,7 @@
     </div>
 
     <ng-template #emptyList>
-      <div class="empty">
+      <div *ngIf="!error && !loading" class="empty">
         <i class="pi pi-exclamation-circle empty-icon"></i>
         <p>Nessun Gran Premio disponibile con i filtri selezionati.</p>
         <p-button label="Mostra tutti" icon="pi pi-refresh" (click)="resetFilters()"></p-button>

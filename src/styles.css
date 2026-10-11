@@ -43,7 +43,7 @@ h6 { font-size: 1rem; }
   box-sizing: border-box;
 }
 
-html, body, app-root {
+html, body {
   height: 100%;
   margin: 0;
   padding: 0;

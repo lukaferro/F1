@@ -17,13 +17,8 @@ import {
   Overtake 
 } from '../../services/openf1-service';
 import { Session } from '../../models/session';
+import { circuitMapUrl, SponsorInfo, titleSponsor } from '../../utils/f1-media';
 
-type SponsorInfo = {
-  name: string;
-  logo: string;
-  website?: string;
-  tagline?: string;
-};
 
 @Component({
   selector: 'app-gran-premi-detail',
@@ -65,192 +60,8 @@ export class GranPremiDetailComponent implements OnInit {
   resultsError?: string;
   
   activeSessionIndex = 0;
-  
-  // Immagini dei circuiti
-  circuitImages: Record<string, string> = {
-    'Monza': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Italy_Circuit.png.transform/7col/image.png',
-    'Spa-Francorchamps': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Belgium_Circuit.png.transform/7col/image.png',
-    'Monte Carlo': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Monaco_Circuit.png.transform/7col/image.png',
-    'Silverstone': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Great_Britain_Circuit.png.transform/7col/image.png',
-    'Hungaroring': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Hungary_Circuit.png.transform/7col/image.png',
-    'Imola': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Emilia_Romagna_Circuit.png.transform/7col/image.png',
-    'Jeddah': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Saudi_Arabia_Circuit.png.transform/7col/image.png',
-    'Sakhir': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Bahrain_Circuit.png.transform/7col/image.png',
-    'Melbourne': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Australia_Circuit.png.transform/7col/image.png',
-    'Suzuka': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Japan_Circuit.png.transform/7col/image.png',
-    'Interlagos': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Brazil_Circuit.png.transform/7col/image.png',
-    'Yas Marina Circuit': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Abu_Dhabi_Circuit.png.transform/7col/image.png',
-    'Catalunya': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Spain_Circuit.png.transform/7col/image.png',
-    'Zandvoort': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Netherlands_Circuit.png.transform/7col/image.png',
-    'Baku': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Baku_Circuit.png.transform/7col/image.png',
-    'Singapore': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Singapore_Circuit.png.transform/7col/image.png',
-    'Mexico City': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Mexico_Circuit.png.transform/7col/image.png',
-    'Montreal': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Canada_Circuit.png.transform/7col/image.png',
-    'Shanghai': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/China_Circuit.png.transform/7col/image.png',
-    'Miami': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Miami_Circuit.png.transform/7col/image.png',
-    'Las Vegas': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Las_Vegas_Circuit.png.transform/7col/image.png',
-    'Lusail': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Qatar_Circuit.png.transform/7col/image.png',
-    'Spielberg': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Austria_Circuit.png.transform/7col/image.png',
-    'Paul Ricard': 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/France_Circuit.png.transform/7col/image.png',
-    'Austin': 'https://media.formula1.com/image/upload/c_lfill,w_3392/q_auto/v1740000000/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/USA_Circuit.webp'
-  };
-  
+
   currentSponsor?: SponsorInfo;
-  
-  circuitSponsors: Record<string, SponsorInfo> = {
-    'Monza': {
-      name: 'Pirelli',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Pirelli_-_logo_full_%28Italy%2C_1997%29.svg',
-      website: 'https://www.pirelli.com/tyres/it-it/motorsport/formula-1',
-      tagline: 'Fornitore ufficiale di pneumatici della Formula 1'
-    },
-    'Spa-Francorchamps': {
-      name: 'Moet & Chandon',
-      logo: 'https://www.moet.com/themes/custom/moet/images/logo-red-header.png',
-      website: 'https://www.moet.com',
-      tagline: 'Official Logistics Partner della Formula 1'
-    },
-    'Monte Carlo': {
-      name: 'TAG Heuer',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/TAG_Heuer_logo.svg/1200px-TAG_Heuer_logo.svg.png',
-      website: 'https://www.tagheuer.com',
-      tagline: 'Cronometrista ufficiale del Gran Premio di Monaco'
-    },
-    'Silverstone': {
-      name: 'Qatar Airways',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Qatar_Airways_logo.svg/2560px-Qatar_Airways_logo.svg.png',
-      website: 'https://www.qatarairways.com',
-      tagline: 'Presenting Partner del Gran Premio di Gran Bretagna'
-    },
-    'Hungaroring': {
-      name: 'Lenovo',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Lenovo_Global_Corporate_Logo.png',
-      website: 'https://www.lenovo.com',
-      tagline: 'Global Partner e Tech Title sponsor della Formula 1'
-    },
-    'Imola': {
-      name: 'AWS',
-      logo: 'https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/aws-color.png',
-      website: 'https://aws.amazon.com/it/',
-      tagline: 'Title sponsor del Gran Premio del Made in Italy e dell’Emilia-Romagna'
-    },
-    'Jeddah': {
-      name: 'STC',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/STC-01.svg/2560px-STC-01.svg.png',
-      website: 'https://www.stc.com.sa',
-      tagline: 'Title sponsor del Gran Premio dell’Arabia Saudita'
-    },
-    'Sakhir': {
-      name: 'Gulf Air',
-      logo: 'https://tpconnects.com/wp-content/uploads/Gulf-Air-whitelogo.png',
-      website: 'https://www.gulfair.com',
-      tagline: 'Title sponsor del Grand Prix del Bahrain'
-    },
-    'Melbourne': {
-      name: 'Luis Vuitton',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Louis_Vuitton_Icon.svg/2074px-Louis_Vuitton_Icon.svg.png',
-      website: 'https://www.louisvuitton.com',
-      tagline: 'Title partner del Gran Premio d’Australia'
-    },
-    'Suzuka': {
-      name: 'Lenovo',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Lenovo_Global_Corporate_Logo.png',
-      website: 'https://www.lenovo.com',
-      tagline: 'Partner storico del circuito di Suzuka'
-    },
-    'Interlagos': {
-      name: 'Lenovo',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Lenovo_Global_Corporate_Logo.png',
-      website: 'https://www.lenovo.com',
-      tagline: 'Title sponsor del Gran Premio del Brasile'
-    },
-    'Yas Marina Circuit': {
-      name: 'Etihad Airways',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Etihad-airways-logo.svg/1280px-Etihad-airways-logo.svg.png',
-      website: 'https://www.etihad.com',
-      tagline: 'Partner ufficiale del Gran Premio di Abu Dhabi'
-    },
-    'Catalunya': {
-      name: 'Aramco',
-      logo: 'https://www.aramco.com/-/jssmedia/project/aramcocom/aramco-logo--white.png',
-      website: 'https://www.aramco.com',
-      tagline: 'Partner tecnologico della Formula 1'
-    },
-    'Zandvoort': {
-      name: 'Heineken',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Heineken_Logo.svg/1024px-Heineken_Logo.svg.png',
-      website: 'https://www.heineken.com',
-      tagline: 'Title sponsor del Dutch Grand Prix'
-    },
-    'Baku': {
-      name: 'Qatar Airways',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Qatar_Airways_logo.svg/2560px-Qatar_Airways_logo.svg.png',
-      website: 'https://www.qatarairways.com',
-      tagline: 'Partner del circuito cittadino di Baku'
-    },
-    'Singapore': {
-      name: 'Singapore Airlines',
-      logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6b/Singapore_Airlines_Logo_2.svg/330px-Singapore_Airlines_Logo_2.svg.png',
-      website: 'https://www.singaporeair.com',
-      tagline: 'Title sponsor del Singapore Grand Prix'
-    },
-    'Mexico City': {
-      name: 'Heineken',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Heineken_Logo.svg/1024px-Heineken_Logo.svg.png',
-      website: 'https://www.heineken.com',
-      tagline: 'Title sponsor del Gran Premio del Messico'
-    },
-    'Montreal': {
-      name: 'Pirelli',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Pirelli_-_logo_full_%28Italy%2C_1997%29.svg',
-      website: 'https://www.pirelli.com',
-      tagline: 'Partner del circuito Gilles Villeneuve'
-    },
-    'Shanghai': {
-      name: 'Heineken',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Heineken_Logo.svg/1024px-Heineken_Logo.svg.png',
-      website: 'https://www.heineken.com',
-      tagline: 'Partner tecnologico globale della Formula 1'
-    },
-    'Miami': {
-      name: 'Crypto.com',
-      logo: 'https://mkt-site-asset.crypto.com/assets/logo/crypto-com.svg',
-      website: 'https://crypto.com',
-      tagline: 'Title sponsor del Gran Premio di Miami'
-    },
-    'Las Vegas': {
-      name: 'Heineken',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Heineken_Logo.svg/1024px-Heineken_Logo.svg.png',
-      website: 'https://www.heineken.com',
-      tagline: 'Presenting partner del Las Vegas Grand Prix'
-    },
-    'Lusail': {
-      name: 'Qatar Airways',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Qatar_Airways_logo.svg/2560px-Qatar_Airways_logo.svg.png',
-      website: 'https://www.qatarairways.com',
-      tagline: 'Title sponsor del Gran Premio del Qatar'
-    },
-    'Spielberg': {
-      name: 'MSC Cruises',
-      logo: 'https://www.msccruises.com/int/-/media/global-contents/msc-logo/msc-cruises.svg',
-      website: 'https://www.msccruises.com',
-      tagline: 'Partner del Gran Premio d’Austria'
-    },
-    'Austin': {
-      name: 'MSC Cruises',
-      logo: 'https://www.msccruises.com/int/-/media/global-contents/msc-logo/msc-cruises.svg',
-      website: 'https://www.msccruises.com',
-      tagline: 'Title sponsor del Gran Premio degli Stati Uniti'
-    }
-  };
-  
-  defaultSponsor: SponsorInfo = {
-    name: 'Formula 1',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/F1.svg/512px-F1.svg.png',
-    website: 'https://www.formula1.com',
-    tagline: 'Partner ufficiale del campionato mondiale'
-  };
-  
 
   // Mappatura dei codici paese dell'API ai codici ISO 3166-1 alpha-2 per le bandiere
   countryCodeMapping: Record<string, string> = {
@@ -317,8 +128,16 @@ export class GranPremiDetailComponent implements OnInit {
     });
   }
   
-  getCircuitImage(circuitName: string): string {
-    return this.circuitImages[circuitName];
+  getCircuitImage(meeting: Meeting): string | undefined {
+    return circuitMapUrl(meeting.circuit_short_name) ?? meeting.circuit_image;
+  }
+
+  // Se la mappa dettagliata non esiste per questo circuito usa quella semplice di OpenF1
+  onCircuitImageError(event: Event, meeting: Meeting): void {
+    const img = event.target as HTMLImageElement;
+    if (meeting.circuit_image && img.src !== meeting.circuit_image) {
+      img.src = meeting.circuit_image;
+    }
   }
   
   // Converte i codici paese dell'API in codici ISO 3166-1 alpha-2 per le bandiere
@@ -326,9 +145,6 @@ export class GranPremiDetailComponent implements OnInit {
     return this.countryCodeMapping[apiCountryCode] || apiCountryCode.toLowerCase();
   }
   
-  private resolveSponsor(circuitName: string): SponsorInfo {
-    return this.circuitSponsors[circuitName] || this.defaultSponsor;
-  }
   
   // Formatta il fuso orario in formato italiano (24 ore)
   formatTimeOffset(offset: string): string {
@@ -658,7 +474,7 @@ export class GranPremiDetailComponent implements OnInit {
         return;
       }
 
-      this.currentSponsor = this.resolveSponsor(this.meeting.circuit_short_name);
+      this.currentSponsor = titleSponsor(this.meeting.meeting_official_name);
 
       // Carica piloti e poi sessioni per avere colori e nomi pronti prima della normalizzazione
       await this.loadDrivers(id);
@@ -700,8 +516,9 @@ export class GranPremiDetailComponent implements OnInit {
         'Haas F1 Team': '9C9FA2',
         'Williams': '1868DB',
         'Kick Sauber': '01C00E',
-        'Audi': '00A800',
-        'Cadillac': 'C41E3A'
+        'Racing Bulls': '6C98FF',
+        'Audi': 'F50537',
+        'Cadillac': '909090'
       };
       
       // Apply default team colors if missing

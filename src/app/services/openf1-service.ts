@@ -76,6 +76,7 @@ export interface Driver {
   name_acronym: string;
   team_name: string;
   team_color: string;
+  team_colour?: string; // nome del campo nell'API OpenF1
   first_name: string;
   last_name: string;
   country_code: string;
@@ -199,24 +200,34 @@ export class Openf1ServiceService {
         : `${this.baseUrl}/drivers?meeting_key=${key}`;
     }
 
-    return this.get<Driver[]>(url);
+    return this.normalizeDrivers(await this.get<Driver[]>(url));
+  }
+
+  /** Piloti dell'ultima sessione disputata (formazione attuale) */
+  async getLatestDrivers(): Promise<Driver[]> {
+    return this.normalizeDrivers(await this.get<Driver[]>(`${this.baseUrl}/drivers?session_key=latest`));
+  }
+
+  // L'API chiama il colore "team_colour": lo copiamo in team_color, usato in tutta l'app
+  private normalizeDrivers(drivers: Driver[]): Driver[] {
+    return drivers.map(d => ({ ...d, team_color: d.team_color || d.team_colour || '' }));
   }
 
   async getDriverByNumber(driverNumber: number): Promise<Driver | null> {
     const url = `${this.baseUrl}/drivers?driver_number=${driverNumber}`;
-    const list = await this.get<Driver[]>(url);
+    const list = this.normalizeDrivers(await this.get<Driver[]>(url));
     return list && list.length ? list[0] : null;
   }
 
   async getDriverByAcronym(acronym: string): Promise<Driver | null> {
     const url = `${this.baseUrl}/drivers?name_acronym=${acronym.toUpperCase()}`;
-    const list = await this.get<Driver[]>(url);
+    const list = this.normalizeDrivers(await this.get<Driver[]>(url));
     return list && list.length ? list[0] : null;
   }
 
   async getDriverByFullName(fullName: string): Promise<Driver | null> {
     const url = `${this.baseUrl}/drivers?full_name=${encodeURIComponent(fullName)}`;
-    const list = await this.get<Driver[]>(url);
+    const list = this.normalizeDrivers(await this.get<Driver[]>(url));
     return list && list.length ? list[0] : null;
   }
 

@@ -25,7 +25,7 @@
         <h2>Circuito</h2>
         <div class="circuit-container">
           <div class="circuit-image">
-            <img [src]="getCircuitImage(meeting.circuit_short_name)" [alt]="meeting.circuit_short_name" class="circuit-map">
+            <img [src]="getCircuitImage(meeting)" (error)="onCircuitImageError($event, meeting)" [alt]="meeting.circuit_short_name" class="circuit-map">
           </div>
           <div class="circuit-info">
             <h3>{{ meeting.circuit_short_name }}</h3>
@@ -95,9 +95,9 @@
             <img [src]="currentSponsor.logo" [alt]="currentSponsor.name" class="sponsor-logo" />
           </div>
           <div class="sponsor-info">
-            <div class="sponsor-label">Sponsor del circuito</div>
+            <div class="sponsor-label">Title sponsor</div>
             <h3 class="sponsor-name">{{ currentSponsor.name }}</h3>
-            <p class="sponsor-tagline" *ngIf="currentSponsor.tagline">{{ currentSponsor.tagline }}</p>
+            <p class="sponsor-tagline">Sponsor principale di questo Gran Premio</p>
             <a *ngIf="currentSponsor.website" [href]="currentSponsor.website" target="_blank" rel="noopener" class="sponsor-link">
               Scopri di più
               <i class="pi pi-external-link"></i>

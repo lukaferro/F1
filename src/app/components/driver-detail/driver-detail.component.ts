@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
+import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
 
 @Component({
   selector: 'app-driver-detail',
@@ -101,9 +102,7 @@ export class DriverDetailComponent implements OnInit {
 
   // Nomi alternativi per ricerca Wikipedia (alcuni piloti hanno nomi diversi su Wikipedia)
   private readonly wikiNameVariants: Record<string, string[]> = {
-    'GABRIEL BORTOLETO': ['Gabriel Bortoleto', 'Gabriel Bortoletto'],
     'ISACK HADJAR': ['Isack Hadjar', 'Isack Hadjar (racing driver)'],
-    'JACK DOOHAN': ['Jack Doohan', 'Jack Doohan (racing driver)'],
     'ANDREA KIMI ANTONELLI': ['Andrea Kimi Antonelli', 'Kimi Antonelli', 'Andrea Antonelli'],
     'LIAM LAWSON': ['Liam Lawson', 'Liam Lawson (racing driver)'],
     'OLIVER BEARMAN': ['Oliver Bearman', 'Ollie Bearman'],
@@ -116,7 +115,6 @@ export class DriverDetailComponent implements OnInit {
   private readonly driverPhotos: { [key: string]: string } = {
     'MAX VERSTAPPEN': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyNC9kcml2ZXJzL2hlYWRzaG90cy9mMS92ZXIucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
     'SERGIO PEREZ': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyMi9kcml2ZXJzL2hlYWRzaG90cy9mMS9wZXIucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
-    'LEWIS HAMILTON': 'https://www.autoformulastore.com/cdn/shop/collections/AF_FEED_INSTA_15.png?v=1743169809&width=1500',
     'GEORGE RUSSELL': 'https://static.sky.it/images/skysport/it/motori/formula-1/piloti/george-russell.png?im=Resize,width=270',
     'CHARLES LECLERC': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyNC9kcml2ZXJzL2hlYWRzaG90cy9mMS9sZWMucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
     'CARLOS SAINZ': 'https://cdn.williamsf1.tech/images/fnx611yr/production/6971f174c05a7f0397e2cbe32cd42ab0255f2dce-3136x3135.png?rect=1,0,3135,3135&w=625&h=625&auto=format',
@@ -138,9 +136,7 @@ export class DriverDetailComponent implements OnInit {
     'OLIVER BEARMAN': 'https://www.olliebearman.com/media/pages/home/b4d938add1-1740818186/about-home-1200x.webp',
     'FRANCO COLAPINTO': 'https://static.sky.it/images/skysport/it/motori/formula-1/piloti/franco-colapinto.png?im=Resize,width=270',
     'ANDREA KIMI ANTONELLI': 'https://images.ctfassets.net/1fvlg6xqnm65/5YiTw6xQHuM94ty9yLDnyk/ff67d40c690940307f48d1b370352577/Kimi_Antonelli.png',
-    'GABRIEL BORTOLETO': 'https://www.autoformulastore.com/cdn/shop/collections/bortoleto.png?v=1743170302',
     'ISACK HADJAR': 'https://soymotor.com/sites/default/files/2025-03/ihadjar_2025.png',
-    'JACK DOOHAN': 'https://cdn.racingnews365.com/_570x570_crop_center-center_none/jacdoo01.png?v=1741600637',
     'NYCK DE VRIES': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyMy9kcml2ZXJzL2hlYWRzaG90cy9mMS9kZXYucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
     'LIAM LAWSON': 'https://static.sky.it/images/skysport/it/motori/formula-1/piloti/liam-lawson.png?im=Resize,width=270'
   };
@@ -189,6 +185,23 @@ export class DriverDetailComponent implements OnInit {
     try {
       if (!this.driver?.name_acronym) return;
       const acronym = this.driver.name_acronym.toUpperCase();
+      this.currentPhoto = undefined;
+
+      // Se il pilota è nella griglia attuale usiamo team, colore e foto ufficiale della stagione in corso
+      const current = (await this.openF1Service.getLatestDrivers())
+        .find(d => (d.name_acronym || '').toUpperCase() === acronym);
+      if (current) {
+        this.driver = {
+          ...this.driver,
+          team_name: current.team_name || this.driver.team_name,
+          team_color: current.team_color || this.driver.team_color,
+          driver_number: current.driver_number || this.driver.driver_number,
+          headshot_url: current.headshot_url || this.driver.headshot_url
+        };
+        this.currentPhoto = currentSeasonPhotoUrl(current);
+        return;
+      }
+
       const nowYear = new Date().getFullYear();
       const yearsToTry = [nowYear, nowYear - 1];
 
@@ -219,16 +232,31 @@ export class DriverDetailComponent implements OnInit {
     }
   }
 
+  private readonly fallbackPhoto = 'https://static.vecteezy.com/system/resources/thumbnails/024/182/341/small_2x/f1-logo-symbol-red-and-black-design-f1-icon-vector.jpg';
+
+  // Foto ufficiale ad alta risoluzione della stagione in corso (solo per i piloti in griglia)
+  currentPhoto?: string;
+
   getDriverImage(driver: Driver | null): string {
-    const fallback = 'https://static.vecteezy.com/system/resources/thumbnails/024/182/341/small_2x/f1-logo-symbol-red-and-black-design-f1-icon-vector.jpg';
-    if (!driver) return fallback;
+    if (!driver) return this.fallbackPhoto;
+    if (this.currentPhoto) return this.currentPhoto;
+
+    const headshot = hiResHeadshotUrl(driver.headshot_url);
+    if (headshot) return headshot;
 
     const key = (driver.full_name || driver.broadcast_name || '').trim().toUpperCase();
-    if (key && this.driverPhotos[key]) {
-      return this.driverPhotos[key];
-    }
+    return this.driverPhotos[key] || this.fallbackPhoto;
+  }
 
-    return driver.headshot_url || fallback;
+  // Se la foto non si carica passa alla successiva disponibile
+  onDriverImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    const headshot = hiResHeadshotUrl(this.driver?.headshot_url);
+    if (headshot && img.src !== headshot) {
+      img.src = headshot;
+    } else if (img.src !== this.fallbackPhoto) {
+      img.src = this.fallbackPhoto;
+    }
   }
 
   getInitialLast(driver: Driver | null): string {
@@ -266,9 +294,7 @@ export class DriverDetailComponent implements OnInit {
     // Ottieni varianti nome da cercare
     const nameKey = fullName.toUpperCase();
     const wikiNameVariants: Record<string, string[]> = {
-      'GABRIEL BORTOLETO': ['Gabriel Bortoleto', 'Gabriel Bortoletto'],
       'ISACK HADJAR': ['Isack Hadjar', 'Isack Hadjar (racing driver)'],
-      'JACK DOOHAN': ['Jack Doohan', 'Jack Doohan (racing driver)'],
       'ANDREA KIMI ANTONELLI': ['Andrea Kimi Antonelli', 'Kimi Antonelli', 'Andrea Antonelli'],
       'LIAM LAWSON': ['Liam Lawson', 'Liam Lawson (racing driver)'],
       'OLIVER BEARMAN': ['Oliver Bearman', 'Ollie Bearman'],

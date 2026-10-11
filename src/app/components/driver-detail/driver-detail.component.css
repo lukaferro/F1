@@ -48,6 +48,7 @@
   width: 160px;
   height: 160px;
   object-fit: cover;
+  object-position: top;
   border-radius: 14px;
   border: 2px solid rgba(255,255,255,0.08);
   background: #0b0b0b;
@@ -221,6 +222,9 @@
 .career-item.stat-champs {
   background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
   border: 1px solid rgba(255,255,255,0.08);
+}
+.career-item .champs-icon {
+  color: #f5c518; /* oro per i titoli mondiali */
 }
 .career-item.full-width {
   grid-column: 1 / -1;
