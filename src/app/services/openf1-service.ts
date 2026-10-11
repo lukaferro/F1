@@ -3,14 +3,6 @@ import { inject, Injectable, signal } from '@angular/core';
 import { Meeting } from '../models/meeting';
 import { firstValueFrom } from 'rxjs';
 
-export interface StartingGrid {
-  position: number;
-  driver_number: number;
-  lap_duration: number;
-  meeting_key: number;
-  session_key: number;
-}
-
 export interface Stint {
   compound: string;
   driver_number: number;
@@ -52,14 +44,6 @@ export interface Pit {
   session_key: number;
 }
 
-export interface Position {
-  date: string;
-  driver_number: number;
-  meeting_key: number;
-  position: number;
-  session_key: number;
-}
-
 export interface Overtake {
   date: string;
   meeting_key: number;
@@ -84,8 +68,10 @@ export interface Driver {
 }
 
 export interface Session {
-  id: number;
+  session_key: number;
   meeting_key: number;
+  year?: number;
+  is_cancelled?: boolean;
   session_name: string;
   session_type: string;
   date_start: string;
@@ -119,7 +105,17 @@ export class Openf1ServiceService {
   private readonly http = inject(HttpClient); //importare funzionalità per chiamate HTTP
   private readonly baseUrl = 'https://api.openf1.org/v1'; //base URL per le API di OpenF1
   private readonly cachePrefix = 'openf1:';
-  private readonly cacheTtlMs = 30 * 60 * 1000; // dopo 30 minuti la cache viene riaggiornata dall'API
+  // Liste generali (calendario, griglia attuale) possono cambiare: si riaggiornano dopo 30 minuti
+  private readonly shortTtlMs = 30 * 60 * 1000;
+  // Dati legati a una sessione o a un GP specifico non cambiano più una volta finiti
+  private readonly longTtlMs = 24 * 60 * 60 * 1000;
+  // Risposte più grandi non vengono salvate nel localStorage (limite ~5MB per sito)
+  private readonly maxCachedChars = 400_000;
+
+  // Cache in memoria (evita di rileggere e decodificare il localStorage a ogni chiamata)
+  private readonly memoryCache = new Map<string, { savedAt: number; data: unknown }>();
+  // Richieste già partite: chi chiede lo stesso URL nel frattempo aspetta la stessa risposta
+  private readonly inFlight = new Map<string, Promise<unknown>>();
 
   /**
    * Stato dell'ultima chiamata all'API:
@@ -129,12 +125,36 @@ export class Openf1ServiceService {
    */
   readonly apiStatus = signal<'ok' | 'stale' | 'error'>('ok');
 
-  // GET con cache in localStorage: usa la cache se recente, altrimenti chiama l'API
+  // GET con cache: usa la cache se recente, altrimenti chiama l'API
   // e, se l'API fallisce (es. sessione live in corso), ripiega sulla cache anche se vecchia.
-  private async get<T>(url: string): Promise<T> {
+  private get<T>(url: string): Promise<T> {
+    const pending = this.inFlight.get(url);
+    if (pending) return pending as Promise<T>;
+
+    const request = this.load<T>(url).finally(() => this.inFlight.delete(url));
+    this.inFlight.set(url, request);
+    return request;
+  }
+
+  /** Come get, ma se l'API non ha quel dato (404) restituisce una lista vuota */
+  private async getList<T>(url: string): Promise<T[]> {
+    try {
+      return await this.get<T[]>(url);
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 404) return [];
+      throw err;
+    }
+  }
+
+  private ttlFor(url: string): number {
+    return /(session_key|meeting_key)=\d/.test(url) ? this.longTtlMs : this.shortTtlMs;
+  }
+
+  private async load<T>(url: string): Promise<T> {
     const key = this.cachePrefix + url;
-    const cached = this.readCache<T>(key);
-    if (cached && Date.now() - cached.savedAt < this.cacheTtlMs) {
+    const cached = (this.memoryCache.get(key) ?? this.readCache<T>(key)) as { savedAt: number; data: T } | null;
+    if (cached && Date.now() - cached.savedAt < this.ttlFor(url)) {
+      this.memoryCache.set(key, cached);
       return cached.data;
     }
 
@@ -157,11 +177,13 @@ export class Openf1ServiceService {
     }
   }
 
-  // OpenF1 accetta circa 3 richieste al secondo: oltre risponde 429 e i dati mancano.
-  // Le richieste partono quindi in fila, distanziate, e quelle rifiutate vengono ritentate.
+  // OpenF1 (piano gratuito) accetta 3 richieste al secondo e 30 al minuto: oltre risponde 429.
+  // Le richieste partono quindi in fila rispettando entrambi i limiti; le poche rifiutate
+  // (es. altre schede aperte sulla stessa rete) vengono ritentate.
   private readonly minRequestGapMs = 350;
-  private readonly retryDelaysMs = [1000, 2000, 4000];
-  private nextRequestAt = 0;
+  private readonly maxRequestsPerMinute = 28; // margine sotto il limite di 30
+  private readonly retryDelaysMs = [2000, 8000, 20000];
+  private readonly scheduledRequests: number[] = []; // orari di partenza, in ordine
 
   private async fetchWithRetry<T>(url: string): Promise<T> {
     for (let attempt = 0; ; attempt++) {
@@ -181,8 +203,20 @@ export class Openf1ServiceService {
 
   private async waitForRequestSlot(): Promise<void> {
     const now = Date.now();
-    const startAt = Math.max(now, this.nextRequestAt);
-    this.nextRequestAt = startAt + this.minRequestGapMs;
+    const minute = 60_000;
+    while (this.scheduledRequests.length && this.scheduledRequests[0] <= now - minute) {
+      this.scheduledRequests.shift();
+    }
+
+    const last = this.scheduledRequests[this.scheduledRequests.length - 1] ?? 0;
+    let startAt = Math.max(now, last + this.minRequestGapMs);
+    // Già 28 richieste nell'ultimo minuto: aspettiamo che la più vecchia esca dalla finestra
+    if (this.scheduledRequests.length >= this.maxRequestsPerMinute) {
+      const oldestInWindow = this.scheduledRequests[this.scheduledRequests.length - this.maxRequestsPerMinute];
+      startAt = Math.max(startAt, oldestInWindow + minute);
+    }
+    this.scheduledRequests.push(startAt);
+
     if (startAt > now) {
       await new Promise(resolve => setTimeout(resolve, startAt - now));
     }
@@ -198,16 +232,28 @@ export class Openf1ServiceService {
   }
 
   private writeCache(key: string, data: unknown): void {
+    const entry = { savedAt: Date.now(), data };
+    this.memoryCache.set(key, entry);
+
+    const json = JSON.stringify(entry);
+    if (json.length > this.maxCachedChars) return;
     try {
-      localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), data }));
+      localStorage.setItem(key, json);
     } catch {
-      // localStorage pieno o non disponibile: svuotiamo la nostra cache e andiamo avanti senza
-      try {
-        Object.keys(localStorage)
-          .filter(k => k.startsWith(this.cachePrefix))
-          .forEach(k => localStorage.removeItem(k));
-      } catch { /* ignorato */ }
+      // localStorage pieno: liberiamo le voci più vecchie e riproviamo una volta
+      this.evictOldest();
+      try { localStorage.setItem(key, json); } catch { /* resta solo in memoria */ }
     }
+  }
+
+  private evictOldest(): void {
+    try {
+      const entries = Object.keys(localStorage)
+        .filter(k => k.startsWith(this.cachePrefix))
+        .map(k => ({ k, savedAt: this.readCache(k)?.savedAt ?? 0 }))
+        .sort((a, b) => a.savedAt - b.savedAt);
+      entries.slice(0, Math.ceil(entries.length / 2)).forEach(e => localStorage.removeItem(e.k));
+    } catch { /* ignorato */ }
   }
 
   async getMeetings(year?: number) : Promise<Meeting[]> {
@@ -218,11 +264,6 @@ export class Openf1ServiceService {
       return this.get<Meeting[]>(url);
   }
 
-    async getMeeting(meetingKey: number): Promise<Session[]> {
-    const url = `${this.baseUrl}/meetings?meeting_key=${meetingKey}`;
-    return this.get<Session[]>(url);
-  }
-  
   /**
    * Get drivers. By default treats the numeric key as meeting_key. If you need to fetch by session_key,
    * pass type = 'session'.
@@ -235,7 +276,7 @@ export class Openf1ServiceService {
         : `${this.baseUrl}/drivers?meeting_key=${key}`;
     }
 
-    return this.normalizeDrivers(await this.get<Driver[]>(url));
+    return this.normalizeDrivers(await this.getList<Driver>(url));
   }
 
   /** Piloti dell'ultima sessione disputata (formazione attuale) */
@@ -248,67 +289,50 @@ export class Openf1ServiceService {
     return drivers.map(d => ({ ...d, team_color: d.team_color || d.team_colour || '' }));
   }
 
+  // L'API restituisce una riga per ogni sessione disputata, dalla più vecchia: prendiamo la più recente
   async getDriverByNumber(driverNumber: number): Promise<Driver | null> {
     const url = `${this.baseUrl}/drivers?driver_number=${driverNumber}`;
-    const list = this.normalizeDrivers(await this.get<Driver[]>(url));
-    return list && list.length ? list[0] : null;
+    const list = this.normalizeDrivers(await this.getList<Driver>(url));
+    return list.length ? list[list.length - 1] : null;
   }
 
   async getDriverByAcronym(acronym: string): Promise<Driver | null> {
     const url = `${this.baseUrl}/drivers?name_acronym=${acronym.toUpperCase()}`;
-    const list = this.normalizeDrivers(await this.get<Driver[]>(url));
-    return list && list.length ? list[0] : null;
+    const list = this.normalizeDrivers(await this.getList<Driver>(url));
+    return list.length ? list[list.length - 1] : null;
   }
 
-  async getDriverByFullName(fullName: string): Promise<Driver | null> {
-    const url = `${this.baseUrl}/drivers?full_name=${encodeURIComponent(fullName)}`;
-    const list = this.normalizeDrivers(await this.get<Driver[]>(url));
-    return list && list.length ? list[0] : null;
-  }
-
-  // Additional useful endpoints that appear in the data samples the UI may consume.
-  async getStartingGrid(sessionKey: number): Promise<StartingGrid[]> {
-    const url = `${this.baseUrl}/starting_grid?session_key=${sessionKey}`;
-    return this.get<StartingGrid[]>(url);
-  }
-
+  // Dati delle singole sessioni: se l'API non li ha (404) arriva una lista vuota
   async getStints(sessionKey: number): Promise<Stint[]> {
-    const url = `${this.baseUrl}/stints?session_key=${sessionKey}`;
-    return this.get<Stint[]>(url);
+    return this.getList<Stint>(`${this.baseUrl}/stints?session_key=${sessionKey}`);
   }
 
   async getTeamRadio(sessionKey: number): Promise<TeamRadio[]> {
-    const url = `${this.baseUrl}/team_radio?session_key=${sessionKey}`;
-    return this.get<TeamRadio[]>(url);
+    return this.getList<TeamRadio>(`${this.baseUrl}/team_radio?session_key=${sessionKey}`);
   }
 
   async getWeather(sessionKey: number): Promise<Weather[]> {
-    const url = `${this.baseUrl}/weather?session_key=${sessionKey}`;
-    return this.get<Weather[]>(url);
+    return this.getList<Weather>(`${this.baseUrl}/weather?session_key=${sessionKey}`);
   }
 
   async getPits(sessionKey: number): Promise<Pit[]> {
-    const url = `${this.baseUrl}/pits?session_key=${sessionKey}`;
-    return this.get<Pit[]>(url);
-  }
-
-  async getPositions(sessionKey: number): Promise<Position[]> {
-    const url = `${this.baseUrl}/positions?session_key=${sessionKey}`;
-    return this.get<Position[]>(url);
+    return this.getList<Pit>(`${this.baseUrl}/pit?session_key=${sessionKey}`);
   }
 
   async getOvertakes(sessionKey: number): Promise<Overtake[]> {
-    const url = `${this.baseUrl}/overtakes?session_key=${sessionKey}`;
-    return this.get<Overtake[]>(url);
+    return this.getList<Overtake>(`${this.baseUrl}/overtakes?session_key=${sessionKey}`);
   }
-  
+
+  /** Tutte le gare (session_name = Race) di tutte le stagioni, con una sola richiesta */
+  async getRaceSessions(): Promise<Session[]> {
+    return this.getList<Session>(`${this.baseUrl}/sessions?session_name=Race`);
+  }
+
   async getSessions(meetingKey: number): Promise<Session[]> {
-    const url = `${this.baseUrl}/sessions?meeting_key=${meetingKey}`;
-    return this.get<Session[]>(url);
+    return this.getList<Session>(`${this.baseUrl}/sessions?meeting_key=${meetingKey}`);
   }
-  
+
   async getResults(sessionKey: number): Promise<Result[]> {
-    const url = `${this.baseUrl}/session_result?session_key=${sessionKey}`;
-    return this.get<Result[]>(url);
+    return this.getList<Result>(`${this.baseUrl}/session_result?session_key=${sessionKey}`);
   }
 }

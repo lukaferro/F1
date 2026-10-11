@@ -9,6 +9,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
+import { TEAM_COLORS } from '../../utils/team-colors';
 
 interface YearOption {
   label: string;
@@ -36,25 +37,9 @@ export class DriversComponent implements OnInit {
   selectedYear: number | null = null;
   searchQuery: string = '';
 
-  // Colori predefiniti per i team (stessi usati in gran-premi-detail)
-  teamColors: { [key: string]: string } = {
-    'Red Bull Racing': '1D19AC',
-    'Mercedes': '00D7B6',
-    'Ferrari': 'ED1131',
-    'McLaren': 'F47600',
-    'Aston Martin': '229971',
-    'Alpine': '00A1E8',
-    'AlphaTauri': '6C98FF',
-    'Alfa Romeo': 'C92D4B',
-    'Haas F1 Team': '9C9FA2',
-    'Williams': '1868DB',
-    'RB': '6692FF',
-    'Kick Sauber': '01C00E',
-    'Racing Bulls': '6C98FF',
-    'Audi': 'F50537',
-    'Cadillac': '909090'
-  };
-  
+  // Colori di riserva dei team (stessi usati in gran-premi-detail)
+  readonly teamColors = TEAM_COLORS;
+
   // Mappa dei piloti con foto ufficiali da Formula1.com (chiavi in MAIUSCOLO "Nome Cognome")
   private readonly driverPhotos: { [key: string]: string } = {
     'MAX VERSTAPPEN': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyNC9kcml2ZXJzL2hlYWRzaG90cy9mMS92ZXIucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
@@ -116,64 +101,42 @@ export class DriversComponent implements OnInit {
     this.error = undefined;
 
     try {
-      // Carica tutti i meeting disponibili
-      const allMeetings = await this.openF1Service.getMeetings();
-      await this.loadCurrentPhotos();
+      // Tutte le gare di tutte le stagioni (una richiesta) e griglia attuale, insieme
+      const [races] = await Promise.all([this.openF1Service.getRaceSessions(), this.loadCurrentPhotos()]);
 
-      // Raggruppa meeting per anno e prendi il primo meeting di ogni anno
-      const yearMeetings = new Map<number, number[]>();
-      allMeetings.forEach(meeting => {
-        if (!yearMeetings.has(meeting.year)) {
-          yearMeetings.set(meeting.year, []);
+      // Gare già corse, raggruppate per stagione in ordine di data
+      const now = Date.now();
+      const racesByYear = new Map<number, number[]>();
+      [...races]
+        .filter(r => !r.is_cancelled && new Date(r.date_end).getTime() < now)
+        .sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime())
+        .forEach(r => {
+          const year = r.year ?? new Date(r.date_start).getFullYear();
+          if (!racesByYear.has(year)) racesByYear.set(year, []);
+          racesByYear.get(year)!.push(r.session_key);
+        });
+
+      // Per ogni stagione i piloti della prima e dell'ultima gara: così compaiono anche i cambi
+      // a metà stagione, ma non chi ha girato solo nelle prove libere.
+      // Tutto in parallelo: il service mette in fila le richieste rispettando il limite dell'API
+      await Promise.all([...racesByYear.entries()].map(async ([year, sessionKeys]) => {
+        const keys = [...new Set([sessionKeys[0], sessionKeys[sessionKeys.length - 1]])];
+        const lists = await Promise.all(keys.map(k => this.openF1Service.getDrivers(k, 'session').catch(() => [] as Driver[])));
+
+        // Unione per nome: per chi c'è in entrambe resta il dato dell'ultima gara (team attuale)
+        const byName = new Map<string, Driver>();
+        for (const driver of lists.flat()) {
+          if (this.isExcluded(driver)) continue;
+          byName.set(this.photoKey(driver), {
+            ...driver,
+            team_color: driver.team_color || this.teamColors[driver.team_name] || 'FFFFFF'
+          });
         }
-        yearMeetings.get(meeting.year)!.push(meeting.meeting_key);
-      });
 
-      // Carica i piloti per ogni anno provando diversi meeting se necessario
-      for (const [year, meetingKeys] of yearMeetings.entries()) {
-        let driversLoaded = false;
-        
-        // Prova con i primi meeting dell'anno fino a trovare dati
-        for (const meetingKey of meetingKeys.slice(0, 3)) {
-          try {
-            const driversOfYear = (await this.openF1Service.getDrivers(meetingKey, 'meeting'))
-              .filter(driver => !this.isExcluded(driver));
-
-            if (driversOfYear.length === 0) {
-              continue; // Prova il prossimo meeting
-            }
-
-            // Deduplica per driver_number mantenendo l'entry con più info (es. team_color)
-            const yearDriversMap = new Map<number, Driver>();
-            driversOfYear.forEach(driver => {
-              const existing = yearDriversMap.get(driver.driver_number);
-              if (!existing || (driver.team_color && !existing.team_color)) {
-                yearDriversMap.set(
-                  driver.driver_number,
-                  {
-                    ...driver,
-                    team_color: driver.team_color || this.teamColors[driver.team_name] || 'FFFFFF'
-                  }
-                );
-              }
-            });
-
-            const processedDrivers = Array.from(yearDriversMap.values()).sort((a, b) => a.driver_number - b.driver_number);
-            this.allDrivers.set(year, processedDrivers);
-            driversLoaded = true;
-
-            // Piccola pausa tra le richieste per evitare rate limiting
-            await new Promise(resolve => setTimeout(resolve, 200));
-            break; // Trovati i piloti, passa all'anno successivo
-          } catch (err) {
-            // Prova il prossimo meeting
-          }
+        if (byName.size) {
+          this.allDrivers.set(year, [...byName.values()].sort((a, b) => a.driver_number - b.driver_number));
         }
-        
-        if (!driversLoaded) {
-          // Se non ci sono piloti per l'anno corrente, non aggiungere l'anno
-        }
-      }
+      }));
 
       // Nessun pilota caricato perché l'API non risponde: mostriamo l'avviso
       if (this.allDrivers.size === 0 && this.openF1Service.apiStatus() === 'error') {

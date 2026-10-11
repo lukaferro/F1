@@ -3,12 +3,12 @@
     <div class="back-button">
       <p-button icon="pi pi-arrow-left" styleClass="p-button-text" label="Torna ai Gran Premi" routerLink="/granpremi"></p-button>
     </div>
-    
+
     <div class="header-content">
       <div class="flag-container">
         <img [src]="'https://flagcdn.com/w320/' + getCountryFlagCode(meeting.country_code) + '.png'" [alt]="meeting.country_name" class="country-flag">
       </div>
-      
+
       <div class="title-container">
         <h1 class="gp-title">{{ meeting.meeting_official_name }}</h1>
         <div class="gp-subtitle">
@@ -18,7 +18,7 @@
       </div>
     </div>
   </div>
-  
+
   <div class="detail-content">
     <div class="detail-main">
       <section class="circuit-section">
@@ -43,7 +43,7 @@
           </div>
         </div>
       </section>
-      
+
       <section class="info-section">
         <h2>Informazioni</h2>
         <div class="info-grid">
@@ -56,7 +56,7 @@
               <p>{{ meeting.meeting_official_name }}</p>
             </div>
           </div>
-          
+
           <div class="info-card">
             <div class="info-icon">
               <i class="pi pi-tag"></i>
@@ -66,7 +66,7 @@
               <p>{{ meeting.meeting_name }}</p>
             </div>
           </div>
-          
+
           <div class="info-card">
             <div class="info-icon">
               <i class="pi pi-map-marker"></i>
@@ -76,7 +76,7 @@
               <p>{{ meeting.location }}, {{ meeting.country_name }}</p>
             </div>
           </div>
-          
+
           <div class="info-card">
             <div class="info-icon">
               <i class="pi pi-calendar"></i>
@@ -120,47 +120,22 @@
           <div class="session-body" *ngIf="expandedSessionKey === session.session_key">
             <!-- Tab menu -->
             <div class="session-tabs">
-              <button class="tab-button" 
-                [class.active]="activeTab[session.session_key] === 'results'"
-                (click)="setActiveTab(session.session_key, 'results')">
-                Risultati
-              </button>
-              <button class="tab-button" 
-                [class.active]="activeTab[session.session_key] === 'stints'"
-                (click)="setActiveTab(session.session_key, 'stints')"
-                *ngIf="stints[session.session_key]?.length">
-                Stint
-              </button>
-              <button class="tab-button" 
-                [class.active]="activeTab[session.session_key] === 'radio'"
-                (click)="setActiveTab(session.session_key, 'radio')"
-                *ngIf="teamRadios[session.session_key]?.length">
-                Team Radio
-              </button>
-              <button class="tab-button" 
-                [class.active]="activeTab[session.session_key] === 'weather'"
-                (click)="setActiveTab(session.session_key, 'weather')"
-                *ngIf="weather[session.session_key]?.length">
-                Meteo
-              </button>
-              <button class="tab-button" 
-                [class.active]="activeTab[session.session_key] === 'pits'"
-                (click)="setActiveTab(session.session_key, 'pits')"
-                *ngIf="pits[session.session_key]?.length">
-                Pit Stop
-              </button>
-              <button class="tab-button" 
-                [class.active]="activeTab[session.session_key] === 'overtakes'"
-                (click)="setActiveTab(session.session_key, 'overtakes')"
-                *ngIf="overtakes[session.session_key]?.length">
-                Sorpassi
+              <button *ngFor="let tab of sessionTabs" class="tab-button"
+                [class.active]="activeTab[session.session_key] === tab.id"
+                (click)="setActiveTab(session.session_key, tab.id)">
+                {{ tab.label }}
               </button>
             </div>
 
+            <div *ngIf="isTabLoading(session.session_key, activeTab[session.session_key])" class="tab-status">
+              <i class="pi pi-spin pi-spinner"></i> Caricamento...
+            </div>
+
             <!-- Results tab -->
-            <div *ngIf="activeTab[session.session_key] === 'results'">
-              <p-table
-                [value]="sessionResultsNormalized[session.session_key] || []"
+            <div *ngIf="activeTab[session.session_key] === 'results' && !isTabLoading(session.session_key, 'results')">
+              <p *ngIf="!sessionResultsNormalized[session.session_key]?.length" class="tab-status">Risultati non disponibili per questa sessione.</p>
+              <p-table *ngIf="sessionResultsNormalized[session.session_key]?.length"
+                [value]="sessionResultsNormalized[session.session_key]"
                 styleClass="results-table"
                 responsiveLayout="scroll"
               >
@@ -220,19 +195,28 @@
             </div>
 
             <!-- Stints tab -->
-            <div *ngIf="activeTab[session.session_key] === 'stints' && getGroupedStints(session.session_key)">
-              <p-table [value]="getGroupedStints(session.session_key)" styleClass="compact-table">
+            <div *ngIf="activeTab[session.session_key] === 'stints' && !isTabLoading(session.session_key, 'stints')">
+              <p *ngIf="!groupedStints[session.session_key]?.length" class="tab-status">Dati sulle gomme non disponibili per questa sessione.</p>
+              <div *ngIf="groupedStints[session.session_key]?.length" class="tyre-legend">
+                <span class="tyre-legend-item"><span class="tyre-dot soft"></span>Soft</span>
+                <span class="tyre-legend-item"><span class="tyre-dot medium"></span>Medium</span>
+                <span class="tyre-legend-item"><span class="tyre-dot hard"></span>Hard</span>
+                <span class="tyre-legend-item"><span class="tyre-dot intermediate"></span>Intermedie</span>
+                <span class="tyre-legend-item"><span class="tyre-dot wet"></span>Da bagnato</span>
+                <span class="tyre-legend-hint">Passa il mouse su un segmento per i dettagli</span>
+              </div>
+              <p-table *ngIf="groupedStints[session.session_key]?.length" [value]="groupedStints[session.session_key]" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
                     <th style="width: 8%;">Pos</th>
                     <th style="width: 24%;">Pilota</th>
-                    <th style="width: 18%;">Team</th>
-                    <th style="width: 50%;">Strategia Stint</th>
+                    <th style="width: 16%;">Team</th>
+                    <th style="width: 52%;">Strategia gomme</th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-driverStint>
                   <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(driverStint.driver_number))">
-                    <td style="text-align: center; font-weight: bold;">{{ driverStint.position }}</td>
+                    <td style="text-align: center; font-weight: bold; white-space: nowrap;">{{ driverStint.positionLabel }}</td>
                     <td>
                       <div class="driver-info">
                         <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(driverStint.driver_number)" [style.color]="'#000'">{{ driverStint.driver_number }}</span>
@@ -241,14 +225,9 @@
                     </td>
                     <td>{{ getDriverTeam(driverStint.driver_number) }}</td>
                     <td>
-                      <div class="stint-strategy">
-                        <div *ngFor="let stint of driverStint.stints" class="stint-item">
-                          <span class="stint-label">Stint {{ stint.stint_number }}:</span>
-                          <span class="tyre-compound" [class]="stint.compound.toLowerCase()">
-                            {{ stint.compound }}
-                          </span>
-                          <span class="stint-detail">Giri {{ stint.lap_start }}-{{ stint.lap_end }} (Età: {{ stint.tyre_age_at_start }})</span>
-                        </div>
+                      <div class="tyre-bar">
+                        <div *ngFor="let seg of driverStint.segments" class="tyre-segment" [ngClass]="seg.compound"
+                          [style.width.%]="seg.widthPct" [title]="seg.tooltip">{{ seg.widthPct >= 4 ? seg.short : '' }}</div>
                       </div>
                     </td>
                   </tr>
@@ -257,7 +236,8 @@
             </div>
 
             <!-- Team Radio tab -->
-            <div *ngIf="activeTab[session.session_key] === 'radio' && teamRadios[session.session_key]">
+            <div *ngIf="activeTab[session.session_key] === 'radio' && !isTabLoading(session.session_key, 'radio')">
+              <p *ngIf="!teamRadios[session.session_key]?.length" class="tab-status">Nessun team radio disponibile per questa sessione.</p>
               <div class="radio-list">
                 <div *ngFor="let radio of teamRadios[session.session_key]" class="radio-item">
                   <div class="radio-header">
@@ -273,8 +253,9 @@
             </div>
 
             <!-- Weather tab -->
-            <div *ngIf="activeTab[session.session_key] === 'weather' && getFilteredWeather(session.session_key)">
-              <p-table [value]="getFilteredWeather(session.session_key)" styleClass="compact-table">
+            <div *ngIf="activeTab[session.session_key] === 'weather' && !isTabLoading(session.session_key, 'weather')">
+              <p *ngIf="!filteredWeather[session.session_key]?.length" class="tab-status">Dati meteo non disponibili per questa sessione.</p>
+              <p-table *ngIf="filteredWeather[session.session_key]?.length" [value]="filteredWeather[session.session_key]" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
                     <th style="width: 20%;">Orario</th>
@@ -297,8 +278,9 @@
             </div>
 
             <!-- Pit Stops tab -->
-            <div *ngIf="activeTab[session.session_key] === 'pits' && pits[session.session_key]">
-              <p-table [value]="pits[session.session_key]" styleClass="compact-table">
+            <div *ngIf="activeTab[session.session_key] === 'pits' && !isTabLoading(session.session_key, 'pits')">
+              <p *ngIf="!pits[session.session_key]?.length" class="tab-status">Nessun pit stop in questa sessione.</p>
+              <p-table *ngIf="pits[session.session_key]?.length" [value]="pits[session.session_key]" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
                     <th style="width: 32%;">Pilota</th>
@@ -326,8 +308,9 @@
             </div>
 
             <!-- Overtakes tab -->
-            <div *ngIf="activeTab[session.session_key] === 'overtakes' && overtakes[session.session_key]">
-              <p-table [value]="overtakes[session.session_key]" styleClass="compact-table">
+            <div *ngIf="activeTab[session.session_key] === 'overtakes' && !isTabLoading(session.session_key, 'overtakes')">
+              <p *ngIf="!overtakes[session.session_key]?.length" class="tab-status">Dati sui sorpassi non disponibili per questa sessione (OpenF1 li fornisce solo per le gare).</p>
+              <p-table *ngIf="overtakes[session.session_key]?.length" [value]="overtakes[session.session_key]" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
                     <th style="width: 15%;">Orario</th>
@@ -360,7 +343,7 @@
         </div>
       </section>
     </div>
-    
+
     <aside class="detail-sidebar">
       <div class="sidebar-card">
         <h3>Dettagli Evento</h3>

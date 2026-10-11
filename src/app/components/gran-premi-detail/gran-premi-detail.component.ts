@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { TabViewModule } from 'primeng/tabview';
 import { TableModule } from 'primeng/table';
 import { Meeting } from '../../models/meeting';
 import { 
@@ -13,53 +12,77 @@ import {
   TeamRadio,
   Weather,
   Pit,
-  Position,
   Overtake 
 } from '../../services/openf1-service';
 import { Session } from '../../models/session';
 import { circuitMapUrl, SponsorInfo, titleSponsor } from '../../utils/f1-media';
+import { TEAM_COLORS } from '../../utils/team-colors';
 
+type SessionTab = 'results' | 'stints' | 'weather' | 'pits' | 'overtakes' | 'radio';
+
+// Un segmento della barra della strategia gomme
+interface TyreSegment {
+  compound: string;   // classe CSS: soft, medium, hard, intermediate, wet
+  short: string;      // iniziale mostrata nel segmento
+  widthPct: number;   // larghezza in proporzione ai giri della sessione
+  tooltip: string;
+}
+
+interface GroupedStint {
+  driver_number: number;
+  positionLabel: string;
+  segments: TyreSegment[];
+}
+
+const COMPOUND_LABELS: Record<string, string> = {
+  soft: 'Soft', medium: 'Medium', hard: 'Hard', intermediate: 'Intermedie', wet: 'Da bagnato'
+};
 
 @Component({
   selector: 'app-gran-premi-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonModule, TabViewModule, TableModule],
+  imports: [CommonModule, RouterLink, ButtonModule, TableModule],
   templateUrl: './gran-premi-detail.component.html',
   styleUrl: './gran-premi-detail.component.css'
 })
 export class GranPremiDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly openF1Service = inject(Openf1ServiceService);
-  
+
   meeting: Meeting | null = null;
   loading = true;
   error?: string;
-  
+
   drivers: Driver[] = [];
   sessions: Session[] = [];
-  sessionResults: { [session_key: number]: Result[] } = {};
   sessionResultsNormalized: { [session_key: number]: Result[] } = {};
   expandedSessionKey: number | null = null;
-  raceResults: Result[] = [];
-  qualifyingResults: Result[] = [];
-  sprintResults: Result[] = [];
-  sessionResultsTable: Array<Result & { sessionLabel: string }> = [];
 
   // Additional session data
   stints: { [session_key: number]: Stint[] } = {};
   teamRadios: { [session_key: number]: TeamRadio[] } = {};
   weather: { [session_key: number]: Weather[] } = {};
   pits: { [session_key: number]: Pit[] } = {};
-  positions: { [session_key: number]: Position[] } = {};
   overtakes: { [session_key: number]: Overtake[] } = {};
-  activeTab: { [session_key: number]: string } = {};
-  
+  // Dati già elaborati per il template (calcolati una volta al caricamento, non a ogni aggiornamento)
+  groupedStints: { [session_key: number]: GroupedStint[] } = {};
+  filteredWeather: { [session_key: number]: Weather[] } = {};
+
+  // Tab di ogni sessione: i dati vengono scaricati solo quando il tab viene aperto,
+  // perché OpenF1 accetta al massimo 30 richieste al minuto
+  readonly sessionTabs: { id: SessionTab; label: string }[] = [
+    { id: 'results', label: 'Risultati' },
+    { id: 'stints', label: 'Gomme' },
+    { id: 'weather', label: 'Meteo' },
+    { id: 'pits', label: 'Pit Stop' },
+    { id: 'overtakes', label: 'Sorpassi' },
+    { id: 'radio', label: 'Team Radio' }
+  ];
+  activeTab: { [session_key: number]: SessionTab } = {};
+  private readonly tabRequests = new Map<string, Promise<void>>();
+  private readonly loadingTabs = new Set<string>();
+
   loadingSessions = false;
-  loadingResults = false;
-  sessionsError?: string;
-  resultsError?: string;
-  
-  activeSessionIndex = 0;
 
   currentSponsor?: SponsorInfo;
 
@@ -118,7 +141,7 @@ export class GranPremiDetailComponent implements OnInit {
     'MUG': 'it', // Mugello (Italia)
     'AZB': 'az'  // Azerbaijan (codice alternativo)
   };
-  
+
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
@@ -127,7 +150,7 @@ export class GranPremiDetailComponent implements OnInit {
       }
     });
   }
-  
+
   getCircuitImage(meeting: Meeting): string | undefined {
     return circuitMapUrl(meeting.circuit_short_name) ?? meeting.circuit_image;
   }
@@ -139,45 +162,45 @@ export class GranPremiDetailComponent implements OnInit {
       img.src = meeting.circuit_image;
     }
   }
-  
+
   // Converte i codici paese dell'API in codici ISO 3166-1 alpha-2 per le bandiere
   getCountryFlagCode(apiCountryCode: string): string {
     return this.countryCodeMapping[apiCountryCode] || apiCountryCode.toLowerCase();
   }
-  
-  
+
+
   // Formatta il fuso orario in formato italiano (24 ore)
   formatTimeOffset(offset: string): string {
     if (!offset) return 'UTC+0';
-    
+
     // Rimuove i secondi e mantiene solo ore e minuti
     const timeRegex = /^([+-]?)(\d{2}):(\d{2}):(\d{2})$/;
     const match = offset.match(timeRegex);
-    
+
     if (match) {
       const sign = match[1] || '+';
       const hours = match[2];
       const minutes = match[3];
-      
+
       if (minutes === '00') {
         return `UTC${sign}${hours}`;
       } else {
         return `UTC${sign}${hours}:${minutes}`;
       }
     }
-    
+
     return `UTC ${offset}`;
   }
-  
+
   // Formatta il tempo in formato leggibile
   formatTime(timeMillis?: number): string {
     if (!timeMillis) return '-';
-    
+
     const totalSeconds = Math.floor(timeMillis / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     const milliseconds = timeMillis % 1000;
-    
+
     return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
   }
 
@@ -341,7 +364,7 @@ export class GranPremiDetailComponent implements OnInit {
     }
     return '-';
   }
-  
+
   // Ottiene il nome della sessione in italiano
   getSessionName(session: Session): string {
     const typeMap: Record<string, string> = {
@@ -353,10 +376,10 @@ export class GranPremiDetailComponent implements OnInit {
       'Practice 3': 'FP3',
       'Sprint Qualifying': 'Sprint Qualifying'
     };
-    
+
     return typeMap[session.session_type] || session.session_name;
   }
-  
+
   // Formatta la data della sessione
   formatSessionDate(dateStr: string): string {
     const date = new Date(dateStr);
@@ -368,7 +391,7 @@ export class GranPremiDetailComponent implements OnInit {
       minute: '2-digit' 
     });
   }
-  
+
   // Ottiene il colore del team
   getTeamColor(color: string): string {
     return `#${color}`;
@@ -404,9 +427,8 @@ export class GranPremiDetailComponent implements OnInit {
   }
 
   // Filtra i dati meteo per mostrare solo quelli ogni 30 minuti
-  getFilteredWeather(sessionKey: number): Weather[] {
-    const weatherData = this.weather[sessionKey];
-    if (!weatherData || weatherData.length === 0) return [];
+  private filterWeather(weatherData: Weather[]): Weather[] {
+    if (!weatherData.length) return [];
 
     // Ordina per data
     const sorted = [...weatherData].sort((a, b) => 
@@ -430,39 +452,47 @@ export class GranPremiDetailComponent implements OnInit {
   }
 
   // Raggruppa gli stint per pilota con la loro posizione finale
-  getGroupedStints(sessionKey: number): any[] {
-    const stintsData = this.stints[sessionKey];
-    const results = this.sessionResultsNormalized[sessionKey];
-    
-    if (!stintsData || !results) return [];
+  private groupStints(stintsData: Stint[], results: Result[]): GroupedStint[] {
+    const totalLaps = Math.max(1, ...stintsData.map(st => st.lap_end ?? st.lap_start ?? 0));
 
-    // Crea una mappa dei piloti con i loro stint
-    const driverStintsMap = new Map<number, any>();
+    const byDriver = new Map<number, Stint[]>();
+    for (const stint of stintsData) {
+      if (!byDriver.has(stint.driver_number)) byDriver.set(stint.driver_number, []);
+      byDriver.get(stint.driver_number)!.push(stint);
+    }
 
-    stintsData.forEach(stint => {
-      if (!driverStintsMap.has(stint.driver_number)) {
-        // Trova la posizione finale del pilota
-        const result = results.find(r => r.driver_number === stint.driver_number);
-        driverStintsMap.set(stint.driver_number, {
-          driver_number: stint.driver_number,
-          position: result?.position || 999,
-          stints: []
-        });
-      }
-      driverStintsMap.get(stint.driver_number).stints.push(stint);
-    });
+    // Stesso ordine della classifica (arrivati, poi squalificati e ritirati); chi non è in classifica va in fondo
+    const order = (driverNumber: number) => {
+      const i = results.findIndex(r => r.driver_number === driverNumber);
+      return i < 0 ? Number.MAX_SAFE_INTEGER : i;
+    };
 
-    // Converti la mappa in array e ordina per posizione
-    const grouped = Array.from(driverStintsMap.values()).sort((a, b) => a.position - b.position);
+    return [...byDriver.entries()]
+      .sort(([a], [b]) => order(a) - order(b))
+      .map(([driverNumber, stints]) => {
+        const result = results.find(r => r.driver_number === driverNumber);
+        const positionLabel = !result ? '-'
+          : result.dsq ? 'DSQ' : result.dnf ? 'DNF' : result.dns ? 'DNS' : String(result.position ?? '-');
 
-    // Ordina gli stint di ogni pilota per numero stint
-    grouped.forEach(driver => {
-      driver.stints.sort((a: Stint, b: Stint) => a.stint_number - b.stint_number);
-    });
+        const segments = [...stints]
+          .sort((a, b) => a.stint_number - b.stint_number)
+          .map(st => {
+            const lapEnd = st.lap_end ?? st.lap_start;
+            const laps = Math.max(1, lapEnd - st.lap_start + 1);
+            const compound = (st.compound || 'unknown').toLowerCase();
+            const name = COMPOUND_LABELS[compound] ?? st.compound ?? '?';
+            return {
+              compound,
+              short: name.charAt(0).toUpperCase(),
+              widthPct: (laps / totalLaps) * 100,
+              tooltip: `Stint ${st.stint_number} · ${name} · giri ${st.lap_start}–${lapEnd} (${laps}) · gomma usata da ${st.tyre_age_at_start} giri`
+            };
+          });
 
-    return grouped;
+        return { driver_number: driverNumber, positionLabel, segments };
+      });
   }
-  
+
   private async loadMeeting(id: number) {
     this.loading = true;
     this.error = undefined;
@@ -491,12 +521,12 @@ export class GranPremiDetailComponent implements OnInit {
       this.loading = false;
     }
   }
-  
+
   private async loadDrivers(meetingKey: number) {
     try {
       // Fetch all drivers for the meeting
       const drivers = await this.openF1Service.getDrivers(meetingKey, 'meeting');
-      
+
       // Create a map of unique drivers by driver number to avoid duplicates
       const uniqueDrivers = new Map();
       drivers.forEach(driver => {
@@ -505,32 +535,15 @@ export class GranPremiDetailComponent implements OnInit {
           uniqueDrivers.set(driver.driver_number, driver);
         }
       });
-      
+
       // Convert map back to array
       this.drivers = Array.from(uniqueDrivers.values());
-      
-      // Ensure we have team colors for all teams
-      const teamColors: { [key: string]: string } = {
-        'Red Bull Racing': '1D19AC',
-        'Mercedes': '00D7B6',
-        'Ferrari': 'ED1131',
-        'McLaren': 'F47600',
-        'Aston Martin': '229971',
-        'Alpine': '00A1E8',
-        'AlphaTauri': '6C98FF',
-        'Alfa Romeo': 'C92D4B',
-        'Haas F1 Team': '9C9FA2',
-        'Williams': '1868DB',
-        'Kick Sauber': '01C00E',
-        'Racing Bulls': '6C98FF',
-        'Audi': 'F50537',
-        'Cadillac': '909090'
-      };
-      
+
+
       // Apply default team colors if missing
       this.drivers = this.drivers.map(driver => ({
         ...driver,
-        team_color: driver.team_color || teamColors[driver.team_name] || 'FFFFFF'
+        team_color: driver.team_color || TEAM_COLORS[driver.team_name] || 'FFFFFF'
       }));
 
       // Drivers caricati e normalizzati
@@ -538,10 +551,9 @@ export class GranPremiDetailComponent implements OnInit {
       // Errore nel caricamento dei piloti
     }
   }
-  
+
   private async loadSessions(meetingKey: number) {
     this.loadingSessions = true;
-    this.sessionsError = undefined;
     try {
       const sessionsRaw = await this.openF1Service.getSessions(meetingKey);
       // Map sessions from service (which have id) to Session model type (which has session_key)
@@ -558,65 +570,10 @@ export class GranPremiDetailComponent implements OnInit {
         year: (s as any).year ?? 0
       })).sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime());
 
-      for (let i = 0; i < this.sessions.length; i += 3) {
-        const chunk = this.sessions.slice(i, i + 3);
-        await Promise.all(chunk.map(async session => {
-          try {
-            const results = await this.openF1Service.getResults(session.session_key);
-            this.sessionResults[session.session_key] = Array.isArray(results) ? results.sort((a, b) => a.position - b.position) : [];
-          } catch (err) {
-            this.sessionResults[session.session_key] = [];
-          }
-        }));
-        if (i + 3 < this.sessions.length) {
-          await new Promise(res => setTimeout(res, 1000));
-        }
-      }
-      // Dopo aver caricato i risultati per sessione, costruisci gli array per le tab
-      this.buildSessionResultArrays();
-    } catch (err: any) {
-      this.sessionsError = err?.message || 'Errore caricamento sessioni';
+    } catch {
+      this.sessions = [];
     } finally {
       this.loadingSessions = false;
-    }
-  }
-
-  private buildSessionResultArrays() {
-    this.raceResults = [];
-    this.qualifyingResults = [];
-    this.sprintResults = [];
-    this.sessionResultsTable = [];
-
-    const sorted = [...this.sessions].sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime());
-
-    for (const session of sorted) {
-      const raw = this.sessionResults[session.session_key] ?? [];
-      const label = this.getSessionName(session);
-
-      // Normalizza: unisci team dal listato drivers, e metti i ritirati in fondo
-      const normalized = this.normalizeResults(raw);
-      this.sessionResultsNormalized[session.session_key] = normalized;
-
-      // Popola la tabella compatta di overview
-      if (normalized.length) {
-        this.sessionResultsTable.push(...normalized.map(r => ({ ...r, sessionLabel: label })));
-      }
-
-      // Classificazione in Race / Qualifying / Sprint usando session_name e session_type
-      const nameLower = (session.session_name || '').toLowerCase();
-      const type = (session.session_type || '').toLowerCase();
-
-      if (nameLower.includes('sprint') && type.includes('qual')) {
-        // Sprint Shootout / Sprint Qualifying
-        this.sprintResults.push(...normalized);
-      } else if (nameLower.includes('sprint') && type.includes('race')) {
-        // Sprint Race
-        this.sprintResults.push(...normalized);
-      } else if (type === 'race' && !nameLower.includes('sprint')) {
-        this.raceResults.push(...normalized);
-      } else if (type.includes('qual') && !nameLower.includes('sprint')) {
-        this.qualifyingResults.push(...normalized);
-      }
     }
   }
 
@@ -625,43 +582,69 @@ export class GranPremiDetailComponent implements OnInit {
       this.expandedSessionKey = null;
       return;
     }
-    
     this.expandedSessionKey = sessionKey;
-    this.activeTab[sessionKey] = 'results';  // default tab
-    
-    // Load all session data in parallel
+    this.activeTab[sessionKey] ??= 'results';
+    await this.loadTab(sessionKey, this.activeTab[sessionKey]);
+  }
+
+  async setActiveTab(sessionKey: number, tab: SessionTab) {
+    this.activeTab[sessionKey] = tab;
+    await this.loadTab(sessionKey, tab);
+  }
+
+  isTabLoading(sessionKey: number, tab: SessionTab): boolean {
+    return this.loadingTabs.has(`${sessionKey}:${tab}`);
+  }
+
+  // Scarica i dati di un tab la prima volta che viene aperto; chi lo richiede
+  // mentre sta ancora caricando aspetta la stessa richiesta
+  private loadTab(sessionKey: number, tab: SessionTab): Promise<void> {
+    const id = `${sessionKey}:${tab}`;
+    let request = this.tabRequests.get(id);
+    if (!request) {
+      request = this.fetchTab(sessionKey, tab, id);
+      this.tabRequests.set(id, request);
+    }
+    return request;
+  }
+
+  private async fetchTab(sessionKey: number, tab: SessionTab, id: string): Promise<void> {
+    this.loadingTabs.add(id);
+    const orEmpty = <T>(request: Promise<T[]>): Promise<T[]> => request.catch(() => []);
     try {
-      const [
-        stints,
-        teamRadio,
-        weather,
-        pits,
-        positions,
-        overtakes
-      ] = await Promise.all([
-        this.openF1Service.getStints(sessionKey),
-        this.openF1Service.getTeamRadio(sessionKey),
-        this.openF1Service.getWeather(sessionKey),
-        this.openF1Service.getPits(sessionKey),
-        this.openF1Service.getPositions(sessionKey),
-        this.openF1Service.getOvertakes(sessionKey)
-      ]);
-
-      // Store results in session-specific collections
-      this.stints[sessionKey] = stints;
-      this.teamRadios[sessionKey] = teamRadio;
-      this.weather[sessionKey] = weather;
-      this.pits[sessionKey] = pits;
-      this.positions[sessionKey] = positions;
-      this.overtakes[sessionKey] = overtakes;
-
-    } catch (err) {
-      // Errore nel caricamento dei dettagli della sessione
+      switch (tab) {
+        case 'results':
+          await this.loadResults(sessionKey);
+          break;
+        case 'stints': {
+          // la posizione finale serve per ordinare i piloti
+          const [stints] = await Promise.all([orEmpty(this.openF1Service.getStints(sessionKey)), this.loadTab(sessionKey, 'results')]);
+          this.stints[sessionKey] = stints;
+          this.groupedStints[sessionKey] = this.groupStints(stints, this.sessionResultsNormalized[sessionKey] ?? []);
+          break;
+        }
+        case 'weather':
+          this.weather[sessionKey] = await orEmpty(this.openF1Service.getWeather(sessionKey));
+          this.filteredWeather[sessionKey] = this.filterWeather(this.weather[sessionKey]);
+          break;
+        case 'pits':
+          this.pits[sessionKey] = await orEmpty(this.openF1Service.getPits(sessionKey));
+          break;
+        case 'overtakes':
+          this.overtakes[sessionKey] = await orEmpty(this.openF1Service.getOvertakes(sessionKey));
+          break;
+        case 'radio':
+          this.teamRadios[sessionKey] = await orEmpty(this.openF1Service.getTeamRadio(sessionKey));
+          break;
+      }
+    } finally {
+      this.loadingTabs.delete(id);
     }
   }
 
-  setActiveTab(sessionKey: number, tab: string) {
-    this.activeTab[sessionKey] = tab;
+  private async loadResults(sessionKey: number): Promise<void> {
+    const results = await this.openF1Service.getResults(sessionKey).catch(() => [] as Result[]);
+    this.sessionResultsNormalized[sessionKey] = this.normalizeResults(results);
   }
 
   private normalizeResults(results: Result[]): Result[] {
@@ -688,15 +671,6 @@ export class GranPremiDetailComponent implements OnInit {
 
     return [...finished, ...dsqLabeled, ...retiredLabeled];
   }
-  
-  // loadAllSessionResults non più necessario: la logica è ora in loadSessions
-  
-  private getResultsBySessionType(type: Session['session_type']): Result[] {
-    // Cerca la prima sessione di quel tipo e restituisce i risultati
-    const session = this.sessions.find(s => s.session_type === type);
-    if (session && this.sessionResults[session.session_key]) {
-      return this.sessionResults[session.session_key];
-    }
-    return [];
-  }
+
+
 }

@@ -158,12 +158,18 @@ export class DriverDetailComponent implements OnInit {
     this.loading = true;
     this.error = undefined;
     try {
-      // Se è un numero, cerca per numero (legacy), altrimenti per acronimo
+      // Prima cerchiamo nella griglia attuale (pochi KB e già in cache dalla pagina Piloti);
+      // solo per i piloti del passato serve la ricerca completa, molto più pesante
       const isNumber = /^\d+$/.test(id);
-      if (isNumber) {
-        this.driver = await this.openF1Service.getDriverByNumber(Number(id));
-      } else {
-        this.driver = await this.openF1Service.getDriverByAcronym(id);
+      const latest = await this.openF1Service.getLatestDrivers().catch(() => [] as Driver[]);
+      this.driver = latest.find(d => isNumber
+        ? d.driver_number === Number(id)
+        : (d.name_acronym || '').toUpperCase() === id.toUpperCase()) ?? null;
+
+      if (!this.driver) {
+        this.driver = isNumber
+          ? await this.openF1Service.getDriverByNumber(Number(id))
+          : await this.openF1Service.getDriverByAcronym(id);
       }
       
       if (!this.driver) {

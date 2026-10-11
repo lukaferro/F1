@@ -411,15 +411,15 @@ h2::after {
   .detail-content {
     flex-direction: column;
   }
-  
+
   .detail-sidebar {
     width: 100%;
   }
-  
+
   .circuit-container {
     flex-direction: column;
   }
-  
+
   .circuit-image, .circuit-info {
     width: 100%;
   }
@@ -431,15 +431,15 @@ h2::after {
     text-align: center;
     gap: 1rem;
   }
-  
+
   .gp-title {
     font-size: 2rem;
   }
-  
+
   .gp-subtitle {
     justify-content: center;
   }
-  
+
   .info-grid {
     grid-template-columns: 1fr;
   }
@@ -903,38 +903,6 @@ Stili per i tab di PrimeNG
   color: var(--primary-color);
 }
 
-.tyre-compound {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.tyre-compound.soft {
-  background-color: #ff000033;
-  color: #ff0000;
-}
-
-.tyre-compound.medium {
-  background-color: #ffff0033;
-  color: #c8c800;
-}
-
-.tyre-compound.hard {
-  background-color: #ffffff33;
-  color: #ffffff;
-}
-
-.tyre-compound.intermediate {
-  background-color: #00ff0033;
-  color: #00ff00;
-}
-
-.tyre-compound.wet {
-  background-color: #0000ff33;
-  color: #0000ff;
-}
-
 .overtaking, .overtaken {
   display: inline-block;
   padding: 2px 6px;
@@ -966,29 +934,60 @@ Stili per i tab di PrimeNG
   margin: 16px;
 }
 
-/* Stint strategy styling */
-.stint-strategy {
+/* Strategia gomme: una barra per pilota, un segmento per stint largo quanto i giri percorsi */
+.tyre-bar {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  gap: 2px;
+  height: 22px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.stint-item {
+.tyre-segment {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.4rem 0;
+  justify-content: center;
+  min-width: 3px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #111111;
+  cursor: default;
 }
 
-.stint-label {
-  font-weight: 600;
-  min-width: 60px;
-  color: rgba(255, 255, 255, 0.8);
+.tyre-segment.soft, .tyre-dot.soft { background: #e8002d; }
+.tyre-segment.medium, .tyre-dot.medium { background: #ffd12e; }
+.tyre-segment.hard, .tyre-dot.hard { background: #f0f0ec; }
+.tyre-segment.intermediate, .tyre-dot.intermediate { background: #43b02a; }
+.tyre-segment.wet, .tyre-dot.wet { background: #0067ad; color: #ffffff; }
+.tyre-segment.unknown { background: #666666; }
+
+.tyre-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0.25rem;
+  font-size: 0.85rem;
+  color: #cccccc;
 }
 
-.stint-detail {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.9rem;
+.tyre-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tyre-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.tyre-legend-hint {
+  margin-left: auto;
+  color: #888888;
+  font-size: 0.8rem;
 }
 
 /* Session tabs styling */
@@ -1022,4 +1021,10 @@ Stili per i tab di PrimeNG
   color: #ff0000;
   border-bottom-color: #ff0000;
   background: rgba(255, 0, 0, 0.1);
+}
+/* Messaggi dentro i tab delle sessioni (caricamento, dati assenti) */
+.tab-status {
+  padding: 1.5rem;
+  text-align: center;
+  color: #bbbbbb;
 }
