@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { Meeting } from '../models/meeting';
 import { firstValueFrom } from 'rxjs';
@@ -139,17 +139,52 @@ export class Openf1ServiceService {
     }
 
     try {
-      const data = await firstValueFrom(this.http.get<T>(url));
+      const data = await this.fetchWithRetry<T>(url);
       this.writeCache(key, data);
       this.apiStatus.set('ok');
       return data;
     } catch (err) {
+      // 404 = l'API non ha quel dato (es. sorpassi di una sessione): non è un problema di connessione
+      if (err instanceof HttpErrorResponse && err.status === 404) {
+        throw err;
+      }
       if (cached) {
         this.apiStatus.set('stale');
         return cached.data;
       }
       this.apiStatus.set('error');
       throw err;
+    }
+  }
+
+  // OpenF1 accetta circa 3 richieste al secondo: oltre risponde 429 e i dati mancano.
+  // Le richieste partono quindi in fila, distanziate, e quelle rifiutate vengono ritentate.
+  private readonly minRequestGapMs = 350;
+  private readonly retryDelaysMs = [1000, 2000, 4000];
+  private nextRequestAt = 0;
+
+  private async fetchWithRetry<T>(url: string): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+      await this.waitForRequestSlot();
+      try {
+        return await firstValueFrom(this.http.get<T>(url));
+      } catch (err) {
+        // 429 = troppe richieste; 0 = nessuna risposta leggibile (il 429 di OpenF1 può arrivare senza header CORS)
+        // Se l'API è già risultata irraggiungibile (es. sessione live) non insistiamo: l'avviso compare subito
+        const retryable = err instanceof HttpErrorResponse
+          && (err.status === 429 || (err.status === 0 && this.apiStatus() !== 'error'));
+        if (!retryable || attempt >= this.retryDelaysMs.length) throw err;
+        await new Promise(resolve => setTimeout(resolve, this.retryDelaysMs[attempt]));
+      }
+    }
+  }
+
+  private async waitForRequestSlot(): Promise<void> {
+    const now = Date.now();
+    const startAt = Math.max(now, this.nextRequestAt);
+    this.nextRequestAt = startAt + this.minRequestGapMs;
+    if (startAt > now) {
+      await new Promise(resolve => setTimeout(resolve, startAt - now));
     }
   }
 

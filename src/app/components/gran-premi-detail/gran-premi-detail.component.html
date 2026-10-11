@@ -167,30 +167,30 @@
               <ng-template pTemplate="header">
                 <!-- Qualifying header: show Q1/Q2/Q3 -->
                 <tr *ngIf="getSessionName(session).toLowerCase().includes('qual')">
-                  <th style="width: 80px;">Pos</th>
-                  <th>Pilota</th>
-                  <th>Team</th>
-                  <th>Q1</th>
-                  <th>Q2</th>
-                  <th>Q3</th>
+                  <th style="width: 8%;">Pos</th>
+                  <th style="width: 29%;">Pilota</th>
+                  <th style="width: 21%;">Team</th>
+                  <th style="width: 14%;">Q1</th>
+                  <th style="width: 14%;">Q2</th>
+                  <th style="width: 14%;">Q3</th>
                   <th *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="width: 80px;">Punti</th>
                 </tr>
 
                 <!-- Default header for non-qualifying sessions -->
                 <tr *ngIf="!getSessionName(session).toLowerCase().includes('qual')">
-                  <th style="width: 80px;">Pos</th>
-                  <th>Pilota</th>
-                  <th>Team</th>
-                  <th style="width: 80px;">Giri</th>
-                  <th style="min-width: 150px; width: 150px;">Gap</th>
-                  <th>Tempo/Status</th>
-                  <th *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="width: 80px;">Punti</th>
+                  <th style="width: 9%;">Pos</th>
+                  <th style="width: 27%;">Pilota</th>
+                  <th style="width: 16%;">Team</th>
+                  <th style="width: 8%;">Giri</th>
+                  <th style="width: 14%;">Gap</th>
+                  <th style="width: 17%;" title="Tempo totale o stato (DNF, DNS, DSQ)">Tempo</th>
+                  <th *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="width: 9%;">Punti</th>
                 </tr>
               </ng-template>
 
               <ng-template pTemplate="body" let-result>
                 <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(result.driver_number))">
-                  <td style="text-align: center; font-weight: bold; font-size: 1.1rem;">
+                  <td style="text-align: center; font-weight: bold; font-size: 1.1rem; white-space: nowrap;">
                     {{ result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : (result.position ?? '-'))) }}
                   </td>
 
@@ -211,7 +211,7 @@
                   <!-- Non-qualifying columns -->
                   <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="text-align: center; font-weight: 500;">{{ result.number_of_laps || '-' }}</td>
                   <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ formatGapForDisplay(result) }}</td>
-                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500;">{{ formatPrimaryDuration(result) }}</td>
+                  <td *ngIf="!getSessionName(session).toLowerCase().includes('qual')" style="font-weight: 500; white-space: nowrap;">{{ formatPrimaryDuration(result) }}</td>
 
                   <td *ngIf="getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')" style="text-align: center; font-weight: bold;">{{ result.points || '-' }}</td>
                 </tr>
@@ -224,10 +224,10 @@
               <p-table [value]="getGroupedStints(session.session_key)" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
-                    <th style="width: 80px;">Pos</th>
-                    <th>Pilota</th>
-                    <th>Team</th>
-                    <th style="min-width: 400px;">Strategia Stint</th>
+                    <th style="width: 8%;">Pos</th>
+                    <th style="width: 24%;">Pilota</th>
+                    <th style="width: 18%;">Team</th>
+                    <th style="width: 50%;">Strategia Stint</th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-driverStint>
@@ -277,11 +277,11 @@
               <p-table [value]="getFilteredWeather(session.session_key)" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
-                    <th>Orario</th>
-                    <th>Temp. Aria</th>
-                    <th>Temp. Pista</th>
-                    <th>Umidità</th>
-                    <th>Vento</th>
+                    <th style="width: 20%;">Orario</th>
+                    <th style="width: 20%;">Temp. Aria</th>
+                    <th style="width: 20%;">Temp. Pista</th>
+                    <th style="width: 20%;">Umidità</th>
+                    <th style="width: 20%;">Vento</th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-w>
@@ -301,11 +301,11 @@
               <p-table [value]="pits[session.session_key]" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
-                    <th>Pilota</th>
-                    <th>Team</th>
-                    <th>Giro</th>
-                    <th>Durata</th>
-                    <th>Orario</th>
+                    <th style="width: 32%;">Pilota</th>
+                    <th style="width: 26%;">Team</th>
+                    <th style="width: 12%;">Giro</th>
+                    <th style="width: 15%;">Durata</th>
+                    <th style="width: 15%;">Orario</th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-pit>
@@ -330,9 +330,9 @@
               <p-table [value]="overtakes[session.session_key]" styleClass="compact-table">
                 <ng-template pTemplate="header">
                   <tr>
-                    <th>Orario</th>
-                    <th>Sorpasso</th>
-                    <th>Posizione</th>
+                    <th style="width: 15%;">Orario</th>
+                    <th style="width: 70%;">Sorpasso</th>
+                    <th style="width: 15%;">Posizione</th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-overtake>

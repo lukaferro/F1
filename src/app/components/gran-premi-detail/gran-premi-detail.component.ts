@@ -214,9 +214,15 @@ export class GranPremiDetailComponent implements OnInit {
     if (seconds < 60) {
       return `${seconds.toFixed(3)} s`;
     }
-    const minutes = Math.floor(seconds / 60);
     const remainder = (seconds % 60).toFixed(3).padStart(6, '0');
-    return `${minutes}:${remainder}`;
+    const totalMinutes = Math.floor(seconds / 60);
+    if (totalMinutes < 60) {
+      return `${totalMinutes}:${remainder}`;
+    }
+    // Tempi di gara oltre l'ora: h:mm:ss.mmm (es. 1:42:06.304 invece di 102:06.304)
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = String(totalMinutes % 60).padStart(2, '0');
+    return `${hours}:${minutes}:${remainder}`;
   }
 
   formatSeconds(value: unknown): string {

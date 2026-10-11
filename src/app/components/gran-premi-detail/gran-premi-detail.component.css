@@ -76,6 +76,7 @@
 
 .detail-main {
   flex: 1;
+  min-width: 0; /* senza questo una tabella larga allarga la colonna e sposta la pagina */
 }
 
 .detail-sidebar {
@@ -546,7 +547,6 @@ h2::after {
 }
 
 .session-panel:hover {
-  transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(0,0,0,0.2);
 }
 
@@ -565,7 +565,6 @@ h2::after {
 
 .session-header:hover {
   background: linear-gradient(90deg, #2d2d2d, #3d3d3d);
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
@@ -750,11 +749,11 @@ Stili per i tab di PrimeNG
   background: #2d2d2d;
   color: #ffffff;
   border: none;
-  padding: 1rem 1.5rem;
+  padding: 0.85rem 0.75rem;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
 }
 
 :host ::ng-deep .p-datatable .p-datatable-tbody > tr {
@@ -768,16 +767,32 @@ Stili per i tab di PrimeNG
   background: #2a2a2a;
 }
 
-:host ::ng-deep .p-datatable .p-datatable-wrapper {
-  overflow-x: hidden !important;
+/* Larghezza fissa: le colonne seguono le larghezze dell'intestazione e non il contenuto,
+   così passando da una sessione o da un tab all'altro la tabella non cambia forma.
+   Sotto i 720px la tabella scorre in orizzontale dentro il suo riquadro. */
+:host ::ng-deep .p-datatable .p-datatable-table-container {
+  overflow-x: auto !important;
 }
 
-:host ::ng-deep .p-datatable {
-  overflow-x: hidden !important;
+:host ::ng-deep .p-datatable .p-datatable-table {
+  width: 100%;
+  min-width: 720px;
+  table-layout: fixed;
+}
+
+/* intestazioni su una riga sola; il contenuto delle celle va a capo tra le parole */
+:host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
-  padding: 1rem 1.5rem;
+  overflow-wrap: break-word;
+}
+
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.85rem 0.75rem;
   border: none;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
