@@ -17,6 +17,7 @@ import {
 import { Session } from '../../models/session';
 import { circuitMapUrl, SponsorInfo, titleSponsor } from '../../utils/f1-media';
 import { TEAM_COLORS } from '../../utils/team-colors';
+import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 
 type SessionTab = 'results' | 'stints' | 'weather' | 'pits' | 'overtakes' | 'radio';
 
@@ -41,7 +42,7 @@ const COMPOUND_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-gran-premi-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonModule, TableModule],
+  imports: [CommonModule, RouterLink, ButtonModule, TableModule, ApiUnavailableComponent],
   templateUrl: './gran-premi-detail.component.html',
   styleUrl: './gran-premi-detail.component.css'
 })
@@ -493,7 +494,7 @@ export class GranPremiDetailComponent implements OnInit {
       });
   }
 
-  private async loadMeeting(id: number) {
+  async loadMeeting(id: number) {
     this.loading = true;
     this.error = undefined;
 
@@ -590,6 +591,21 @@ export class GranPremiDetailComponent implements OnInit {
   async setActiveTab(sessionKey: number, tab: SessionTab) {
     this.activeTab[sessionKey] = tab;
     await this.loadTab(sessionKey, tab);
+  }
+
+  // I sorpassi esistono solo per le gare (anche sprint, che hanno session_type "Race")
+  tabsFor(session: Session): { id: SessionTab; label: string }[] {
+    return session.session_type === 'Race' ? this.sessionTabs : this.sessionTabs.filter(t => t.id !== 'overtakes');
+  }
+
+  /** true se il problema è la connessione all'API, false se il Gran Premio non esiste */
+  get apiUnavailable(): boolean {
+    return this.openF1Service.apiStatus() === 'error';
+  }
+
+  reload(): void {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (id) this.loadMeeting(id);
   }
 
   isTabLoading(sessionKey: number, tab: SessionTab): boolean {

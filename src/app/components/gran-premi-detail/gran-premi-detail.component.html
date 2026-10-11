@@ -103,6 +103,13 @@
           </section>
         }
         <h2>Risultati Sessioni</h2>
+        @if (loadingSessions) {
+          <div class="session-accordion" aria-busy="true" aria-label="Caricamento sessioni">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="skeleton" style="height: 58px; border-radius: 12px;"></div>
+            }
+          </div>
+        }
         @if (sessions && sessions.length) {
           <section class="session-accordion">
             @for (session of sessions; track session) {
@@ -118,7 +125,7 @@
                   <div class="session-body">
                     <!-- Tab menu -->
                     <div class="session-tabs">
-                      @for (tab of sessionTabs; track tab) {
+                      @for (tab of tabsFor(session); track tab.id) {
                         <button class="tab-button"
                           [class.active]="activeTab[session.session_key] === tab.id"
                           (click)="setActiveTab(session.session_key, tab.id)">
@@ -127,8 +134,11 @@
                       }
                     </div>
                     @if (isTabLoading(session.session_key, activeTab[session.session_key])) {
-                      <div class="tab-status">
-                        <i class="pi pi-spin pi-spinner"></i> Caricamento...
+                      <div class="tab-skeleton" aria-busy="true" aria-label="Caricamento dati sessione">
+                        <div class="skeleton" style="height: 44px; margin-bottom: 0.5rem;"></div>
+                        @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+                          <div class="skeleton" style="height: 38px; margin-bottom: 0.4rem; opacity: 0.7;"></div>
+                        }
                       </div>
                     }
                     <!-- Results tab -->
@@ -421,12 +431,36 @@
       </aside>
     </div>
   </div>
-} @else {
-  <div class="loading-container">
-    <div class="loading-spinner">
-      <i class="pi pi-spin pi-spinner" style="font-size: 3rem"></i>
+} @else if (error && !loading) {
+  <div class="detail-container">
+    <div class="back-button">
+      <p-button icon="pi pi-arrow-left" styleClass="p-button-text" label="Torna ai Gran Premi" routerLink="/granpremi"></p-button>
     </div>
-    <p>Caricamento informazioni del Gran Premio...</p>
+    @if (apiUnavailable) {
+      <app-api-unavailable (retry)="reload()"></app-api-unavailable>
+    } @else {
+      <div class="not-found">
+        <i class="pi pi-flag"></i>
+        <h3>Gran Premio non trovato</h3>
+        <p>Il Gran Premio che cerchi non esiste o non è più disponibile.</p>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="detail-container" aria-busy="true" aria-label="Caricamento Gran Premio">
+    <div class="skeleton" style="height: 40px; width: 220px; margin-bottom: 1.5rem;"></div>
+    <div class="skeleton" style="height: 150px; margin-bottom: 2rem; border-radius: 12px;"></div>
+    <div class="detail-content">
+      <div class="detail-main">
+        <div class="skeleton" style="height: 300px; margin-bottom: 2rem; border-radius: 12px;"></div>
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <div class="skeleton" style="height: 56px; margin-bottom: 1rem; border-radius: 12px;"></div>
+        }
+      </div>
+      <div class="detail-sidebar">
+        <div class="skeleton" style="height: 310px; border-radius: 12px;"></div>
+      </div>
+    </div>
   </div>
 }
 

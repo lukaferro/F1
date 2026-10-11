@@ -8,11 +8,12 @@ import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
 import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
+import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 
 @Component({
   selector: 'app-driver-detail',
   standalone: true,
-  imports: [RouterLink, ButtonModule, CardModule, TagModule],
+  imports: [RouterLink, ButtonModule, CardModule, TagModule, ApiUnavailableComponent],
   templateUrl: './driver-detail.component.html',
   styleUrls: ['./driver-detail.component.css']
 })
@@ -141,6 +142,16 @@ export class DriverDetailComponent implements OnInit {
     'LIAM LAWSON': 'https://static.sky.it/images/skysport/it/motori/formula-1/piloti/liam-lawson.png?im=Resize,width=270'
   };
 
+  /** true se il problema è la connessione all'API, false se il pilota non esiste */
+  get apiUnavailable(): boolean {
+    return this.openF1Service.apiStatus() === 'error';
+  }
+
+  reload(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) this.loadDriverByIdOrAcronym(id);
+  }
+
   async ngOnInit() {
     this.route.paramMap.subscribe(async params => {
       const id = params.get('id');
@@ -171,7 +182,7 @@ export class DriverDetailComponent implements OnInit {
           ? await this.openF1Service.getDriverByNumber(Number(id))
           : await this.openF1Service.getDriverByAcronym(id);
       }
-      
+
       if (!this.driver) {
         this.error = 'Pilota non trovato';
       } else {
@@ -296,7 +307,7 @@ export class DriverDetailComponent implements OnInit {
     if (!fullName) return;
     this.loadingWiki = true;
     this.loadingStats = true;
-    
+
     // Ottieni varianti nome da cercare
     const nameKey = fullName.toUpperCase();
     const wikiNameVariants: Record<string, string[]> = {
@@ -345,7 +356,7 @@ export class DriverDetailComponent implements OnInit {
           break;
         }
       }
-      
+
       // Se non trova nulla, imposta stringa vuota
       if (!this.wikiExtract) {
         this.wikiExtract = '';
@@ -406,7 +417,7 @@ export class DriverDetailComponent implements OnInit {
         teams: stats.teams || this.careerStats?.teams || '—',
         teamsArray: stats.teamsArray || this.careerStats?.teamsArray || []
       };
-      
+
       // Se OpenF1 non ha country_code, prova a prenderlo da Wikipedia
       if (stats.country && this.driver && !this.driver.country_code) {
         // Cerca di estrarre codice ISO se presente
@@ -426,8 +437,8 @@ export class DriverDetailComponent implements OnInit {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const rows = Array.from(doc.querySelectorAll('table.infobox tr, table.wikitable tr'));
-      
-      
+
+
 
       // Marcatori per riconoscere il contesto Formula 1 ed escludere altre serie
       const f1Markers = [
@@ -564,7 +575,7 @@ export class DriverDetailComponent implements OnInit {
                   .map(team => this.formatTeamEntry(team));
                 // Filtra fuori riferimenti espliciti a serie non-F1
                 teamsArray = teamsArray.filter(entry => !textHasAny(entry, nonF1Markers));
-                
+
                 found['teamsArray'] = teamsArray;
                 found[key] = teamsArray.join(' • ');
               } else if (key === 'championships') {
@@ -648,7 +659,7 @@ export class DriverDetailComponent implements OnInit {
       'nuova zelanda': 'NZL',
       'new zealand': 'NZL'
     };
-    
+
     const normalized = countryText.toLowerCase().trim();
     return countryMap[normalized] || countryText.toUpperCase().slice(0, 3);
   }

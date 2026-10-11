@@ -1028,3 +1028,31 @@ Stili per i tab di PrimeNG
   text-align: center;
   color: #bbbbbb;
 }
+
+/* Lo spazio dei tab resta stabile: passando da un tab corto a uno lungo il pannello non si richiude */
+.session-body {
+  min-height: 460px;
+}
+
+.tab-skeleton {
+  padding: 1rem 0;
+}
+
+.not-found {
+  max-width: 560px;
+  margin: 4rem auto;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.not-found i {
+  font-size: 2.5rem;
+  color: #ff4444;
+}
+
+.not-found p {
+  color: #cccccc;
+}

@@ -56,9 +56,17 @@
 
       <!-- Loading -->
       @if (loading) {
-        <div class="loading-container">
-          <i class="pi pi-spin pi-spinner loading-spinner"></i>
-          <p>Caricamento piloti...</p>
+        <div class="drivers-grid" aria-busy="true" aria-label="Caricamento piloti">
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+            <div class="driver-card skeleton-card">
+              <div class="skeleton" style="height: 112px; border-radius: 0;"></div>
+              <div class="driver-body">
+                <div class="skeleton" style="height: 300px; margin-bottom: 1rem;"></div>
+                <div class="skeleton skeleton-line" style="width: 60%; margin: 0 auto;"></div>
+                <div class="skeleton skeleton-line" style="width: 25%; margin: 0.75rem auto 0;"></div>
+              </div>
+            </div>
+          }
         </div>
       }
 

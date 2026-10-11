@@ -69,8 +69,10 @@
           </p>
         }
         @if (loadingWiki) {
-          <div class="wiki-loading">
-            <i class="pi pi-spin pi-spinner"></i> Caricamento biografia...
+          <div aria-busy="true" aria-label="Caricamento biografia">
+            @for (w of ['100%', '96%', '98%', '92%', '60%']; track $index) {
+              <div class="skeleton skeleton-line" [style.width]="w"></div>
+            }
           </div>
         }
         @if (!loadingWiki && wikiExtract) {
@@ -107,8 +109,10 @@
       <section class="panel career-panel">
         <h2>Statistiche Carriera</h2>
         @if (loadingStats) {
-          <div class="stats-loading">
-            <i class="pi pi-spin pi-spinner"></i> Caricamento statistiche...
+          <div class="career-grid" aria-busy="true" aria-label="Caricamento statistiche">
+            @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+              <div class="skeleton" style="height: 120px; border-radius: 12px;"></div>
+            }
           </div>
         }
         @if (!loadingStats && careerStats) {
@@ -212,10 +216,29 @@
       </section>
     </div>
   </div>
+} @else if (error && !loading) {
+  <div class="driver-detail">
+    <div class="back-button">
+      <p-button icon="pi pi-arrow-left" styleClass="p-button-text" label="Torna ai Piloti" routerLink="/drivers"></p-button>
+    </div>
+    @if (apiUnavailable) {
+      <app-api-unavailable (retry)="reload()"></app-api-unavailable>
+    } @else {
+      <div class="not-found">
+        <i class="pi pi-user"></i>
+        <h3>Pilota non trovato</h3>
+        <p>Il pilota che cerchi non esiste o non è presente nei dati OpenF1.</p>
+      </div>
+    }
+  </div>
 } @else {
-  <div class="loading">
-    <i class="pi pi-spin pi-spinner" style="font-size:2rem"></i>
-    <p>Caricamento pilota...</p>
+  <div class="driver-detail" aria-busy="true" aria-label="Caricamento pilota">
+    <div class="skeleton" style="height: 40px; width: 200px; margin-bottom: 1rem;"></div>
+    <div class="skeleton" style="height: 230px; margin-bottom: 2rem; border-radius: 16px;"></div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <div class="skeleton" style="height: 320px; border-radius: 16px;"></div>
+      <div class="skeleton" style="height: 320px; border-radius: 16px;"></div>
+    </div>
   </div>
 }
 

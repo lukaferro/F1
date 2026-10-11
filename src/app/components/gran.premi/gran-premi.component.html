@@ -90,6 +90,21 @@
       <app-api-unavailable (retry)="loadMeetings()"></app-api-unavailable>
     }
 
+    @if (loading) {
+      <div class="cards-grid" aria-busy="true" aria-label="Caricamento Gran Premi">
+        @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+          <div class="gp-card" style="min-height: 270px;">
+            <div class="gp-card-content">
+              <div class="skeleton skeleton-line" style="width: 40%;"></div>
+              <div class="skeleton" style="height: 1.4rem; width: 90%; margin: 1rem 0 0.5rem;"></div>
+              <div class="skeleton" style="height: 1.4rem; width: 70%;"></div>
+              <div class="skeleton skeleton-line" style="width: 55%; margin-top: 1rem;"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
     @if (!error && meetings.length) {
       <div class="cards-grid">
         @for (meeting of meetings; track trackById($index, meeting)) {
