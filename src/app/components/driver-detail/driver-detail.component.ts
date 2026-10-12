@@ -9,11 +9,13 @@ import { TagModule } from 'primeng/tag';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
 import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
+import { DriverCareerComponent } from '../driver-career/driver-career.component';
+import { nationalityToCountryCode } from '../../utils/nationality';
 
 @Component({
   selector: 'app-driver-detail',
   standalone: true,
-  imports: [RouterLink, ButtonModule, CardModule, TagModule, ApiUnavailableComponent],
+  imports: [RouterLink, ButtonModule, CardModule, TagModule, ApiUnavailableComponent, DriverCareerComponent],
   templateUrl: './driver-detail.component.html',
   styleUrls: ['./driver-detail.component.css']
 })
@@ -31,8 +33,6 @@ export class DriverDetailComponent implements OnInit {
   loadingWiki = false;
   // URL della bandiera già caricata: finché non coincide con quella attuale si vede lo skeleton
   flagLoadedUrl?: string;
-  careerStats: any = null;
-  loadingStats = false;
 
   // Mappatura codici paese come in gran-premi-detail (3 lettere -> ISO2)
   private readonly countryCodeMapping: Record<string, string> = {
@@ -100,7 +100,9 @@ export class DriverDetailComponent implements OnInit {
     NOR: 'no',  // Norvegia
     CZE: 'cz',  // Repubblica Ceca
     VEN: 've',  // Venezuela
-    COL: 'co'   // Colombia
+    COL: 'co',  // Colombia
+    EST: 'ee',  // Estonia
+    ISR: 'il'   // Israele
   };
 
   // Nomi alternativi per ricerca Wikipedia (alcuni piloti hanno nomi diversi su Wikipedia)
@@ -314,20 +316,10 @@ export class DriverDetailComponent implements OnInit {
   private async loadWikipediaInfo(fullName: string) {
     if (!fullName) return;
     this.loadingWiki = true;
-    this.loadingStats = true;
 
     // Ottieni varianti nome da cercare
     const nameKey = fullName.toUpperCase();
-    const wikiNameVariants: Record<string, string[]> = {
-      'ISACK HADJAR': ['Isack Hadjar', 'Isack Hadjar (racing driver)'],
-      'ANDREA KIMI ANTONELLI': ['Andrea Kimi Antonelli', 'Kimi Antonelli', 'Andrea Antonelli'],
-      'LIAM LAWSON': ['Liam Lawson', 'Liam Lawson (racing driver)'],
-      'OLIVER BEARMAN': ['Oliver Bearman', 'Ollie Bearman'],
-      'FRANCO COLAPINTO': ['Franco Colapinto'],
-      'YUKI TSUNODA': ['Yuki Tsunoda'],
-      'ESTEBAN OCON': ['Esteban Ocon']
-    };
-    const namesToTry = wikiNameVariants[nameKey] || [fullName];
+    const namesToTry = this.wikiNameVariants[nameKey] || [fullName];
     const locales = ['it', 'en'];
 
     try {
@@ -351,16 +343,13 @@ export class DriverDetailComponent implements OnInit {
             }
           }
 
-          // Prova a estrarre statistiche dalla tabella HTML (Carriera F1)
-          await this.loadWikipediaStats(pageTitle, locale);
-
           // Se abbiamo ottenuto qualcosa con questa variante, interrompiamo
-          if (this.wikiExtract || this.careerStats) {
+          if (this.wikiExtract) {
             break;
           }
         }
         // Se abbiamo trovato dati, esci dal loop locale
-        if (this.wikiExtract || this.careerStats) {
+        if (this.wikiExtract) {
           break;
         }
       }
@@ -373,7 +362,6 @@ export class DriverDetailComponent implements OnInit {
       // Silenzia errori caricamento Wikipedia
     } finally {
       this.loadingWiki = false;
-      this.loadingStats = false;
     }
   }
 
@@ -387,300 +375,10 @@ export class DriverDetailComponent implements OnInit {
     ];
   }
 
-  private cleanWikiValue(value: string): string {
-    return value
-      .replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1') // [[Testo|Label]] -> Label
-      .replace(/\[\[([^\]]+)\]\]/g, '$1') // [[Testo]] -> Testo
-      .replace(/<[^>]+>/g, '') // rimuovi HTML
-      .replace(/\{\{[^}]+\}\}/g, '') // rimuovi template
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+  // Bandiera dalla nazionalità Jolpica quando OpenF1 non ha il paese del pilota
+  onNationality(nationality: string): void {
+    if (!this.driver || this.driver.country_code) return;
+    const code = nationalityToCountryCode(nationality);
+    if (code) this.driver = { ...this.driver, country_code: code };
   }
-
-  private normalizeLabel(text: string): string {
-    return text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // rimuovi accenti diacritici
-      .replace(/[^a-z0-9 ]/g, '') // tieni solo lettere, numeri, spazi
-      .replace(/\s+/g, ' ') // collassa spazi multipli
-      .trim();
-  }
-
-  private async loadWikipediaStats(pageTitle: string, locale: string) {
-    const stats = await this.parseWikipediaHtmlStats(pageTitle, locale);
-    if (stats) {
-      this.careerStats = {
-        ...(this.careerStats || {}),
-        debut: stats.debut || this.careerStats?.debut || '—',
-        races: stats.races || this.careerStats?.races || '—',
-        wins: stats.wins || this.careerStats?.wins || '—',
-        podiums: stats.podiums || this.careerStats?.podiums || '—',
-        poles: stats.poles || this.careerStats?.poles || '—',
-        fastestLaps: stats.fastestLaps || this.careerStats?.fastestLaps || '—',
-        points: stats.points || this.careerStats?.points || '—',
-        championshipsCount: stats.championshipsCount || this.careerStats?.championshipsCount || '0',
-        championshipYears: stats.championshipYears || this.careerStats?.championshipYears || [],
-        teams: stats.teams || this.careerStats?.teams || '—',
-        teamsArray: stats.teamsArray || this.careerStats?.teamsArray || []
-      };
-
-      // Se OpenF1 non ha country_code, prova a prenderlo da Wikipedia
-      if (stats.country && this.driver && !this.driver.country_code) {
-        // Cerca di estrarre codice ISO se presente
-        this.driver = { ...this.driver, country_code: this.extractCountryCode(stats.country) };
-      }
-    }
-  }
-
-  // Parsing HTML della pagina Wikipedia (action=parse) per estrarre le righe chiave della tabella carriera
-  private async parseWikipediaHtmlStats(pageTitle: string, locale: string): Promise<{ wins?: string; podiums?: string; poles?: string; fastestLaps?: string; championships?: string; teams?: string; debut?: string; races?: string; points?: string; championshipsCount?: string; championshipYears?: string[]; teamsArray?: string[]; country?: string } | null> {
-    try {
-      const parseUrl = `https://${locale}.wikipedia.org/w/api.php?action=parse&origin=*&format=json&page=${encodeURIComponent(pageTitle)}&prop=text`;
-      const htmlRes: any = await this.http.get(parseUrl).toPromise();
-      const html: string | undefined = htmlRes?.parse?.text?.['*'];
-      if (!html) return null;
-
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const rows = Array.from(doc.querySelectorAll('table.infobox tr, table.wikitable tr'));
-
-
-
-      // Marcatori per riconoscere il contesto Formula 1 ed escludere altre serie
-      const f1Markers = [
-        'formula 1', 'formula one', 'formula uno',
-        'campionato mondiale di formula 1', 'statistiche in f1', 'carriera in f1',
-        'formula one world championship', 'career statistics formula one'
-      ];
-      const nonF1Markers = [
-        'indy', 'indycar', 'indianapolis 500', 'indy 500', '500 miglia', '500 miglia di indianapolis',
-        'gp2', 'formula 2', 'f2', 'formula 3', 'f3',
-        'dtm', 'wec', 'fia wec', 'fia world endurance', 'world endurance', 'elms', 'wrc', 'formula e', 'super formula', 'karting', 'endurance', 'daytona',
-        'le mans', '24 ore di le mans', 'andretti', 'gazoo'
-      ];
-
-      const norm = (t: string) => this.normalizeLabel(t);
-      const textHasAny = (t: string | null | undefined, markers: string[]) => {
-        const n = norm(t || '');
-        return markers.some(m => n.includes(norm(m)));
-      };
-
-      // Verifica se la riga appartiene ad un contesto F1 usando caption e heading vicine
-      const isRowInF1Context = (rowEl: Element): boolean => {
-        const table = rowEl.closest('table');
-        if (!table) return false;
-
-        // Fallback: le righe dell'infobox sono considerate F1
-        const isInfobox = (table.classList.contains('infobox') ||
-          (table.getAttribute('class') || '').toLowerCase().includes('infobox'));
-        if (isInfobox) return true;
-
-        const isWikitable = (table.classList.contains('wikitable') ||
-          (table.getAttribute('class') || '').toLowerCase().includes('wikitable'));
-
-        const texts: string[] = [];
-        const caption = table.querySelector('caption');
-        if (caption) texts.push(caption.textContent || '');
-
-        // Considera anche tutti i th della tabella come contesto
-        const ths = Array.from(table.querySelectorAll('th'));
-        ths.forEach(th => texts.push(th.textContent || ''));
-
-        // Cerca heading (h2/h3/h4) immediatamente precedente nella gerarchia
-        const scanPrevForHeading = (el: Element | null, maxSteps = 12): void => {
-          let cur: Element | null = el;
-          let steps = 0;
-          while (cur && steps < maxSteps) {
-            const prev = cur.previousElementSibling as Element | null;
-            if (!prev) break;
-            const tag = (prev.tagName || '').toLowerCase();
-            if (tag === 'h2' || tag === 'h3' || tag === 'h4') {
-              texts.push(prev.textContent || '');
-              break;
-            }
-            cur = prev;
-            steps++;
-          }
-        };
-
-        scanPrevForHeading(table as Element);
-        // Tenta anche sui genitori per catturare heading di sezione
-        const parent = table.parentElement as Element | null;
-        if (parent) scanPrevForHeading(parent);
-
-        // Se il contesto contiene marker non-F1, scarta
-        if (texts.some(t => textHasAny(t, nonF1Markers))) return false;
-        // Se troviamo marker F1, accetta
-        if (texts.some(t => textHasAny(t, f1Markers))) return true;
-        // Per le wikitable senza marker F1, non accettare
-        if (isWikitable) return false;
-        // Altrimenti, fallback (non dovrebbe capitare poiché gestiamo infobox e wikitable)
-        return false;
-      };
-
-      const wanted: Record<'championships' | 'wins' | 'podiums' | 'poles' | 'fastestLaps' | 'teams' | 'debut' | 'races' | 'points' | 'country', readonly string[]> = {
-        championships: ['mondiali vinti', 'campionati', 'campionati mondiali', 'world championships', 'titoli', 'world champion', 'f1 championships', 'world drivers championship', 'wdc'],
-        wins: ['gp vinti', 'vittorie', 'wins', 'race wins', 'grand prix wins'],
-        podiums: ['podi', 'podiums', 'podium finishes'],
-        poles: ['pole position', 'pole positions', 'pole', 'poles'],
-        fastestLaps: ['giri veloci', 'giro veloce', 'fastest laps', 'fastest lap'],
-        teams: ['scuderie', 'teams', 'squadre', 'racing teams', 'team'],
-        debut: ['esordio', 'debut', 'debutto', 'first race', 'formula one debut'],
-        races: ['gp disputati', 'gare', 'races', 'gran premi', 'formula one entries', 'entries', 'starts', 'f1 starts', 'grand prix starts'],
-        points: ['punti', 'points', 'punti ottenuti', 'career points', 'formula one points'],
-        country: ['nazionalita', 'nationality', 'paese', 'country']
-      };
-      const extractNumber = (text: string, allowDecimal = false): string => {
-        const match = text.match(/[0-9][0-9\s\.,]*/);
-        if (!match) return text;
-        let s = match[0].replace(/\s/g, '');
-        if (allowDecimal) {
-          s = s.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-          const firstDot = s.indexOf('.');
-          if (firstDot !== -1) {
-            s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, '');
-          }
-        } else {
-          s = s.replace(/[^0-9]/g, '');
-        }
-        return s;
-      };
-
-      const found: any = {};
-
-      rows.forEach(row => {
-        // Richiede contesto F1 (infobox accettato come fallback, altre tabelle devono avere marker F1)
-        if (!isRowInF1Context(row)) {
-          return;
-        }
-        const th = row.querySelector('th');
-        const td = row.querySelector('td');
-        if (!th || !td) return;
-        const label = this.normalizeLabel(th.textContent || '');
-        const valueRaw = this.cleanWikiValue(td.innerHTML || td.textContent || '');
-
-        // Salta subito righe che contengono marcatori espliciti di serie non-F1
-        const rawLabel = th.textContent || '';
-        const rawValue = td.textContent || '';
-        const containsNonF1 = textHasAny(rawLabel, nonF1Markers) || textHasAny(rawValue, nonF1Markers);
-        if (containsNonF1) {
-          return;
-        }
-
-        (Object.entries(wanted) as Array<[keyof typeof wanted, readonly string[]]>).forEach(([key, labels]) => {
-          labels.forEach(lab => {
-            if (label.includes(this.normalizeLabel(lab))) {
-              if (key === 'teams') {
-                // Split quando troviamo pattern: "anno-anno Nome" o "anno- Nome"
-                // Es: "Toro Rosso 2015-2016 Red Bull 2016-" -> ["Toro Rosso 2015-2016", "Red Bull 2016-"]
-                let teamsArray = valueRaw
-                  .replace(/(\d{4}(?:-\d{4})?-?)\s+([A-Z])/g, '$1|||$2') // Inserisci separatore tra anno e nome maiuscolo
-                  .split('|||')
-                  .map(v => v.trim())
-                  .filter(Boolean)
-                  .map(team => this.formatTeamEntry(team));
-                // Filtra fuori riferimenti espliciti a serie non-F1
-                teamsArray = teamsArray.filter(entry => !textHasAny(entry, nonF1Markers));
-
-                found['teamsArray'] = teamsArray;
-                found[key] = teamsArray.join(' • ');
-              } else if (key === 'championships') {
-                // Estrai anni dai titoli: "4 (2021, 2022, 2023, 2024)" -> count: 4, years: [2021, 2022, 2023, 2024]
-                const match = valueRaw.match(/(\d+)(?:\s*\(([^)]+)\))?/);
-                if (match) {
-                  found['championshipsCount'] = match[1];
-                  found['championshipYears'] = match[2] ? match[2].split(',').map(y => y.trim()) : [];
-                }
-              } else if (key === 'debut') {
-                // Pulisci esordio: rimuovi br e newline per avere tutto su una riga
-                found[key] = valueRaw
-                  .replace(/<br\s*\/?>/gi, ' ')
-                  .replace(/\n/g, ' ')
-                  .replace(/\s+/g, ' ')
-                  .trim();
-              } else if (key === 'country') {
-                // Estrai codice paese, cerca pattern come "Regno Unito", "GBR", etc.
-                found[key] = valueRaw.trim();
-              } else if (key === 'wins' || key === 'podiums' || key === 'poles' || key === 'races' || key === 'points' || key === 'fastestLaps') {
-                // Estrai il primo numero presente nel valore
-                const num = extractNumber(valueRaw);
-                found[key] = num;
-              } else {
-                found[key] = valueRaw;
-              }
-            }
-          });
-        });
-      });
-
-      if (Object.keys(found).length === 0) return null;
-      return found;
-    } catch (err) {
-      // Silenzia errori di parsing Wikipedia
-      return null;
-    }
-  }
-
-  // Debug: mostra i primi 400 caratteri del wikitext della pagina per capire i campi disponibili
-  private extractCountryCode(countryText: string): string {
-    // Mappa nomi paese comuni a codici ISO
-    const countryMap: Record<string, string> = {
-      'regno unito': 'GBR',
-      'united kingdom': 'GBR',
-      'gran bretagna': 'GBR',
-      'great britain': 'GBR',
-      'italia': 'ITA',
-      'italy': 'ITA',
-      'francia': 'FRA',
-      'france': 'FRA',
-      'spagna': 'ESP',
-      'spain': 'ESP',
-      'germania': 'DEU',
-      'germany': 'DEU',
-      'olanda': 'NED',
-      'paesi bassi': 'NED',
-      'netherlands': 'NED',
-      'belgio': 'BEL',
-      'belgium': 'BEL',
-      'australia': 'AUS',
-      'giappone': 'JPN',
-      'japan': 'JPN',
-      'messico': 'MEX',
-      'mexico': 'MEX',
-      'canada': 'CAN',
-      'brasile': 'BRA',
-      'brazil': 'BRA',
-      'argentina': 'ARG',
-      'finlandia': 'FIN',
-      'finland': 'FIN',
-      'monaco': 'MON',
-      'danimarca': 'DEN',
-      'denmark': 'DEN',
-      'thailandia': 'THA',
-      'thailand': 'THA',
-      'cina': 'CHN',
-      'china': 'CHN',
-      'stati uniti': 'USA',
-      'united states': 'USA',
-      'nuova zelanda': 'NZL',
-      'new zealand': 'NZL'
-    };
-
-    const normalized = countryText.toLowerCase().trim();
-    return countryMap[normalized] || countryText.toUpperCase().slice(0, 3);
-  }
-
-  private formatTeamEntry(teamStr: string): string {
-    // Converte "Toro Rosso 2015-2016" -> "Toro Rosso (2015-2016)"
-    // o "Red Bull 2016-" -> "Red Bull (2016-)"
-    const match = teamStr.match(/^(.*?)\s+(\d{4}(?:-\d{4})?(?:-)?)$/);
-    if (match) {
-      return `${match[1].trim()} (${match[2]})`;
-    }
-    return teamStr.trim();
-  }
-
-  // rimosso logging wikitext per prestazioni
 }

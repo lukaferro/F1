@@ -233,8 +233,6 @@
   .career-table td {
     padding: 0.6rem 0.4rem;
   }
-  .career-table .col-year { width: 4.5rem; }
-  .career-table .col-num { width: 3.6rem; }
   .in-progress {
     display: block;
     margin: 0.2rem 0 0;
@@ -268,4 +266,55 @@
 .position-chart .axis-label {
   fill: #9aa0a6;
   font-size: 12px;
+}
+
+.label-short {
+  display: none;
+}
+@media (max-width: 720px) {
+  .label-short {
+    display: inline;
+  }
+  .career-table .col-year { width: 3.6rem; }
+  .career-table .col-num { width: 2.9rem; }
+  .career-table th {
+    font-size: 0.7rem;
+    letter-spacing: 0;
+  }
+  .career-table td {
+    font-size: 0.85rem;
+  }
+  /* solo il logo e l'intestazione corta: i testi completi restano per gli screen reader */
+  .label-full,
+  .team-name.has-logo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .team-logo {
+    margin-right: 0.2rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .career-table .col-pos { width: 2.4rem; }
+  .career-table .col-points { width: 3.6rem; }
+  .career-table td.cell-num,
+  .career-table td.cell-pos {
+    white-space: nowrap;
+  }
+  .in-progress {
+    font-size: 0.58rem;
+    white-space: nowrap;
+  }
+  /* il grafico si rimpicciolisce: testi più grandi e metà delle etichette degli anni */
+  .position-chart .axis-label {
+    font-size: 20px;
+  }
+  .position-chart .x-label.minor {
+    display: none;
+  }
 }

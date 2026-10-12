@@ -82,7 +82,7 @@ export class JolpicaService {
   // Limiti Jolpica per indirizzo IP: 4 richieste al secondo e 500 all'ora
   private readonly cache = new HttpCache(inject(HttpClient), {
     prefix: 'jolpica:',
-    minGapMs: 260,
+    minGapMs: 550, // Cloudflare risponde 429 già sotto le 4/s dichiarate: circa 18 richieste ogni 10 s
     maxPerWindow: 450, // margine sotto il limite di 500
     windowMs: 3_600_000,
     ttlFor: url => jolpicaTtl(url, new Date().getFullYear())

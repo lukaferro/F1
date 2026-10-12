@@ -47,7 +47,8 @@ describe('buildPositionChart', () => {
 
   it('thins x labels on long careers', () => {
     const twenty = buildPositionChart(consecutive(20))!.xLabels.map(l => l.label);
-    expect(twenty).toEqual(['2000', '2002', '2004', '2006', '2008', '2010', '2012', '2014', '2016', '2018', '2019']);
+    // l'ultima stagione è sempre visibile; l'etichetta subito prima si toglie per non sovrapporsi
+    expect(twenty).toEqual(['2000', '2002', '2004', '2006', '2008', '2010', '2012', '2014', '2016', '2019']);
 
     const twentySix = buildPositionChart(consecutive(26))!.xLabels.map(l => l.label);
     expect(twentySix).toEqual(['2000', '2005', '2010', '2015', '2020', '2025']);

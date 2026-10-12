@@ -109,8 +109,10 @@ describe('DriverCareerComponent', () => {
       standings: season => Promise.resolve(season === 2008 ? [standing('hamilton', 3, 50)] : [standing('alonso', 1, 109)])
     });
 
+    // es. una stagione con sole prove libere: non è una stagione corsa, la riga non si mostra
     expect(component.seasons.find(s => s.season === 2007)?.state).toBe('ready');
-    expect(row(2007)?.querySelector('.cell-pos')?.textContent?.trim()).toBe('—');
+    expect(row(2007)).toBeNull();
+    expect(row(2008)).toBeTruthy();
     expect(component.totalPoints).toBe(50);
   });
 

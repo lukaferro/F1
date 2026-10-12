@@ -109,7 +109,7 @@
         </circle>
       }
       @for (l of c.xLabels; track l.label) {
-        <text class="axis-label" [attr.x]="l.x" [attr.y]="c.height - 8" text-anchor="middle">{{ l.label }}</text>
+        <text class="axis-label x-label" [class.minor]="$odd && !$last" [attr.x]="l.x" [attr.y]="c.height - 8" [attr.text-anchor]="$first ? 'start' : $last ? 'end' : 'middle'">{{ l.label }}</text>
       }
     </svg>
   }
@@ -128,13 +128,13 @@
         <tr>
           <th class="col-year">Anno</th>
           <th class="col-team">Team</th>
-          <th class="col-num">Pos.</th>
-          <th class="col-num">Punti</th>
-          <th class="col-num">Vittorie</th>
+          <th class="col-num col-pos">Pos.</th>
+          <th class="col-num col-points">Punti</th>
+          <th class="col-num"><span class="label-full">Vittorie</span><span class="label-short" aria-hidden="true">Vitt.</span></th>
         </tr>
       </thead>
       <tbody>
-        @for (s of seasons; track s.season) {
+        @for (s of tableSeasons; track s.season) {
           <tr [attr.data-season]="s.season" [class.champion]="s.champion" [style.--i]="$index"
             [style.border-left-color]="s.state === 'ready' && s.constructors.length ? teamColor(s) : null">
             <td class="cell-year">
@@ -155,7 +155,7 @@
                     <img class="team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" (error)="onLogoError(c.id)" />
                   }
                 }
-                {{ s.state === 'error' ? '—' : teamNames(s) || '—' }}
+                <span class="team-name" [class.has-logo]="hasLogo(s)">{{ s.state === 'error' ? '—' : teamNames(s) || '—' }}</span>
               </td>
               <td class="cell-pos">{{ s.position ?? '—' }}</td>
               <td class="cell-num">{{ s.points ?? '—' }}</td>

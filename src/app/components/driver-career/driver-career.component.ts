@@ -61,6 +61,11 @@ export class DriverCareerComponent implements OnChanges {
     return this.seasons.reduce((sum, s) => sum + (s.points ?? 0), 0);
   }
 
+  /** Righe della tabella: senza le stagioni in cui il pilota non è in classifica (es. solo prove libere) */
+  get tableSeasons(): CareerSeason[] {
+    return this.seasons.filter(s => !(s.state === 'ready' && s.position === undefined));
+  }
+
   get titleYears(): number[] {
     return this.seasons.filter(s => s.champion).map(s => s.season).sort((a, b) => a - b);
   }
@@ -160,6 +165,11 @@ export class DriverCareerComponent implements OnChanges {
 
   logoFor(constructorId: string): ConstructorLogo | undefined {
     return this.failedLogos.has(constructorId) ? undefined : constructorLogo(constructorId);
+  }
+
+  /** Almeno un logo nella riga: su schermi stretti basta quello */
+  hasLogo(row: CareerSeason): boolean {
+    return row.constructors.some(c => !!this.logoFor(c.id));
   }
 
   onLogoError(constructorId: string): void {

@@ -47,8 +47,10 @@ export function buildPositionChart(input: ChartInput[], width = 640, height = 22
 
   // etichette diradate nelle carriere lunghe, l'ultima stagione sempre visibile
   const step = points.length > 24 ? 5 : points.length > 12 ? 2 : 1;
+  const lastIndex = points.length - 1;
+  // un'etichetta troppo vicina all'ultima le si sovrapporrebbe: la si salta
   const xLabels = points
-    .filter((_, i) => i % step === 0 || i === points.length - 1)
+    .filter((_, i) => i === lastIndex || (i % step === 0 && (step === 1 || lastIndex - i >= step)))
     .map(p => ({ x: p.x, label: String(p.season) }));
 
   const best = Math.min(...seasons.map(s => s.position));
