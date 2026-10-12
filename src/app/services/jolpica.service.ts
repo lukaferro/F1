@@ -1,10 +1,12 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { HttpCache } from './http-cache';
 
 // Jolpica: archivio storico della F1 dal 1950 (erede di Ergast). https://github.com/jolpica/jolpica-f1
 const BASE_URL = 'https://api.jolpi.ca/ergast/f1';
 const PAGE_SIZE = 100; // massimo consentito dall'API per richiesta
+// Prima stagione coperta da OpenF1: i piloti dell'app si cercano solo da qui in poi
+export const FIRST_OPENF1_SEASON = 2023;
 
 export interface DriverStanding {
   position: number;
@@ -16,6 +18,21 @@ export interface DriverStanding {
   nationality: string;
   constructorId: string;  // ultima squadra della stagione
   constructorName: string;
+  constructors: { id: string; name: string }[];  // tutte le squadre della stagione, in ordine
+}
+
+export interface CareerTotals {
+  races: number;
+  wins: number;
+  podiums: number;
+  poles: number;
+  fastestLaps: number;
+  debut?: { season: number; raceName: string };  // assente se non ha mai corso
+}
+
+export interface JolpicaDriverMatch {
+  driverId: string;
+  nationality: string;
 }
 
 export interface ConstructorStanding {
@@ -29,25 +46,31 @@ export interface ConstructorStanding {
 
 // Forme delle risposte Jolpica (solo i campi usati)
 interface JolpicaConstructor { constructorId: string; name: string; nationality: string; }
+interface JolpicaDriver { driverId: string; code?: string; givenName: string; familyName: string; nationality: string; }
 interface JolpicaDriverRow {
   position?: string; points: string; wins: string;
-  Driver: { driverId: string; code?: string; givenName: string; familyName: string; nationality: string };
+  Driver: JolpicaDriver;
   Constructors: JolpicaConstructor[];
 }
 interface JolpicaConstructorRow { position?: string; points: string; wins: string; Constructor: JolpicaConstructor; }
 interface StandingsResponse<Row> {
   MRData: {
     total: string;
-    StandingsTable: { season: string; StandingsLists: Array<{ DriverStandings?: Row[]; ConstructorStandings?: Row[] }> };
+    StandingsTable: { season: string; StandingsLists: Array<{ round?: string; DriverStandings?: Row[]; ConstructorStandings?: Row[] }> };
   };
 }
 interface SeasonsResponse { MRData: { total?: string; SeasonTable: { Seasons: Array<{ season: string }> } }; }
+interface DriversResponse { MRData: { DriverTable: { Drivers: JolpicaDriver[] } }; }
+interface RacesResponse { MRData: { total: string; RaceTable: { Races: Array<{ season: string; raceName: string }> } }; }
 
 /** Le stagioni concluse non cambiano più (7 giorni); stagione in corso ed elenchi generali 1 ora */
 export function jolpicaTtl(url: string, currentYear: number): number {
   const season = Number(url.match(/\/f1\/(\d{4})\//)?.[1]);
   return season && season < currentYear ? 604_800_000 : 3_600_000;
 }
+
+// Confronto dei nomi senza accenti né maiuscole (es. "Hülkenberg" e "HULKENBERG")
+const plain = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 const toPosition = (value: string | undefined, index: number) => {
   const n = Number(value);
@@ -108,9 +131,73 @@ export class JolpicaService {
         fullName: `${row.Driver.givenName} ${row.Driver.familyName}`,
         nationality: row.Driver.nationality,
         constructorId: team?.constructorId ?? '',
-        constructorName: team?.name ?? ''
+        constructorName: team?.name ?? '',
+        constructors: row.Constructors.map(c => ({ id: c.constructorId, name: c.name }))
       };
     });
+  }
+
+  /** Round a cui è aggiornata la classifica (0 se vuota): stessa richiesta di getDriverStandings */
+  async getStandingsRound(season: number): Promise<number> {
+    const res = await this.cache.get<StandingsResponse<JolpicaDriverRow>>(`${BASE_URL}/${season}/driverstandings/?limit=${PAGE_SIZE}&offset=0`);
+    return Number(res.MRData.StandingsTable.StandingsLists[0]?.round) || 0;
+  }
+
+  /** Numero di gare in calendario nella stagione */
+  async getSeasonRaceCount(season: number): Promise<number> {
+    const res = await this.cache.get<RacesResponse>(`${BASE_URL}/${season}/races/?limit=1`);
+    return Number(res.MRData.total) || 0;
+  }
+
+  /**
+   * Abbina un pilota OpenF1 al suo driverId Jolpica: si cerca dalla stagione corrente
+   * all'indietro fino al 2023, prima per sigla e poi per cognome; null se non c'è
+   */
+  async findDriver(acronym: string, fullName: string): Promise<JolpicaDriverMatch | null> {
+    const code = acronym.toUpperCase();
+    const name = plain(fullName);
+    for (let season = new Date().getFullYear(); season >= FIRST_OPENF1_SEASON; season--) {
+      const drivers = await this.getSeasonDrivers(season);
+      const found = drivers.find(d => d.code === code) ?? drivers.find(d => name.includes(plain(d.familyName)));
+      if (found) return { driverId: found.driverId, nationality: found.nationality };
+    }
+    return null;
+  }
+
+  // Elenco piloti di una stagione; una stagione che Jolpica non conosce (404) è vuota
+  private async getSeasonDrivers(season: number): Promise<JolpicaDriver[]> {
+    try {
+      const res = await this.cache.get<DriversResponse>(`${BASE_URL}/${season}/drivers/?limit=${PAGE_SIZE}`);
+      return res.MRData.DriverTable.Drivers;
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 404) return [];
+      throw err;
+    }
+  }
+
+  /** Numeri di carriera: ogni valore è il MRData.total di una richiesta con limit=1 */
+  async getCareerTotals(driverId: string): Promise<CareerTotals> {
+    const base = `${BASE_URL}/drivers/${driverId}`;
+    const [all, first, second, third, poles, fastest] = await Promise.all(
+      ['results/', 'results/1/', 'results/2/', 'results/3/', 'qualifying/1/', 'fastest/1/results/']
+        .map(path => this.cache.get<RacesResponse>(`${base}/${path}?limit=1`)));
+    const total = (res: RacesResponse) => Number(res.MRData.total) || 0;
+    // la prima gara restituita è l'esordio
+    const debut = all.MRData.RaceTable.Races[0];
+    return {
+      races: total(all),
+      wins: total(first),
+      podiums: total(first) + total(second) + total(third),
+      poles: total(poles),
+      fastestLaps: total(fastest),
+      debut: debut ? { season: Number(debut.season), raceName: debut.raceName } : undefined
+    };
+  }
+
+  /** Stagioni corse dal pilota, dalla più recente */
+  async getDriverSeasons(driverId: string): Promise<number[]> {
+    const res = await this.cache.get<SeasonsResponse>(`${BASE_URL}/drivers/${driverId}/seasons/?limit=${PAGE_SIZE}`);
+    return res.MRData.SeasonTable.Seasons.map(s => Number(s.season)).sort((a, b) => b - a);
   }
 
   /** Vuota per le stagioni prima del 1958, quando il campionato costruttori non esisteva */
