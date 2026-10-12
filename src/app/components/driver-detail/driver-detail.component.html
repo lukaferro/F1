@@ -14,6 +14,9 @@
             [class.flag-pending]="flagLoadedUrl !== flagUrl"
             (load)="flagLoadedUrl = flagUrl"
             (error)="onFlagError($event, flagUrl)">
+        } @else if (nationalityPending) {
+          <!-- la nazionalità può arrivare dopo, da Jolpica -->
+          <div class="skeleton flag-skeleton"></div>
         }
       </div>
       <div class="hero-content">

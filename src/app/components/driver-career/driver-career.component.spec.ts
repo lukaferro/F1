@@ -259,6 +259,49 @@ describe('DriverCareerComponent', () => {
     expect(jolpica['getDriverStandings']).not.toHaveBeenCalledWith(2009);
   });
 
+  it('emits null when the driver is not found, so the page stops waiting for the flag', async () => {
+    const emitted: (string | null)[] = [];
+    await create({ findDriver: () => never() });
+    component.nationality.subscribe(n => emitted.push(n));
+    jolpica['findDriver'].mockImplementation(() => Promise.resolve(null));
+    fixture.componentRef.setInput('acronym', 'XYZ');
+    await settle();
+
+    expect(emitted).toEqual([null]);
+  });
+
+  it('emits null when Jolpica does not answer', async () => {
+    const emitted: (string | null)[] = [];
+    await create({ findDriver: () => never() });
+    component.nationality.subscribe(n => emitted.push(n));
+    jolpica['findDriver'].mockImplementation(() => Promise.reject(new Error('down')));
+    fixture.componentRef.setInput('acronym', 'XYZ');
+    await settle();
+
+    expect(emitted).toEqual([null]);
+  });
+
+  it('shows how many seasons are loaded', async () => {
+    await create({ standings: season => season === 2008 ? Promise.resolve([standing('hamilton', 1, 98)]) : never() });
+
+    expect(text()).toContain('Caricamento stagioni: 1 di 2');
+    expect(el().querySelector('.career-table')?.getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('marks the table as ready once every season is loaded', async () => {
+    await create({ standings: () => Promise.resolve([standing('hamilton', 2, 50)]) });
+
+    expect(text()).not.toContain('Caricamento stagioni');
+    expect(el().querySelector('.career-table')?.getAttribute('aria-busy')).toBe('false');
+  });
+
+  it('marks title rows for screen readers, not only with colour', async () => {
+    await create({ standings: season => Promise.resolve([standing('hamilton', season === 2008 ? 1 : 2, 50)]) });
+
+    expect(row(2008)?.querySelector('[aria-label="Campione del mondo"]')).toBeTruthy();
+    expect(row(2007)?.querySelector('[aria-label="Campione del mondo"]')).toBeNull();
+  });
+
   it('shows every constructor of a season', async () => {
     await create({
       seasons: [2025],

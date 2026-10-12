@@ -33,6 +33,8 @@ export class DriverDetailComponent implements OnInit {
   loadingWiki = false;
   // URL della bandiera già caricata: finché non coincide con quella attuale si vede lo skeleton
   flagLoadedUrl?: string;
+  // senza paese da OpenF1 la nazionalità può ancora arrivare da Jolpica (sezione carriera)
+  nationalityPending = true;
 
   // Mappatura codici paese come in gran-premi-detail (3 lettere -> ISO2)
   private readonly countryCodeMapping: Record<string, string> = {
@@ -172,6 +174,7 @@ export class DriverDetailComponent implements OnInit {
   private async loadDriverByIdOrAcronym(id: string) {
     this.loading = true;
     this.error = undefined;
+    this.nationalityPending = true;
     try {
       // Prima cerchiamo nella griglia attuale (pochi KB e già in cache dalla pagina Piloti);
       // solo per i piloti del passato serve la ricerca completa, molto più pesante
@@ -376,8 +379,9 @@ export class DriverDetailComponent implements OnInit {
   }
 
   // Bandiera dalla nazionalità Jolpica quando OpenF1 non ha il paese del pilota
-  onNationality(nationality: string): void {
-    if (!this.driver || this.driver.country_code) return;
+  onNationality(nationality: string | null): void {
+    this.nationalityPending = false;
+    if (!nationality || !this.driver || this.driver.country_code) return;
     const code = nationalityToCountryCode(nationality);
     if (code) this.driver = { ...this.driver, country_code: code };
   }

@@ -29,8 +29,8 @@ export class DriverCareerComponent implements OnChanges, OnDestroy {
 
   @Input({ required: true }) acronym!: string;
   @Input({ required: true }) fullName!: string;
-  /** Nazionalità Jolpica (es. "British"), utile se OpenF1 non ha il paese */
-  @Output() nationality = new EventEmitter<string>();
+  /** Nazionalità Jolpica (es. "British"), utile se OpenF1 non ha il paese; null se Jolpica non la conosce o non risponde */
+  @Output() nationality = new EventEmitter<string | null>();
 
   totals: CareerTotals | null = null;
   seasons: CareerSeason[] = [];
@@ -54,6 +54,11 @@ export class DriverCareerComponent implements OnChanges, OnDestroy {
 
   get seasonsComplete(): boolean {
     return this.seasons.every(s => s.state !== 'loading');
+  }
+
+  /** Stagioni già arrivate (anche in errore): il primo caricamento di una carriera lunga richiede qualche secondo */
+  get loadedSeasons(): number {
+    return this.seasons.filter(s => s.state !== 'loading').length;
   }
 
   get seasonsFailed(): boolean {
@@ -94,6 +99,7 @@ export class DriverCareerComponent implements OnChanges, OnDestroy {
       if (seq !== this.loadSeq) return;
       if (!match) {
         this.notFound = true;
+        this.nationality.emit(null);
         return;
       }
       this.nationality.emit(match.nationality);
@@ -111,7 +117,10 @@ export class DriverCareerComponent implements OnChanges, OnDestroy {
       this.seasons = seasons.map(season => ({ season, state: 'loading', constructors: [], inProgress: false, champion: false }));
       this.loadSeasons(seq);
     } catch {
-      if (seq === this.loadSeq) this.error = true;
+      if (seq === this.loadSeq) {
+        this.error = true;
+        this.nationality.emit(null);
+      }
     } finally {
       if (seq === this.loadSeq) this.loading = false;
     }

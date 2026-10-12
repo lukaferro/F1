@@ -168,6 +168,17 @@ describe('JolpicaService', () => {
       expect(await result).toEqual({ driverId: 'hulkenberg', nationality: 'German' });
     });
 
+    it('matches the family name only as a whole word', async () => {
+      const result = service.findDriver('HUL', 'Nico HULKENBERG');
+      for (let season = year; season >= 2023; season--) {
+        (await request(`${API}/${season}/drivers/?limit=100`)).flush(driversOf(season, [
+          { driverId: 'berg', givenName: 'Test', familyName: 'Berg', nationality: 'Swedish' }
+        ]));
+      }
+
+      expect(await result).toBeNull();
+    });
+
     it('returns null when no season since 2023 has the driver', async () => {
       const result = service.findDriver('XYZ', 'Nobody Here');
       for (let season = year; season >= 2023; season--) {

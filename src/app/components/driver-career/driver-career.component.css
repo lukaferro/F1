@@ -21,19 +21,6 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
-.career-item.highlight:hover,
-.career-item.stat-champs:hover {
-  border-color: rgba(230,57,70,0.35);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.22);
-}
-.career-item.highlight {
-  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.career-item.stat-champs {
-  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-  border: 1px solid rgba(255,255,255,0.08);
-}
 .career-item .champs-icon {
   color: #f5c518; /* oro per i titoli mondiali */
 }
@@ -124,6 +111,11 @@
   margin: 0;
   font-size: 1.1rem;
 }
+.seasons-progress {
+  margin-right: auto;
+  color: #9aa0a6;
+  font-size: 0.85rem;
+}
 .career-retry {
   display: inline-flex;
   align-items: center;
@@ -185,6 +177,11 @@
 .cell-year {
   font-weight: 700;
 }
+.champion-icon {
+  margin-left: 0.3rem;
+  color: #f5c518;
+  font-size: 0.85rem;
+}
 .in-progress {
   display: inline-block;
   margin-left: 0.35rem;
@@ -220,26 +217,6 @@
   background: #ffffff;
 }
 
-@media (max-width: 900px) {
-  .career-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 720px) {
-  .career-grid {
-    grid-template-columns: 1fr;
-  }
-  .career-table th,
-  .career-table td {
-    padding: 0.6rem 0.4rem;
-  }
-  .in-progress {
-    display: block;
-    margin: 0.2rem 0 0;
-    width: fit-content;
-  }
-}
-
 /* Grafico della posizione finale per stagione */
 .chart-title {
   margin: 1.75rem 0 0.75rem;
@@ -271,18 +248,47 @@
 .label-short {
   display: none;
 }
+@media (max-width: 900px) {
+  .career-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 @media (max-width: 720px) {
-  .label-short {
-    display: inline;
+  .career-grid {
+    grid-template-columns: 1fr;
+  }
+  .seasons-header {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
   }
   .career-table .col-year { width: 3.6rem; }
   .career-table .col-num { width: 2.9rem; }
+  .career-table .col-pos { width: 2.4rem; }
+  .career-table .col-points { width: 3.6rem; }
+  .career-table th,
+  .career-table td {
+    padding: 0.6rem 0.4rem;
+  }
   .career-table th {
     font-size: 0.7rem;
     letter-spacing: 0;
   }
   .career-table td {
     font-size: 0.85rem;
+  }
+  .career-table td.cell-num,
+  .career-table td.cell-pos {
+    white-space: nowrap;
+  }
+  .in-progress {
+    display: block;
+    width: fit-content;
+    margin: 0.2rem 0 0;
+    font-size: 0.58rem;
+    white-space: nowrap;
+  }
+  .label-short {
+    display: inline;
   }
   /* solo il logo e l'intestazione corta: i testi completi restano per gli screen reader */
   .label-full,
@@ -297,20 +303,7 @@
   .team-logo {
     margin-right: 0.2rem;
   }
-}
-
-@media (max-width: 720px) {
-  .career-table .col-pos { width: 2.4rem; }
-  .career-table .col-points { width: 3.6rem; }
-  .career-table td.cell-num,
-  .career-table td.cell-pos {
-    white-space: nowrap;
-  }
-  .in-progress {
-    font-size: 0.58rem;
-    white-space: nowrap;
-  }
-  /* il grafico si rimpicciolisce: testi più grandi e metà delle etichette degli anni */
+  /* il grafico si rimpicciolisce: testi più grandi e solo le etichette degli anni ben distanziate */
   .position-chart .axis-label {
     font-size: 20px;
   }

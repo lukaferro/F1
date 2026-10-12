@@ -71,6 +71,8 @@ export function jolpicaTtl(url: string, currentYear: number): number {
 
 // Confronto dei nomi senza accenti né maiuscole (es. "Hülkenberg" e "HULKENBERG")
 const plain = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+// Il cognome deve comparire come parola intera ("berg" non è "Hulkenberg")
+const words = (text: string) => ` ${plain(text).replace(/[^a-z]+/g, ' ').trim()} `;
 
 const toPosition = (value: string | undefined, index: number) => {
   const n = Number(value);
@@ -155,10 +157,10 @@ export class JolpicaService {
    */
   async findDriver(acronym: string, fullName: string): Promise<JolpicaDriverMatch | null> {
     const code = acronym.toUpperCase();
-    const name = plain(fullName);
+    const name = words(fullName);
     for (let season = new Date().getFullYear(); season >= FIRST_OPENF1_SEASON; season--) {
       const drivers = await this.getSeasonDrivers(season);
-      const found = drivers.find(d => d.code === code) ?? drivers.find(d => name.includes(plain(d.familyName)));
+      const found = drivers.find(d => d.code === code) ?? drivers.find(d => name.includes(words(d.familyName)));
       if (found) return { driverId: found.driverId, nationality: found.nationality };
     }
     return null;

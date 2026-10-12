@@ -61,6 +61,11 @@ describe('buildPositionChart', () => {
     shown.slice(1).forEach((l, i) => expect(l.x - shown[i].x).toBeGreaterThanOrEqual(80));
   });
 
+  it('mentions the season in progress for screen readers', () => {
+    const chart = buildPositionChart([point(2025, 2), point(2026, 1, true)])!;
+    expect(chart.label).toBe('Posizione finale dal 2025 al 2026, migliore: 1ª; il 2026 è ancora in corso');
+  });
+
   it('describes the chart for screen readers', () => {
     const chart = buildPositionChart([point(2026, 4), point(2007, 3), point(2008, 1)])!;
     expect(chart.label).toBe('Posizione finale dal 2007 al 2026, migliore: 1ª');

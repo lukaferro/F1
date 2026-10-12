@@ -45,28 +45,28 @@
         <span class="career-value">{{ totals.poles }}</span>
       </div>
     </div>
-    <div class="career-item highlight">
+    <div class="career-item">
       <i class="pi pi-trophy"></i>
       <div>
         <span class="career-label">Vittorie</span>
         <span class="career-value">{{ totals.wins }}</span>
       </div>
     </div>
-    <div class="career-item highlight">
+    <div class="career-item">
       <i class="pi pi-star"></i>
       <div>
         <span class="career-label">Podi</span>
         <span class="career-value">{{ totals.podiums }}</span>
       </div>
     </div>
-    <div class="career-item highlight">
+    <div class="career-item">
       <i class="pi pi-forward"></i>
       <div>
         <span class="career-label">Giri Veloci</span>
         <span class="career-value">{{ totals.fastestLaps }}</span>
       </div>
     </div>
-    <div class="career-item stat-champs">
+    <div class="career-item">
       <i class="pi pi-crown champs-icon" aria-hidden="true"></i>
       <div>
         <span class="career-label">Titoli Mondiali</span>
@@ -116,6 +116,9 @@
 
   <div class="seasons-header">
     <h3>Stagione per stagione</h3>
+    @if (!seasonsComplete) {
+      <span class="seasons-progress" aria-live="polite">Caricamento stagioni: {{ loadedSeasons }} di {{ seasons.length }}</span>
+    }
     @if (seasonsComplete && seasonsFailed) {
       <button type="button" class="career-retry" (click)="retry()">
         <i class="pi pi-refresh"></i> Riprova
@@ -123,7 +126,7 @@
     }
   </div>
   <div class="table-wrap">
-    <table class="career-table">
+    <table class="career-table" [attr.aria-busy]="!seasonsComplete">
       <thead>
         <tr>
           <th class="col-year">Anno</th>
@@ -139,6 +142,9 @@
             [style.border-left-color]="s.state === 'ready' && s.constructors.length ? teamColor(s) : null">
             <td class="cell-year">
               {{ s.season }}
+              @if (s.champion) {
+                <i class="pi pi-crown champion-icon" role="img" aria-label="Campione del mondo"></i>
+              }
               @if (s.inProgress) {
                 <span class="in-progress">in corso</span>
               }

@@ -65,5 +65,6 @@ export function buildPositionChart(input: ChartInput[], width = 640, height = 22
   return {
     width, height, points, segments, yTicks, xLabels,
     label: `Posizione finale dal ${first} al ${last}, migliore: ${best}ª`
+      + (seasons[seasons.length - 1].inProgress ? `; il ${last} è ancora in corso` : '')
   };
 }
