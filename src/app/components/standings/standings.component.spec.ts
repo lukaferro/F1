@@ -11,7 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 const driver = (position: number, fullName: string, extra: Partial<DriverStanding> = {}): DriverStanding => ({
   position, points: 100 - position, wins: 0, driverId: `d${position}`, fullName, nationality: 'Italian',
-  constructorId: 'ferrari', constructorName: 'Ferrari', ...extra
+  constructorId: 'ferrari', constructorName: 'Ferrari', constructors: [{ id: 'ferrari', name: 'Ferrari' }], ...extra
 });
 
 interface Setup {

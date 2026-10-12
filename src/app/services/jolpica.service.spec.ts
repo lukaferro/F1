@@ -124,4 +124,127 @@ describe('JolpicaService', () => {
     expect(jolpicaTtl(`${API}/current/driverstandings/?limit=1`, 2026)).toBe(3_600_000);
     expect(jolpicaTtl(`${API}/seasons/?limit=100`, 2026)).toBe(3_600_000);
   });
+
+  it('adds every constructor of the season', async () => {
+    const result = service.getDriverStandings(2025);
+    (await request(`${API}/2025/driverstandings/?limit=100&offset=0`)).flush(driverStandings('2025', [driverRow(1, {
+      Constructors: [
+        { constructorId: 'rb', name: 'RB F1 Team', nationality: 'Italian' },
+        { constructorId: 'red_bull', name: 'Red Bull', nationality: 'Austrian' }
+      ]
+    })]));
+
+    const [first] = await result;
+    expect(first.constructors).toEqual([{ id: 'rb', name: 'RB F1 Team' }, { id: 'red_bull', name: 'Red Bull' }]);
+    expect(first.constructorId).toBe('red_bull');
+  });
+
+  describe('career', () => {
+    const year = new Date().getFullYear();
+    const driversOf = (season: number, drivers: object[]) => ({
+      MRData: { total: String(drivers.length), DriverTable: { season: String(season), Drivers: drivers } }
+    });
+    const races = (total: number, first?: { season: string; raceName: string }) => ({
+      MRData: { total: String(total), RaceTable: { Races: first ? [first] : [] } }
+    });
+
+    it('finds a driver by code in the most recent season', async () => {
+      const result = service.findDriver('VER', 'Max VERSTAPPEN');
+      (await request(`${API}/${year}/drivers/?limit=100`)).flush(driversOf(year, [
+        { driverId: 'norris', code: 'NOR', givenName: 'Lando', familyName: 'Norris', nationality: 'British' },
+        { driverId: 'max_verstappen', code: 'VER', givenName: 'Max', familyName: 'Verstappen', nationality: 'Dutch' }
+      ]));
+
+      expect(await result).toEqual({ driverId: 'max_verstappen', nationality: 'Dutch' });
+    });
+
+    it('falls back to earlier seasons and to the family name without accents', async () => {
+      const result = service.findDriver('HUL', 'Nico HULKENBERG');
+      (await request(`${API}/${year}/drivers/?limit=100`)).flush(driversOf(year, []));
+      (await request(`${API}/${year - 1}/drivers/?limit=100`)).flush(driversOf(year - 1, [
+        { driverId: 'hulkenberg', givenName: 'Nico', familyName: 'Hülkenberg', nationality: 'German' }
+      ]));
+
+      expect(await result).toEqual({ driverId: 'hulkenberg', nationality: 'German' });
+    });
+
+    it('matches the family name only as a whole word', async () => {
+      const result = service.findDriver('HUL', 'Nico HULKENBERG');
+      for (let season = year; season >= 2023; season--) {
+        (await request(`${API}/${season}/drivers/?limit=100`)).flush(driversOf(season, [
+          { driverId: 'berg', givenName: 'Test', familyName: 'Berg', nationality: 'Swedish' }
+        ]));
+      }
+
+      expect(await result).toBeNull();
+    });
+
+    it('returns null when no season since 2023 has the driver', async () => {
+      const result = service.findDriver('XYZ', 'Nobody Here');
+      for (let season = year; season >= 2023; season--) {
+        (await request(`${API}/${season}/drivers/?limit=100`)).flush(driversOf(season, []));
+      }
+
+      expect(await result).toBeNull();
+    });
+
+    it('reads career totals from MRData.total', async () => {
+      const result = service.getCareerTotals('hamilton');
+      const base = `${API}/drivers/hamilton`;
+      (await request(`${base}/results/?limit=1`)).flush(races(397, { season: '2007', raceName: 'Australian Grand Prix' }));
+      (await request(`${base}/results/1/?limit=1`)).flush(races(106));
+      (await request(`${base}/results/2/?limit=1`)).flush(races(50));
+      (await request(`${base}/results/3/?limit=1`)).flush(races(44));
+      (await request(`${base}/qualifying/1/?limit=1`)).flush(races(119));
+      (await request(`${base}/fastest/1/results/?limit=1`)).flush(races(69));
+
+      expect(await result).toEqual({
+        races: 397, wins: 106, podiums: 200, poles: 119, fastestLaps: 69,
+        debut: { season: 2007, raceName: 'Australian Grand Prix' }
+      });
+    });
+
+    it('has no debut when the driver has no races', async () => {
+      const result = service.getCareerTotals('rookie');
+      for (const path of ['results/', 'results/1/', 'results/2/', 'results/3/', 'qualifying/1/', 'fastest/1/results/']) {
+        (await request(`${API}/drivers/rookie/${path}?limit=1`)).flush(races(0));
+      }
+
+      const totals = await result;
+      expect(totals.races).toBe(0);
+      expect(totals.debut).toBeUndefined();
+    });
+
+    it('lists driver seasons from the most recent', async () => {
+      const result = service.getDriverSeasons('hamilton');
+      (await request(`${API}/drivers/hamilton/seasons/?limit=100`)).flush({
+        MRData: { total: '3', SeasonTable: { Seasons: [{ season: '2007' }, { season: '2008' }, { season: '2026' }] } }
+      });
+
+      expect(await result).toEqual([2026, 2008, 2007]);
+    });
+
+    it('reads the race count of a season', async () => {
+      const result = service.getSeasonRaceCount(2026);
+      (await request(`${API}/2026/races/?limit=1`)).flush(races(24));
+
+      expect(await result).toBe(24);
+    });
+
+    it('reads the round of the standings', async () => {
+      const result = service.getStandingsRound(2026);
+      (await request(`${API}/2026/driverstandings/?limit=100&offset=0`)).flush({
+        MRData: { total: '1', StandingsTable: { season: '2026', StandingsLists: [{ season: '2026', round: '19', DriverStandings: [driverRow(1)] }] } }
+      });
+
+      expect(await result).toBe(19);
+    });
+
+    it('reads round 0 when the standings are empty', async () => {
+      const result = service.getStandingsRound(2027);
+      (await request(`${API}/2027/driverstandings/?limit=100&offset=0`)).flush(driverStandings('2027', []));
+
+      expect(await result).toBe(0);
+    });
+  });
 });
