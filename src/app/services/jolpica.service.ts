@@ -70,7 +70,7 @@ export function jolpicaTtl(url: string, currentYear: number): number {
 }
 
 // Confronto dei nomi senza accenti né maiuscole (es. "Hülkenberg" e "HULKENBERG")
-const plain = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const plain = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 const toPosition = (value: string | undefined, index: number) => {
   const n = Number(value);
