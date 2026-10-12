@@ -166,15 +166,26 @@ describe('DriverCareerComponent', () => {
     expect(text()).toContain('Questo pilota non ha ancora disputato gare in F1.');
   });
 
-  it('emits the Jolpica nationality', async () => {
-    const emitted: string[] = [];
+  it('emits the nationality and the wikipedia title when matched', async () => {
+    const emitted: unknown[] = [];
     await create({ findDriver: () => never() });
-    component.nationality.subscribe(n => emitted.push(n));
-    jolpica['findDriver'].mockImplementation(() => Promise.resolve({ driverId: 'hamilton', nationality: 'British' }));
+    component.matched.subscribe(m => emitted.push(m));
+    jolpica['findDriver'].mockImplementation(() => Promise.resolve({ driverId: 'hamilton', nationality: 'British', wikiTitle: 'Lewis_Hamilton' }));
     fixture.componentRef.setInput('acronym', 'HAM2');
     await settle();
 
-    expect(emitted).toEqual(['British']);
+    expect(emitted).toEqual([{ nationality: 'British', wikiTitle: 'Lewis_Hamilton' }]);
+  });
+
+  it('skips the lookup when a driverId is given', async () => {
+    await create({ findDriver: () => never() });
+    jolpica['findDriver'].mockClear();
+    fixture.componentRef.setInput('driverId', 'senna');
+    await settle();
+
+    expect(jolpica['findDriver']).not.toHaveBeenCalled();
+    expect(jolpica['getCareerTotals']).toHaveBeenCalledWith('senna');
+    expect(text()).toContain('106');
   });
 
   it('ignores results of a previous driver', async () => {
@@ -260,9 +271,9 @@ describe('DriverCareerComponent', () => {
   });
 
   it('emits null when the driver is not found, so the page stops waiting for the flag', async () => {
-    const emitted: (string | null)[] = [];
+    const emitted: unknown[] = [];
     await create({ findDriver: () => never() });
-    component.nationality.subscribe(n => emitted.push(n));
+    component.matched.subscribe(n => emitted.push(n));
     jolpica['findDriver'].mockImplementation(() => Promise.resolve(null));
     fixture.componentRef.setInput('acronym', 'XYZ');
     await settle();
@@ -271,9 +282,9 @@ describe('DriverCareerComponent', () => {
   });
 
   it('emits null when Jolpica does not answer', async () => {
-    const emitted: (string | null)[] = [];
+    const emitted: unknown[] = [];
     await create({ findDriver: () => never() });
-    component.nationality.subscribe(n => emitted.push(n));
+    component.matched.subscribe(n => emitted.push(n));
     jolpica['findDriver'].mockImplementation(() => Promise.reject(new Error('down')));
     fixture.componentRef.setInput('acronym', 'XYZ');
     await settle();

@@ -1,0 +1,20 @@
+<ng-content></ng-content>
+@if (loading) {
+  <div aria-busy="true" aria-label="Caricamento biografia">
+    @for (w of ['100%', '96%', '98%', '92%', '60%']; track $index) {
+      <div class="skeleton skeleton-line" [style.width]="w"></div>
+    }
+  </div>
+} @else if (bio) {
+  <div class="wiki-content">
+    <p>{{ bio.extract }}</p>
+    <a [href]="bio.url" target="_blank" rel="noopener" class="wiki-link">
+      <i class="pi pi-external-link"></i> Leggi su Wikipedia
+    </a>
+  </div>
+} @else {
+  <p class="muted">
+    <i class="pi pi-info-circle"></i>
+    Dati biografici non ancora disponibili. Questo pilota potrebbe essere nuovo in F1 o i dati non sono ancora su Wikipedia.
+  </p>
+}

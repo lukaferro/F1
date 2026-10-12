@@ -14,7 +14,7 @@
             [class.flag-pending]="flagLoadedUrl !== flagUrl"
             (load)="flagLoadedUrl = flagUrl"
             (error)="onFlagError($event, flagUrl)">
-        } @else if (nationalityPending) {
+        } @else if (matchPending) {
           <!-- la nazionalità può arrivare dopo, da Jolpica -->
           <div class="skeleton flag-skeleton"></div>
         }
@@ -58,47 +58,28 @@
     <div class="content-grid">
       <section class="panel bio-panel">
         <h2>Profilo</h2>
-        @if (driver.team_name && driver.country_code) {
-          <p>
-            Corre per <strong>{{ driver.team_name }}</strong> con il numero <strong>{{ driver.driver_number }}</strong> e rappresenta <strong>{{ driver.country_code }}</strong>.
-          </p>
-        }
-        @if (!driver.team_name && driver.country_code) {
-          <p>
-            Pilota con numero <strong>{{ driver.driver_number }}</strong> che rappresenta <strong>{{ driver.country_code }}</strong>. Team non ancora confermato per questa stagione.
-          </p>
-        }
-        @if (driver.team_name && !driver.country_code) {
-          <p>
-            Corre per <strong>{{ driver.team_name }}</strong> con il numero <strong>{{ driver.driver_number }}</strong>.
-          </p>
-        }
-        @if (!driver.team_name && !driver.country_code) {
-          <p>
-            Pilota con numero <strong>{{ driver.driver_number }}</strong>. Informazioni complete non ancora disponibili per questa stagione.
-          </p>
-        }
-        @if (loadingWiki) {
-          <div aria-busy="true" aria-label="Caricamento biografia">
-            @for (w of ['100%', '96%', '98%', '92%', '60%']; track $index) {
-              <div class="skeleton skeleton-line" [style.width]="w"></div>
-            }
-          </div>
-        }
-        @if (!loadingWiki && wikiExtract) {
-          <div class="wiki-content">
-            <p>{{ wikiExtract }}</p>
-            <a [href]="wikiUrl" target="_blank" rel="noopener" class="wiki-link">
-              <i class="pi pi-external-link"></i> Leggi su Wikipedia
-            </a>
-          </div>
-        }
-        @if (!loadingWiki && !wikiExtract) {
-          <p class="muted">
-            <i class="pi pi-info-circle"></i>
-            Dati biografici non ancora disponibili. Questo pilota potrebbe essere nuovo in F1 o i dati non sono ancora su Wikipedia.
-          </p>
-        }
+        <app-wikipedia-bio [title]="wikiTitle" [name]="driver.full_name" [waiting]="matchPending">
+          @if (driver.team_name && driver.country_code) {
+            <p>
+              Corre per <strong>{{ driver.team_name }}</strong> con il numero <strong>{{ driver.driver_number }}</strong> e rappresenta <strong>{{ driver.country_code }}</strong>.
+            </p>
+          }
+          @if (!driver.team_name && driver.country_code) {
+            <p>
+              Pilota con numero <strong>{{ driver.driver_number }}</strong> che rappresenta <strong>{{ driver.country_code }}</strong>. Team non ancora confermato per questa stagione.
+            </p>
+          }
+          @if (driver.team_name && !driver.country_code) {
+            <p>
+              Corre per <strong>{{ driver.team_name }}</strong> con il numero <strong>{{ driver.driver_number }}</strong>.
+            </p>
+          }
+          @if (!driver.team_name && !driver.country_code) {
+            <p>
+              Pilota con numero <strong>{{ driver.driver_number }}</strong>. Informazioni complete non ancora disponibili per questa stagione.
+            </p>
+          }
+        </app-wikipedia-bio>
       </section>
       <section class="panel stats-panel">
         <h2>Informazioni Attuali</h2>
@@ -118,7 +99,7 @@
       </section>
       <section class="panel career-panel">
         <h2>Statistiche Carriera</h2>
-        <app-driver-career [acronym]="driver.name_acronym" [fullName]="driver.full_name" (nationality)="onNationality($event)" />
+        <app-driver-career [acronym]="driver.name_acronym" [fullName]="driver.full_name" (matched)="onMatched($event)" />
       </section>
     </div>
   </div>

@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
-import { HttpClient } from '@angular/common/http';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
@@ -10,13 +9,14 @@ import { Openf1ServiceService, Driver } from '../../services/openf1-service';
 import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { DriverCareerComponent } from '../driver-career/driver-career.component';
+import { WikipediaBioComponent } from '../wikipedia-bio/wikipedia-bio.component';
 import { nationalityToCountryCode } from '../../utils/nationality';
 import { flagUrl } from '../../utils/country-flags';
 
 @Component({
   selector: 'app-driver-detail',
   standalone: true,
-  imports: [RouterLink, ButtonModule, CardModule, TagModule, ApiUnavailableComponent, DriverCareerComponent],
+  imports: [RouterLink, ButtonModule, CardModule, TagModule, ApiUnavailableComponent, DriverCareerComponent, WikipediaBioComponent],
   templateUrl: './driver-detail.component.html',
   styleUrls: ['./driver-detail.component.css']
 })
@@ -24,29 +24,16 @@ export class DriverDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly openF1Service = inject(Openf1ServiceService);
   private readonly sanitizer = inject(DomSanitizer);
-  private readonly http = inject(HttpClient);
 
   driver: Driver | null = null;
   loading = true;
   error?: string;
-  wikiExtract = '';
-  wikiUrl = '';
-  loadingWiki = false;
   // URL della bandiera già caricata: finché non coincide con quella attuale si vede lo skeleton
   flagLoadedUrl?: string;
-  // senza paese da OpenF1 la nazionalità può ancora arrivare da Jolpica (sezione carriera)
-  nationalityPending = true;
-
-  // Nomi alternativi per ricerca Wikipedia (alcuni piloti hanno nomi diversi su Wikipedia)
-  private readonly wikiNameVariants: Record<string, string[]> = {
-    'ISACK HADJAR': ['Isack Hadjar', 'Isack Hadjar (racing driver)'],
-    'ANDREA KIMI ANTONELLI': ['Andrea Kimi Antonelli', 'Kimi Antonelli', 'Andrea Antonelli'],
-    'LIAM LAWSON': ['Liam Lawson', 'Liam Lawson (racing driver)'],
-    'OLIVER BEARMAN': ['Oliver Bearman', 'Ollie Bearman'],
-    'FRANCO COLAPINTO': ['Franco Colapinto'],
-    'YUKI TSUNODA': ['Yuki Tsunoda'],
-    'ESTEBAN OCON': ['Esteban Ocon']
-  };
+  // la sezione carriera cerca il pilota su Jolpica: da lì arrivano nazionalità (se OpenF1 non ha il paese)
+  // e titolo Wikipedia (biografia con 2 richieste); finché non risponde bandiera e biografia aspettano
+  matchPending = true;
+  wikiTitle?: string;
 
   // Stessa mappa usata in drivers.component per coerenza immagini
   private readonly driverPhotos: { [key: string]: string } = {
@@ -104,7 +91,8 @@ export class DriverDetailComponent implements OnInit {
   private async loadDriverByIdOrAcronym(id: string) {
     this.loading = true;
     this.error = undefined;
-    this.nationalityPending = true;
+    this.matchPending = true;
+    this.wikiTitle = undefined;
     try {
       // Prima cerchiamo nella griglia attuale (pochi KB e già in cache dalla pagina Piloti);
       // solo per i piloti del passato serve la ricerca completa, molto più pesante
@@ -125,8 +113,6 @@ export class DriverDetailComponent implements OnInit {
       } else {
         // Aggiorna i dati del pilota con la stagione più recente disponibile
         await this.refreshDriverLatestSeason();
-        // Carica info Wikipedia in background
-        this.loadWikipediaInfo(this.driver.full_name);
       }
     } catch (err: any) {
       this.error = err?.message || 'Errore durante il caricamento del pilota';
@@ -244,58 +230,6 @@ export class DriverDetailComponent implements OnInit {
     return this.sanitizer.bypassSecurityTrustStyle(style);
   }
 
-  private async loadWikipediaInfo(fullName: string) {
-    if (!fullName) return;
-    this.loadingWiki = true;
-
-    // Ottieni varianti nome da cercare
-    const nameKey = fullName.toUpperCase();
-    const namesToTry = this.wikiNameVariants[nameKey] || [fullName];
-    const locales = ['it', 'en'];
-
-    try {
-      // Prova tutte le combinazioni di locale e variante nome
-      for (const locale of locales) {
-        for (const searchName of namesToTry) {
-          const searchUrl = `https://${locale}.wikipedia.org/w/api.php?action=query&format=json&origin=*&list=search&srsearch=${encodeURIComponent(searchName)}`;
-          const searchResult: any = await this.http.get(searchUrl).toPromise();
-          if (!searchResult?.query?.search?.length) continue;
-
-          const pageTitle = searchResult.query.search[0].title;
-          this.wikiUrl = `https://${locale}.wikipedia.org/wiki/${encodeURIComponent(pageTitle.replace(/ /g, '_'))}`;
-
-          const extractUrl = `https://${locale}.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(pageTitle)}`;
-          const extractResult: any = await this.http.get(extractUrl).toPromise();
-          if (extractResult?.query?.pages) {
-            const pages = extractResult.query.pages;
-            const pageId = Object.keys(pages)[0];
-            if (pages[pageId]?.extract) {
-              this.wikiExtract = pages[pageId].extract;
-            }
-          }
-
-          // Se abbiamo ottenuto qualcosa con questa variante, interrompiamo
-          if (this.wikiExtract) {
-            break;
-          }
-        }
-        // Se abbiamo trovato dati, esci dal loop locale
-        if (this.wikiExtract) {
-          break;
-        }
-      }
-
-      // Se non trova nulla, imposta stringa vuota
-      if (!this.wikiExtract) {
-        this.wikiExtract = '';
-      }
-    } catch (err) {
-      // Silenzia errori caricamento Wikipedia
-    } finally {
-      this.loadingWiki = false;
-    }
-  }
-
   get stats(): Array<{ label: string; value: string; accent?: string }> {
     if (!this.driver) return [];
     return [
@@ -307,10 +241,11 @@ export class DriverDetailComponent implements OnInit {
   }
 
   // Bandiera dalla nazionalità Jolpica quando OpenF1 non ha il paese del pilota
-  onNationality(nationality: string | null): void {
-    this.nationalityPending = false;
-    if (!nationality || !this.driver || this.driver.country_code) return;
-    const code = nationalityToCountryCode(nationality);
+  onMatched(match: { nationality?: string; wikiTitle?: string } | null): void {
+    this.matchPending = false;
+    this.wikiTitle = match?.wikiTitle;
+    if (!match?.nationality || !this.driver || this.driver.country_code) return;
+    const code = nationalityToCountryCode(match.nationality);
     if (code) this.driver = { ...this.driver, country_code: code };
   }
 }

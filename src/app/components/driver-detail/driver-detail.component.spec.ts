@@ -39,14 +39,26 @@ describe('DriverDetailComponent', () => {
     showDriver(undefined);
     expect(flagSkeleton()).toBeTruthy();
 
-    component.onNationality('British');
+    component.onMatched({ nationality: 'British' });
     fixture.detectChanges();
     expect(component.driver?.country_code).toBe('GBR');
   });
 
+  it('waits for the career match before loading the bio', () => {
+    showDriver('GBR');
+    const bio = () => fixture.debugElement.query(el => el.name === 'app-wikipedia-bio').componentInstance;
+    expect(bio().waiting).toBe(true);
+
+    component.onMatched({ nationality: 'British', wikiTitle: 'Lewis_Hamilton' });
+    fixture.detectChanges();
+    expect(bio().waiting).toBe(false);
+    expect(bio().title).toBe('Lewis_Hamilton');
+    expect(bio().name).toBe('Lewis HAMILTON');
+  });
+
   it('drops the flag skeleton when Jolpica has no nationality', () => {
     showDriver(undefined);
-    component.onNationality(null);
+    component.onMatched(null);
     fixture.detectChanges();
 
     expect(flagSkeleton()).toBeNull();

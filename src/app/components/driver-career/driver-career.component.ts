@@ -27,10 +27,16 @@ export interface CareerSeason {
 export class DriverCareerComponent implements OnChanges, OnDestroy {
   private readonly jolpica = inject(JolpicaService);
 
-  @Input({ required: true }) acronym!: string;
-  @Input({ required: true }) fullName!: string;
-  /** Nazionalità Jolpica (es. "British"), utile se OpenF1 non ha il paese; null se Jolpica non la conosce o non risponde */
-  @Output() nationality = new EventEmitter<string | null>();
+  /** Pilota OpenF1 (dal 2023): si cerca su Jolpica per sigla e nome */
+  @Input() acronym?: string;
+  @Input() fullName?: string;
+  /** Pilota Jolpica già noto (pagina storica): nessuna ricerca */
+  @Input() driverId?: string;
+  /**
+   * Pilota OpenF1 trovato su Jolpica: nazionalità (per la bandiera) e titolo Wikipedia (per la biografia);
+   * null se Jolpica non lo conosce o non risponde. Non emesso quando il driverId è dato in input.
+   */
+  @Output() matched = new EventEmitter<{ nationality?: string; wikiTitle?: string } | null>();
 
   totals: CareerTotals | null = null;
   seasons: CareerSeason[] = [];
@@ -38,13 +44,14 @@ export class DriverCareerComponent implements OnChanges, OnDestroy {
   error = false;
   notFound = false;
 
-  private driverId: string | null = null;
+  // driverId Jolpica in uso (dato in input o trovato da sigla e nome)
+  private resolvedId: string | null = null;
   // ogni caricamento ha il suo numero: le risposte di un pilota precedente vengono ignorate
   private loadSeq = 0;
   private readonly failedLogos = new Set<string>();
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['acronym'] || changes['fullName']) this.load();
+    if (changes['acronym'] || changes['fullName'] || changes['driverId']) this.load();
   }
 
   // la pagina è cambiata: le stagioni ancora da chiedere non servono più
@@ -81,7 +88,7 @@ export class DriverCareerComponent implements OnChanges, OnDestroy {
   }
 
   async retry(): Promise<void> {
-    if (this.error || !this.driverId) return this.load();
+    if (this.error || !this.resolvedId) return this.load();
     const seq = this.loadSeq;
     await Promise.all(this.seasons.filter(s => s.state === 'error').map(s => this.loadSeason(s, seq)));
   }
@@ -93,33 +100,37 @@ export class DriverCareerComponent implements OnChanges, OnDestroy {
     this.notFound = false;
     this.totals = null;
     this.seasons = [];
-    this.driverId = null;
+    this.resolvedId = null;
     try {
-      const match = await this.jolpica.findDriver(this.acronym ?? '', this.fullName ?? '');
-      if (seq !== this.loadSeq) return;
-      if (!match) {
-        this.notFound = true;
-        this.nationality.emit(null);
-        return;
+      let driverId = this.driverId;
+      if (!driverId) {
+        const match = await this.jolpica.findDriver(this.acronym ?? '', this.fullName ?? '');
+        if (seq !== this.loadSeq) return;
+        if (!match) {
+          this.notFound = true;
+          this.matched.emit(null);
+          return;
+        }
+        this.matched.emit({ nationality: match.nationality, wikiTitle: match.wikiTitle });
+        driverId = match.driverId;
       }
-      this.nationality.emit(match.nationality);
       const [totals, seasons] = await Promise.all([
-        this.jolpica.getCareerTotals(match.driverId),
-        this.jolpica.getDriverSeasons(match.driverId)
+        this.jolpica.getCareerTotals(driverId),
+        this.jolpica.getDriverSeasons(driverId)
       ]);
       if (seq !== this.loadSeq) return;
       if (totals.races === 0) {
         this.notFound = true;
         return;
       }
-      this.driverId = match.driverId;
+      this.resolvedId = driverId;
       this.totals = totals;
       this.seasons = seasons.map(season => ({ season, state: 'loading', constructors: [], inProgress: false, champion: false }));
       this.loadSeasons(seq);
     } catch {
       if (seq === this.loadSeq) {
         this.error = true;
-        this.nationality.emit(null);
+        if (!this.driverId) this.matched.emit(null);
       }
     } finally {
       if (seq === this.loadSeq) this.loading = false;
@@ -142,7 +153,7 @@ export class DriverCareerComponent implements OnChanges, OnDestroy {
       const standings = await this.jolpica.getDriverStandings(row.season);
       const inProgress = row.season === new Date().getFullYear() && !(await this.isSeasonOver(row.season));
       if (seq !== this.loadSeq) return;
-      const mine = standings.find(s => s.driverId === this.driverId);
+      const mine = standings.find(s => s.driverId === this.resolvedId);
       this.replace(index, {
         ...row,
         state: 'ready',
