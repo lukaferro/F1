@@ -64,14 +64,14 @@ describe('StandingsComponent', () => {
     expect(el.querySelectorAll('tbody tr').length).toBe(2);
   });
 
-  it('links drivers only from 2023 and only with a code', async () => {
+  it('links recent drivers by code and the others to their historic page', async () => {
     await create();
     component.selectedSeason = 2024;
     expect(component.driverLink(driver(1, 'Lando Norris', { code: 'NOR' }))).toEqual(['/drivers', 'NOR']);
     component.selectedSeason = 1988;
-    expect(component.driverLink(driver(1, 'Ayrton Senna'))).toBeNull();
+    expect(component.driverLink(driver(1, 'Ayrton Senna', { driverId: 'senna' }))).toEqual(['/drivers', 'storico', 'senna']);
     component.selectedSeason = 2019;
-    expect(component.driverLink(driver(1, 'Lewis Hamilton', { code: 'HAM' }))).toBeNull();
+    expect(component.driverLink(driver(1, 'Lewis Hamilton', { code: 'HAM', driverId: 'hamilton' }))).toEqual(['/drivers', 'storico', 'hamilton']);
   });
 
   it('shows initials for historic drivers without a photo', async () => {

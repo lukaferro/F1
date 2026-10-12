@@ -218,9 +218,10 @@ export class StandingsComponent implements OnInit, OnDestroy {
   }
 
   /** Link al dettaglio pilota: esiste solo dal 2023 (dati OpenF1) e per chi ha una sigla */
-  driverLink(standing: DriverStanding): string[] | null {
-    if (this.selectedSeason === null || this.selectedSeason < FIRST_OPENF1_SEASON || !standing.code) return null;
-    return ['/drivers', standing.code];
+  // Dal 2023 la pagina con i dati OpenF1, prima quella storica
+  driverLink(standing: DriverStanding): string[] {
+    if (this.selectedSeason !== null && this.selectedSeason >= FIRST_OPENF1_SEASON && standing.code) return ['/drivers', standing.code];
+    return ['/drivers', 'storico', standing.driverId];
   }
 
   // Pilota della griglia OpenF1 attuale, solo se è la stagione in corso e la squadra coincide

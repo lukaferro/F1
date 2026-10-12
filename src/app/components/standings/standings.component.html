@@ -60,11 +60,7 @@
                 }
               </div>
               <span class="podium-position">{{ s.position }}</span>
-              @if (driverLink(s); as link) {
-                <a class="podium-name" [routerLink]="link">{{ s.fullName }}</a>
-              } @else {
-                <span class="podium-name">{{ s.fullName }}</span>
-              }
+              <a class="podium-name" [routerLink]="driverLink(s)">{{ s.fullName }}</a>
               <span class="podium-team">
                 @if (logoFor(s.constructorId); as logo) {
                   <img class="team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" (error)="onLogoError(s.constructorId)" />
@@ -91,11 +87,7 @@
                   <td class="cell-pos">{{ s.position }}</td>
                   <td>
                     <span class="team-dot" [style.background]="'#' + driverColor(s)"></span>
-                    @if (driverLink(s); as link) {
-                      <a class="row-link" [routerLink]="link">{{ s.fullName }}</a>
-                    } @else {
-                      {{ s.fullName }}
-                    }
+                    <a class="row-link" [routerLink]="driverLink(s)">{{ s.fullName }}</a>
                   </td>
                   <td>
                     @if (logoFor(s.constructorId); as logo) {

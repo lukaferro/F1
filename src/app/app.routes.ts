@@ -6,6 +6,7 @@ import { DriversComponent } from './components/drivers/drivers.component';
 import { DriverDetailComponent } from './components/driver-detail/driver-detail.component';
 import { CircuitsComponent } from './components/circuits/circuits.component';
 import { StandingsComponent } from './components/standings/standings.component';
+import { HistoricDriverDetailComponent } from './components/historic-driver-detail/historic-driver-detail.component';
 
 export const routes: Routes = [
   {
@@ -25,6 +26,11 @@ export const routes: Routes = [
     component: DriversComponent,
   }
   ,
+  {
+    // prima di drivers/:id: alcuni driverId storici sono di tre lettere (es. "ide") come le sigle
+    path: 'drivers/storico/:driverId',
+    component: HistoricDriverDetailComponent,
+  },
   {
     path: 'drivers/:id',
     component: DriverDetailComponent,

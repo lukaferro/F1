@@ -1,0 +1,10 @@
+/* Riquadro con le iniziali al posto della foto, sul colore dell'ultima squadra */
+.portrait-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 3rem;
+  font-weight: 800;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}

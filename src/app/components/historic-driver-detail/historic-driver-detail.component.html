@@ -1,0 +1,82 @@
+<div class="driver-detail">
+  <div class="back-button">
+    <p-button icon="pi pi-arrow-left" styleClass="p-button-text" label="Torna ai Piloti" routerLink="/drivers"></p-button>
+  </div>
+
+  @if (error) {
+    <app-api-unavailable source="jolpica" (retry)="load()"></app-api-unavailable>
+  } @else if (notFound) {
+    <div class="not-found">
+      <i class="pi pi-user"></i>
+      <h3>Pilota non trovato</h3>
+      <p>Il pilota che cerchi non è presente nell'archivio storico della F1.</p>
+    </div>
+  } @else if (loading || !driver) {
+    <div aria-busy="true" aria-label="Caricamento pilota">
+      <div class="skeleton" style="height: 230px; margin-bottom: 2rem; border-radius: 16px;"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div class="skeleton" style="height: 320px; border-radius: 16px;"></div>
+        <div class="skeleton" style="height: 320px; border-radius: 16px;"></div>
+      </div>
+    </div>
+  } @else {
+    <div class="hero">
+      <div class="flag-container">
+        @if (flag; as flagSrc) {
+          @if (flagLoadedUrl !== flagSrc) {
+            <div class="skeleton flag-skeleton"></div>
+          }
+          <img [src]="flagSrc" [alt]="'Bandiera ' + (driver.nationality || '')" class="country-flag" decoding="async"
+            [class.flag-pending]="flagLoadedUrl !== flagSrc"
+            (load)="flagLoadedUrl = flagSrc"
+            (error)="onFlagError($event, flagSrc)">
+        }
+      </div>
+      <div class="hero-content">
+        <div class="hero-left">
+          @if (photo) {
+            <img class="portrait" [src]="photo" [alt]="driver.fullName" (error)="onPhotoError()" decoding="async" />
+          } @else {
+            <div class="portrait portrait-initials" [style.background]="teamColor" aria-hidden="true">{{ initials }}</div>
+          }
+        </div>
+        <div class="hero-right">
+          <h1>{{ driver.fullName }}</h1>
+          <div class="meta">
+            @if (driver.permanentNumber) {
+              <span class="badge number-badge">#{{ driver.permanentNumber }}</span>
+            }
+            @if (lastTeam) {
+              <span class="badge team" [style.border]="'1px solid ' + teamColor" [style.color]="teamColor">{{ lastTeam.name }}</span>
+            }
+            @if (seasonsLabel) {
+              <span class="badge">{{ seasonsLabel }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <section class="panel bio-panel">
+        <h2>Profilo</h2>
+        <app-wikipedia-bio [title]="driver.wikiTitle" [name]="driver.fullName"></app-wikipedia-bio>
+      </section>
+      <section class="panel stats-panel">
+        <h2>Informazioni</h2>
+        <div class="stats-grid">
+          @for (card of infoCards; track card.label) {
+            <div class="stat-card">
+              <span class="stat-label">{{ card.label }}</span>
+              <span class="stat-value">{{ card.value }}</span>
+            </div>
+          }
+        </div>
+      </section>
+      <section class="panel career-panel">
+        <h2>Statistiche Carriera</h2>
+        <app-driver-career [driverId]="driver.driverId" />
+      </section>
+    </div>
+  }
+</div>
