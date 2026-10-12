@@ -28,6 +28,7 @@ interface Setup {
   standings?: (season: number) => Promise<DriverStanding[]>;
   round?: number;
   raceCount?: number;
+  raceCountFails?: boolean;
 }
 
 describe('DriverCareerComponent', () => {
@@ -50,7 +51,7 @@ describe('DriverCareerComponent', () => {
       getDriverSeasons: vi.fn(() => Promise.resolve(setup.seasons ?? [2008, 2007])),
       getDriverStandings: vi.fn(setup.standings ?? (() => Promise.resolve([]))),
       getStandingsRound: vi.fn(() => Promise.resolve(setup.round ?? 24)),
-      getSeasonRaceCount: vi.fn(() => Promise.resolve(setup.raceCount ?? 24))
+      getSeasonRaceCount: vi.fn(() => setup.raceCountFails ? Promise.reject(new Error('down')) : Promise.resolve(setup.raceCount ?? 24))
     };
     await TestBed.configureTestingModule({
       imports: [DriverCareerComponent, NoopAnimationsModule],
@@ -207,6 +208,55 @@ describe('DriverCareerComponent', () => {
     expect(svg).toBeTruthy();
     expect(svg?.querySelectorAll('circle').length).toBe(2);
     expect(svg?.getAttribute('aria-label')).toBe('Posizione finale dal 2023 al 2024, migliore: 3ª');
+  });
+
+  it('keeps the season and the totals when the season-over check fails', async () => {
+    await create({
+      seasons: [YEAR, 2025], raceCountFails: true,
+      standings: season => Promise.resolve([standing('hamilton', season === YEAR ? 1 : 2, 100)])
+    });
+
+    const current = component.seasons.find(s => s.season === YEAR)!;
+    expect(current.state).toBe('ready');
+    expect(current.inProgress).toBe(true);
+    expect(current.champion).toBe(false);
+    expect(component.totalPoints).toBe(200);
+  });
+
+  it('hides the title years while a season is missing', async () => {
+    await create({
+      seasons: [2008, 2007],
+      standings: season => season === 2007 ? Promise.reject(new Error('down')) : Promise.resolve([standing('hamilton', 1, 98)])
+    });
+
+    expect(component.seasonsFailed).toBe(true);
+    expect(el().querySelector('.championships-years-item')).toBeNull();
+  });
+
+  it('stops asking for the seasons of a previous driver', async () => {
+    let releaseFirst!: (rows: DriverStanding[]) => void;
+    await create({ seasons: [2010, 2009], standings: () => new Promise(resolve => { releaseFirst = resolve; }) });
+
+    jolpica['findDriver'].mockImplementation(() => Promise.resolve({ driverId: 'antonelli', nationality: 'Italian' }));
+    jolpica['getDriverSeasons'].mockImplementation(() => Promise.resolve([2025]));
+    jolpica['getDriverStandings'].mockImplementation(() => Promise.resolve([standing('antonelli', 7, 150)]));
+    fixture.componentRef.setInput('acronym', 'ANT');
+    await settle();
+    releaseFirst([standing('hamilton', 1, 98)]);
+    await settle();
+
+    expect(jolpica['getDriverStandings']).not.toHaveBeenCalledWith(2009);
+  });
+
+  it('stops asking for seasons once destroyed', async () => {
+    let releaseFirst!: (rows: DriverStanding[]) => void;
+    await create({ seasons: [2010, 2009], standings: () => new Promise(resolve => { releaseFirst = resolve; }) });
+
+    fixture.destroy();
+    releaseFirst([standing('hamilton', 1, 98)]);
+    await new Promise(resolve => setTimeout(resolve));
+
+    expect(jolpica['getDriverStandings']).not.toHaveBeenCalledWith(2009);
   });
 
   it('shows every constructor of a season', async () => {

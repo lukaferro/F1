@@ -54,6 +54,13 @@ describe('buildPositionChart', () => {
     expect(twentySix).toEqual(['2000', '2005', '2010', '2015', '2020', '2025']);
   });
 
+  it('marks the labels to hide on narrow screens so none overlap', () => {
+    const labels = buildPositionChart(Array.from({ length: 12 }, (_, i) => point(2015 + i, 3)))!.xLabels;
+    const shown = labels.filter(l => !l.minor);
+    expect(shown.map(l => l.label)).toEqual(['2016', '2018', '2020', '2022', '2024', '2026']);
+    shown.slice(1).forEach((l, i) => expect(l.x - shown[i].x).toBeGreaterThanOrEqual(80));
+  });
+
   it('describes the chart for screen readers', () => {
     const chart = buildPositionChart([point(2026, 4), point(2007, 3), point(2008, 1)])!;
     expect(chart.label).toBe('Posizione finale dal 2007 al 2026, migliore: 1ª');

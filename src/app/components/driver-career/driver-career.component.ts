@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
 
 import { CareerTotals, JolpicaService } from '../../services/jolpica.service';
 import { ConstructorLogo, constructorColor, constructorLogo } from '../../utils/constructor-branding';
@@ -24,7 +24,7 @@ export interface CareerSeason {
   templateUrl: './driver-career.component.html',
   styleUrls: ['./driver-career.component.css']
 })
-export class DriverCareerComponent implements OnChanges {
+export class DriverCareerComponent implements OnChanges, OnDestroy {
   private readonly jolpica = inject(JolpicaService);
 
   @Input({ required: true }) acronym!: string;
@@ -45,6 +45,11 @@ export class DriverCareerComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['acronym'] || changes['fullName']) this.load();
+  }
+
+  // la pagina è cambiata: le stagioni ancora da chiedere non servono più
+  ngOnDestroy(): void {
+    this.loadSeq++;
   }
 
   get seasonsComplete(): boolean {
@@ -104,12 +109,20 @@ export class DriverCareerComponent implements OnChanges {
       this.driverId = match.driverId;
       this.totals = totals;
       this.seasons = seasons.map(season => ({ season, state: 'loading', constructors: [], inProgress: false, champion: false }));
-      // senza attendere in serie: la coda della cache distribuisce le richieste
-      this.seasons.forEach(s => this.loadSeason(s, seq));
+      this.loadSeasons(seq);
     } catch {
       if (seq === this.loadSeq) this.error = true;
     } finally {
       if (seq === this.loadSeq) this.loading = false;
+    }
+  }
+
+  // Una stagione alla volta, dalla più recente: se nel frattempo si cambia pilota (o pagina)
+  // le richieste rimaste non partono e non occupano la coda di Jolpica
+  private async loadSeasons(seq: number): Promise<void> {
+    for (const row of [...this.seasons]) {
+      if (seq !== this.loadSeq) return;
+      await this.loadSeason(row, seq);
     }
   }
 
@@ -137,9 +150,14 @@ export class DriverCareerComponent implements OnChanges {
   }
 
   // La stagione corrente è conclusa quando la classifica è aggiornata all'ultima gara in calendario
+  // Se il controllo fallisce la stagione resta "in corso": nessun titolo contato per errore, punti intatti
   private async isSeasonOver(season: number): Promise<boolean> {
-    const [round, races] = await Promise.all([this.jolpica.getStandingsRound(season), this.jolpica.getSeasonRaceCount(season)]);
-    return races > 0 && round === races;
+    try {
+      const [round, races] = await Promise.all([this.jolpica.getStandingsRound(season), this.jolpica.getSeasonRaceCount(season)]);
+      return races > 0 && round === races;
+    } catch {
+      return false;
+    }
   }
 
   private replace(index: number, row: CareerSeason): void {

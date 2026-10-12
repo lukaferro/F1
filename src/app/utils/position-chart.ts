@@ -13,12 +13,14 @@ export interface PositionChart {
   points: { x: number; y: number; season: number; position: number; color: string }[];
   segments: { x1: number; y1: number; x2: number; y2: number; dashed: boolean }[];
   yTicks: { y: number; label: string }[];
-  xLabels: { x: number; label: string }[];
+  xLabels: { x: number; label: string; minor: boolean }[];  // minor: nascosta sugli schermi stretti
   label: string;  // sintesi per aria-label
 }
 
 const MARGIN = { left: 40, right: 16, top: 16, bottom: 28 };
 const MIN_BOTTOM_POSITION = 10;
+// distanza minima tra due etichette degli anni quando il grafico è rimpicciolito (testo a 20px)
+const NARROW_LABEL_GAP = 80;
 
 /** null con meno di due stagioni: una linea con un solo punto non dice nulla */
 export function buildPositionChart(input: ChartInput[], width = 640, height = 220): PositionChart | null {
@@ -51,7 +53,13 @@ export function buildPositionChart(input: ChartInput[], width = 640, height = 22
   // un'etichetta troppo vicina all'ultima le si sovrapporrebbe: la si salta
   const xLabels = points
     .filter((_, i) => i === lastIndex || (i % step === 0 && (step === 1 || lastIndex - i >= step)))
-    .map(p => ({ x: p.x, label: String(p.season) }));
+    .map(p => ({ x: p.x, label: String(p.season), minor: false }));
+  // sugli schermi stretti si tengono, partendo dall'ultima, solo le etichette abbastanza distanziate
+  let lastShownX = Infinity;
+  for (let i = xLabels.length - 1; i >= 0; i--) {
+    xLabels[i].minor = lastShownX - xLabels[i].x < NARROW_LABEL_GAP;
+    if (!xLabels[i].minor) lastShownX = xLabels[i].x;
+  }
 
   const best = Math.min(...seasons.map(s => s.position));
   return {

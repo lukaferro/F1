@@ -77,7 +77,7 @@
         }
       </div>
     </div>
-    @if (seasonsComplete && titleYears.length) {
+    @if (seasonsComplete && !seasonsFailed && titleYears.length) {
       <div class="career-item full-width championships-years-item">
         <i class="pi pi-history"></i>
         <div>
@@ -109,7 +109,7 @@
         </circle>
       }
       @for (l of c.xLabels; track l.label) {
-        <text class="axis-label x-label" [class.minor]="$odd && !$last" [attr.x]="l.x" [attr.y]="c.height - 8" [attr.text-anchor]="$first ? 'start' : $last ? 'end' : 'middle'">{{ l.label }}</text>
+        <text class="axis-label x-label" [class.minor]="l.minor" [attr.x]="l.x" [attr.y]="c.height - 8" [attr.text-anchor]="$first ? 'start' : $last ? 'end' : 'middle'">{{ l.label }}</text>
       }
     </svg>
   }
