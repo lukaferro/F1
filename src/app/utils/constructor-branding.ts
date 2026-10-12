@@ -29,6 +29,7 @@ const F1_LOGO_SLUGS: Record<string, string> = {
 const WIKIMEDIA_LOGOS: Record<string, string> = {
   ats: 'Ats_logo_2009.svg',
   bmw: 'BMW_logo_(gray).svg',
+  brawn: 'Brawn_GP_logo.svg',
   brp: 'British_Racing_Partnership_logo.png',
   bugatti: 'Bugatti_Logo.png',
   caterham: 'Caterham_F1_Team_logo_(2014).svg',
@@ -40,6 +41,7 @@ const WIKIMEDIA_LOGOS: Record<string, string> = {
   gordini: 'Gordini_Logo.svg',
   lago: 'Talbot_Paris_logo.jpg',
   ligier: 'Ligier2017.png',
+  lotus: 'TeamLotus.jpg',
   'lotus-borgward': 'TeamLotus.jpg',
   'lotus-brm': 'TeamLotus.jpg',
   'lotus-climax': 'TeamLotus.jpg',
@@ -48,10 +50,12 @@ const WIKIMEDIA_LOGOS: Record<string, string> = {
   'lotus-pw': 'TeamLotus.jpg',
   lotus_f1: 'Lotus_F1_Team_logo.jpg',
   maserati: 'Maserati_logo_2.svg',
+  minardi: 'Minardi_F1_Team.svg',
   osella: 'Osella.svg',
   penske: 'Team_Penske_logo.svg',
   prost: 'Prost_Grand_Prix_Formula_One_Logo.png',
   racing_point: 'BWT_Racing_Point_Logo.svg',
+  renault: 'Renault_F1_Team_logo_2019.png',
   sauber: 'Logo_Sauber_F1.png',
   simca: 'Simca_logo_1970.svg',
   stewart: 'Stewart-logo.jpg',
@@ -163,7 +167,7 @@ const f1Logo = (slug: string): ConstructorLogo => ({
 export function constructorLogo(constructorId: string): ConstructorLogo | undefined {
   if (!constructorId) return undefined;
   if (F1_LOGO_SLUGS[constructorId]) return f1Logo(F1_LOGO_SLUGS[constructorId]);
-  const file = WIKIMEDIA_LOGOS[constructorId];
+  const file = WIKIMEDIA_LOGOS[constructorId] ?? WIKIMEDIA_LOGOS[baseId(constructorId)];
   if (file) return { url: `https://commons.wikimedia.org/wiki/Special:FilePath/${file}?width=160`, onLight: true };
   const base = F1_LOGO_SLUGS[baseId(constructorId)];
   return base ? f1Logo(base) : undefined;

@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { SelectModule } from 'primeng/select';
 import { ConstructorStanding, DriverStanding, JolpicaService } from '../../services/jolpica.service';
 import { Driver, Openf1ServiceService } from '../../services/openf1-service';
+import { WikipediaService } from '../../services/wikipedia.service';
 import { currentSeasonPhotoUrl } from '../../utils/f1-media';
 import { constructorColor, ConstructorLogo, constructorLogo } from '../../utils/constructor-branding';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
@@ -47,6 +48,7 @@ const isNotFound = (err: unknown) => err instanceof HttpErrorResponse && err.sta
 export class StandingsComponent implements OnInit, OnDestroy {
   private readonly jolpica = inject(JolpicaService);
   private readonly openF1 = inject(Openf1ServiceService);
+  private readonly wikipedia = inject(WikipediaService, { optional: true });
 
   seasons: number[] = [];
   seasonOptions: { label: string; value: number }[] = [];
@@ -71,6 +73,8 @@ export class StandingsComponent implements OnInit, OnDestroy {
 
   // Griglia attuale di OpenF1 (per sigla): foto e colori ufficiali della stagione in corso
   private readonly currentGrid = new Map<string, Driver>();
+  // Foto dei piloti caricate da Wikipedia (per piloti storici, chiave: driverId)
+  private readonly driverPhotos = new Map<string, string>();
   // Foto e loghi che non si sono caricati: al loro posto le iniziali
   private readonly failedPhotos = new Set<string>();
   private readonly failedLogos = new Set<string>();
@@ -154,6 +158,18 @@ export class StandingsComponent implements OnInit, OnDestroy {
   private setDrivers(standings: DriverStanding[]): void {
     this.driverStandings = standings;
     this.driverRows = standings.slice(3);
+    if (this.wikipedia) {
+      const titles = standings.map(s => s.wikiTitle).filter((t): t is string => !!t).slice(0, 50);
+      if (titles.length) {
+        this.wikipedia.getImages(titles).then(images => {
+          for (const s of standings) {
+            if (s.wikiTitle && images.has(s.wikiTitle)) {
+              this.driverPhotos.set(s.driverId, images.get(s.wikiTitle)!);
+            }
+          }
+        }).catch(() => {});
+      }
+    }
   }
 
   private setConstructors(standings: ConstructorStanding[]): void {
@@ -232,12 +248,14 @@ export class StandingsComponent implements OnInit, OnDestroy {
   }
 
   photoFor(standing: DriverStanding): string | undefined {
-    if (!standing.code || this.failedPhotos.has(standing.code)) return undefined;
+    if (this.failedPhotos.has(standing.driverId) || (standing.code && this.failedPhotos.has(standing.code))) return undefined;
     const driver = this.gridDriverFor(standing);
-    return driver ? currentSeasonPhotoUrl(driver) : undefined;
+    if (driver) return currentSeasonPhotoUrl(driver);
+    return this.driverPhotos.get(standing.driverId);
   }
 
   onPhotoError(standing: DriverStanding): void {
+    this.failedPhotos.add(standing.driverId);
     if (standing.code) this.failedPhotos.add(standing.code);
   }
 

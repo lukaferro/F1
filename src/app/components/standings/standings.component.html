@@ -86,7 +86,11 @@
                 <tr [style]="rowStyle(driverColor(s))" [style.--i]="$index">
                   <td class="cell-pos">{{ s.position }}</td>
                   <td>
-                    <span class="team-dot" [style.background]="'#' + driverColor(s)"></span>
+                    @if (photoFor(s); as photo) {
+                      <img [src]="photo" [alt]="" class="table-driver-photo" (error)="onPhotoError(s)" />
+                    } @else {
+                      <span class="team-dot" [style.background]="'#' + driverColor(s)"></span>
+                    }
                     <a class="row-link" [routerLink]="driverLink(s)">{{ s.fullName }}</a>
                   </td>
                   <td>

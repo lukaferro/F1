@@ -94,7 +94,7 @@ export class GranPremiComponent implements OnInit {
 
   meetings: Meeting[] = [];
   allMeetings: Meeting[] = []; // Mantiene tutti i meeting per il filtraggio
-  loading = false;
+  loading = true;
   error?: string;
 
 

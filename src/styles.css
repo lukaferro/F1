@@ -254,12 +254,15 @@ main.app-content > :not(router-outlet) {
   animation: page-enter 0.35s ease both;
 }
 
-/* card che entrano una dopo l'altra (ritardo limitato alle prime 12) */
+/* card che entrano all'apertura (senza ritardi lunghi che lasciano lo schermo nero) */
+.skeleton-card {
+  animation: none !important;
+}
+
 .driver-card,
 .gp-card,
 .circuit-card {
-  animation: rise-in 0.4s ease both;
-  animation-delay: calc(min(var(--i, 0), 12) * 45ms);
+  animation: rise-in 0.25s ease-out;
 }
 
 /* podio: salgono terzo, secondo e primo */
