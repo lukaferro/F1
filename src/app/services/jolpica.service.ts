@@ -19,6 +19,20 @@ export interface DriverStanding {
   constructorId: string;  // ultima squadra della stagione
   constructorName: string;
   constructors: { id: string; name: string }[];  // tutte le squadre della stagione, in ordine
+  wikiTitle?: string;     // titolo della pagina inglese di Wikipedia
+}
+
+/** Anagrafica di un pilota Jolpica (alcuni piloti storici non hanno link Wikipedia o nazionalità) */
+export interface JolpicaDriverInfo {
+  driverId: string;
+  code?: string;
+  permanentNumber?: number;
+  givenName: string;
+  familyName: string;
+  fullName: string;
+  dateOfBirth?: string;
+  nationality?: string;
+  wikiTitle?: string;
 }
 
 export interface CareerTotals {
@@ -33,6 +47,7 @@ export interface CareerTotals {
 export interface JolpicaDriverMatch {
   driverId: string;
   nationality: string;
+  wikiTitle?: string;
 }
 
 export interface ConstructorStanding {
@@ -46,7 +61,10 @@ export interface ConstructorStanding {
 
 // Forme delle risposte Jolpica (solo i campi usati)
 interface JolpicaConstructor { constructorId: string; name: string; nationality: string; }
-interface JolpicaDriver { driverId: string; code?: string; givenName: string; familyName: string; nationality: string; }
+interface JolpicaDriver {
+  driverId: string; code?: string; permanentNumber?: string; givenName: string; familyName: string;
+  dateOfBirth?: string; nationality: string; url?: string;
+}
 interface JolpicaDriverRow {
   position?: string; points: string; wins: string;
   Driver: JolpicaDriver;
@@ -60,7 +78,7 @@ interface StandingsResponse<Row> {
   };
 }
 interface SeasonsResponse { MRData: { total?: string; SeasonTable: { Seasons: Array<{ season: string }> } }; }
-interface DriversResponse { MRData: { DriverTable: { Drivers: JolpicaDriver[] } }; }
+interface DriversResponse { MRData: { total?: string; DriverTable: { Drivers: JolpicaDriver[] } }; }
 interface RacesResponse { MRData: { total: string; RaceTable: { Races: Array<{ season: string; raceName: string }> } }; }
 
 /** Le stagioni concluse non cambiano più (7 giorni); stagione in corso ed elenchi generali 1 ora */
@@ -73,6 +91,28 @@ export function jolpicaTtl(url: string, currentYear: number): number {
 const plain = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 // Il cognome deve comparire come parola intera ("berg" non è "Hulkenberg")
 const words = (text: string) => ` ${plain(text).replace(/[^a-z]+/g, ' ').trim()} `;
+/** "http://en.wikipedia.org/wiki/Ayrton_Senna" → "Ayrton_Senna" */
+export function wikiTitleFromUrl(url: string | undefined): string | undefined {
+  const title = url?.split('/wiki/')[1];
+  if (!title) return undefined;
+  try {
+    return decodeURIComponent(title);
+  } catch {
+    return title;
+  }
+}
+
+const toDriverInfo = (d: JolpicaDriver): JolpicaDriverInfo => ({
+  driverId: d.driverId,
+  code: d.code,
+  permanentNumber: d.permanentNumber ? Number(d.permanentNumber) : undefined,
+  givenName: d.givenName,
+  familyName: d.familyName,
+  fullName: `${d.givenName} ${d.familyName}`,
+  dateOfBirth: d.dateOfBirth,
+  nationality: d.nationality || undefined,
+  wikiTitle: wikiTitleFromUrl(d.url)
+});
 
 const toPosition = (value: string | undefined, index: number) => {
   const n = Number(value);
@@ -134,7 +174,8 @@ export class JolpicaService {
         nationality: row.Driver.nationality,
         constructorId: team?.constructorId ?? '',
         constructorName: team?.name ?? '',
-        constructors: row.Constructors.map(c => ({ id: c.constructorId, name: c.name }))
+        constructors: row.Constructors.map(c => ({ id: c.constructorId, name: c.name })),
+        wikiTitle: wikiTitleFromUrl(row.Driver.url)
       };
     });
   }
@@ -161,7 +202,7 @@ export class JolpicaService {
     for (let season = new Date().getFullYear(); season >= FIRST_OPENF1_SEASON; season--) {
       const drivers = await this.getSeasonDrivers(season);
       const found = drivers.find(d => d.code === code) ?? drivers.find(d => name.includes(words(d.familyName)));
-      if (found) return { driverId: found.driverId, nationality: found.nationality };
+      if (found) return { driverId: found.driverId, nationality: found.nationality, wikiTitle: wikiTitleFromUrl(found.url) };
     }
     return null;
   }
@@ -175,6 +216,24 @@ export class JolpicaService {
       if (err instanceof HttpErrorResponse && err.status === 404) return [];
       throw err;
     }
+  }
+
+  /** Anagrafica di un pilota; null se Jolpica non lo conosce */
+  async getDriver(driverId: string): Promise<JolpicaDriverInfo | null> {
+    try {
+      const res = await this.cache.get<DriversResponse>(`${BASE_URL}/drivers/${driverId}/`);
+      const driver = res.MRData.DriverTable.Drivers[0];
+      return driver ? toDriverInfo(driver) : null;
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 404) return null;
+      throw err;
+    }
+  }
+
+  /** Tutti i piloti della storia della F1 (881 nel 2026, 9 pagine) */
+  async getAllDrivers(): Promise<JolpicaDriverInfo[]> {
+    const pages = await this.getAllPages<DriversResponse>(offset => `${BASE_URL}/drivers/?limit=${PAGE_SIZE}&offset=${offset}`);
+    return pages.flatMap(p => p.MRData.DriverTable.Drivers).map(toDriverInfo);
   }
 
   /** Numeri di carriera: ogni valore è il MRData.total di una richiesta con limit=1 */

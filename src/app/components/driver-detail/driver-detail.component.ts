@@ -11,6 +11,7 @@ import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { DriverCareerComponent } from '../driver-career/driver-career.component';
 import { nationalityToCountryCode } from '../../utils/nationality';
+import { flagUrl } from '../../utils/country-flags';
 
 @Component({
   selector: 'app-driver-detail',
@@ -35,77 +36,6 @@ export class DriverDetailComponent implements OnInit {
   flagLoadedUrl?: string;
   // senza paese da OpenF1 la nazionalità può ancora arrivare da Jolpica (sezione carriera)
   nationalityPending = true;
-
-  // Mappatura codici paese come in gran-premi-detail (3 lettere -> ISO2)
-  private readonly countryCodeMapping: Record<string, string> = {
-    BRN: 'bh',
-    KSA: 'sa',
-    AUS: 'au',
-    JPN: 'jp',
-    CHN: 'cn',
-    USA: 'us',
-    ITA: 'it',
-    MON: 'mc',
-    CAN: 'ca',
-    ESP: 'es',
-    AUT: 'at',
-    GBR: 'gb',
-    HUN: 'hu',
-    BEL: 'be',
-    NED: 'nl',
-    AZE: 'az',
-    SGP: 'sg',
-    MEX: 'mx',
-    BRA: 'br',
-    UAE: 'ae',
-    QAT: 'qa',
-    FRA: 'fr',
-    DEU: 'de',
-    GER: 'de',
-    RUS: 'ru',
-    PRT: 'pt',
-    TUR: 'tr',
-    MYS: 'my',
-    JOR: 'jo',
-    KOR: 'kr',
-    IND: 'in',
-    ZAF: 'za',
-    ABU: 'ae',
-    ARG: 'ar',
-    BAH: 'bh',
-    SIN: 'sg',
-    JAP: 'jp',
-    MAL: 'my',
-    EUR: 'eu',
-    STY: 'at',
-    EMI: 'it',
-    TUS: 'it',
-    POR: 'pt',
-    LUX: 'lu',
-    MIA: 'us',
-    LAS: 'us',
-    TEX: 'us',
-    CAT: 'es',
-    SPA: 'be',
-    EIF: 'de',
-    MUG: 'it',
-    AZB: 'az',
-    DEN: 'dk',  // Danimarca
-    DNK: 'dk',  // Danimarca (alternativo)
-    FIN: 'fi',  // Finlandia
-    THA: 'th',  // Tailandia
-    NZL: 'nz',  // Nuova Zelanda
-    POL: 'pl',  // Polonia
-    SWE: 'se',  // Svezia
-    CHE: 'ch',  // Svizzera
-    SUI: 'ch',  // Svizzera (alternativo)
-    NOR: 'no',  // Norvegia
-    CZE: 'cz',  // Repubblica Ceca
-    VEN: 've',  // Venezuela
-    COL: 'co',  // Colombia
-    EST: 'ee',  // Estonia
-    ISR: 'il'   // Israele
-  };
 
   // Nomi alternativi per ricerca Wikipedia (alcuni piloti hanno nomi diversi su Wikipedia)
   private readonly wikiNameVariants: Record<string, string[]> = {
@@ -302,9 +232,7 @@ export class DriverDetailComponent implements OnInit {
   }
 
   getFlagUrl(driver: Driver | null): string {
-    if (!driver || !driver.country_code) return '';
-    const iso2 = this.countryCodeMapping[driver.country_code] || driver.country_code.toLowerCase();
-    return `https://flagcdn.com/w320/${iso2}.png`;
+    return flagUrl(driver?.country_code);
   }
 
   getHeroBackground(driver: Driver | null): SafeStyle {

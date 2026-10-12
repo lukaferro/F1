@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
 
-import { jolpicaTtl, JolpicaService } from './jolpica.service';
+import { jolpicaTtl, JolpicaService, wikiTitleFromUrl } from './jolpica.service';
 
 const API = 'https://api.jolpi.ca/ergast/f1';
 
@@ -139,6 +139,64 @@ describe('JolpicaService', () => {
     expect(first.constructorId).toBe('red_bull');
   });
 
+  it('reads the wikipedia title from a driver url', () => {
+    expect(wikiTitleFromUrl('http://en.wikipedia.org/wiki/Ayrton_Senna')).toBe('Ayrton_Senna');
+    expect(wikiTitleFromUrl('https://en.wikipedia.org/wiki/Nico_H%C3%BClkenberg')).toBe('Nico_Hülkenberg');
+    expect(wikiTitleFromUrl(undefined)).toBeUndefined();
+    expect(wikiTitleFromUrl('http://example.com')).toBeUndefined();
+  });
+
+  it('adds the wikipedia title to standings', async () => {
+    const result = service.getDriverStandings(1988);
+    (await request(`${API}/1988/driverstandings/?limit=100&offset=0`)).flush(driverStandings('1988', [driverRow(1, {
+      Driver: { driverId: 'senna', givenName: 'Ayrton', familyName: 'Senna', nationality: 'Brazilian', url: 'http://en.wikipedia.org/wiki/Ayrton_Senna' }
+    })]));
+
+    expect((await result)[0].wikiTitle).toBe('Ayrton_Senna');
+  });
+
+  describe('drivers', () => {
+    const senna = {
+      driverId: 'senna', givenName: 'Ayrton', familyName: 'Senna', dateOfBirth: '1960-03-21',
+      nationality: 'Brazilian', url: 'http://en.wikipedia.org/wiki/Ayrton_Senna'
+    };
+    const driverTable = (drivers: object[], total = drivers.length) => ({ MRData: { total: String(total), DriverTable: { Drivers: drivers } } });
+
+    it('reads a driver', async () => {
+      const result = service.getDriver('hamilton');
+      (await request(`${API}/drivers/hamilton/`)).flush(driverTable([{
+        driverId: 'hamilton', permanentNumber: '44', code: 'HAM', givenName: 'Lewis', familyName: 'Hamilton',
+        dateOfBirth: '1985-01-07', nationality: 'British', url: 'http://en.wikipedia.org/wiki/Lewis_Hamilton'
+      }]));
+
+      expect(await result).toEqual({
+        driverId: 'hamilton', code: 'HAM', permanentNumber: 44, givenName: 'Lewis', familyName: 'Hamilton',
+        fullName: 'Lewis Hamilton', dateOfBirth: '1985-01-07', nationality: 'British', wikiTitle: 'Lewis_Hamilton'
+      });
+    });
+
+    it('returns null for an unknown driver', async () => {
+      const empty = service.getDriver('nobody');
+      (await request(`${API}/drivers/nobody/`)).flush(driverTable([]));
+      expect(await empty).toBeNull();
+
+      const missing = service.getDriver('ghost');
+      (await request(`${API}/drivers/ghost/`)).flush('Not found', { status: 404, statusText: 'Not Found' });
+      expect(await missing).toBeNull();
+    });
+
+    it('lists every driver across pages', async () => {
+      const result = service.getAllDrivers();
+      const many = (from: number, count: number) => Array.from({ length: count }, (_, i) => ({ ...senna, driverId: `d${from + i}` }));
+      (await request(`${API}/drivers/?limit=100&offset=0`)).flush(driverTable(many(0, 100), 120));
+      (await request(`${API}/drivers/?limit=100&offset=100`)).flush(driverTable(many(100, 20), 120));
+
+      const drivers = await result;
+      expect(drivers.length).toBe(120);
+      expect(drivers[0].fullName).toBe('Ayrton Senna');
+    });
+  });
+
   describe('career', () => {
     const year = new Date().getFullYear();
     const driversOf = (season: number, drivers: object[]) => ({
@@ -155,7 +213,16 @@ describe('JolpicaService', () => {
         { driverId: 'max_verstappen', code: 'VER', givenName: 'Max', familyName: 'Verstappen', nationality: 'Dutch' }
       ]));
 
-      expect(await result).toEqual({ driverId: 'max_verstappen', nationality: 'Dutch' });
+      expect(await result).toEqual({ driverId: 'max_verstappen', nationality: 'Dutch', wikiTitle: undefined });
+    });
+
+    it('adds the wikipedia title to a lookup', async () => {
+      const result = service.findDriver('HAM', 'Lewis HAMILTON');
+      (await request(`${API}/${year}/drivers/?limit=100`)).flush(driversOf(year, [
+        { driverId: 'hamilton', code: 'HAM', givenName: 'Lewis', familyName: 'Hamilton', nationality: 'British', url: 'http://en.wikipedia.org/wiki/Lewis_Hamilton' }
+      ]));
+
+      expect((await result)?.wikiTitle).toBe('Lewis_Hamilton');
     });
 
     it('falls back to earlier seasons and to the family name without accents', async () => {
