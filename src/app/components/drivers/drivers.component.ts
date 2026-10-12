@@ -1,5 +1,4 @@
 import { Component, OnInit, inject } from '@angular/core';
-
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CardModule } from 'primeng/card';
@@ -7,14 +6,40 @@ import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
+import { JolpicaService, JolpicaDriverInfo } from '../../services/jolpica.service';
+import { WikipediaService } from '../../services/wikipedia.service';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
 import { TEAM_COLORS } from '../../utils/team-colors';
+import { constructorColor } from '../../utils/constructor-branding';
+import { flagUrl } from '../../utils/country-flags';
+import { nationalityToCountryCode } from '../../utils/nationality';
 
 interface YearOption {
   label: string;
   value: number | null;
 }
+
+export interface HistoricCard {
+  driverId: string;
+  name: string;
+  team?: string;
+  color: string; // color senza '#'
+  badge?: string; // 'P3' nelle stagioni, assente nella ricerca
+  flag?: string; // solo nella ricerca senza anno
+  photo?: string;
+  initials: string;
+  link: string[];
+}
+
+const plain = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+const getInitials = (fullName: string): string => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 @Component({
   selector: 'app-drivers',
@@ -25,17 +50,25 @@ interface YearOption {
 })
 export class DriversComponent implements OnInit {
   private readonly openF1Service = inject(Openf1ServiceService);
+  private readonly jolpicaService = inject(JolpicaService);
+  private readonly wikipediaService = inject(WikipediaService);
   private readonly excludedDrivers = new Set<string>(['FELIPE DRUGOVICH']);
 
   drivers: Driver[] = [];
   allDrivers: Map<number, Driver[]> = new Map(); // Map<year, drivers[]>
   filteredDrivers: Driver[] = [];
+  historicCards: HistoricCard[] | null = null;
+  searchLimited = false;
   loading = false;
   error?: string;
+  errorSource: 'openf1' | 'jolpica' = 'openf1';
 
   years: YearOption[] = [];
   selectedYear: number | null = null;
   searchQuery: string = '';
+
+  private allHistoricDrivers?: JolpicaDriverInfo[];
+  private filterSeq = 0;
 
   // Colori di riserva dei team (stessi usati in gran-premi-detail)
   readonly teamColors = TEAM_COLORS;
@@ -64,9 +97,9 @@ export class DriversComponent implements OnInit {
     'OLIVER BEARMAN': 'https://www.olliebearman.com/media/pages/home/b4d938add1-1740818186/about-home-1200x.webp',
     'FRANCO COLAPINTO': 'https://static.sky.it/images/skysport/it/motori/formula-1/piloti/franco-colapinto.png?im=Resize,width=270',
     'ANDREA KIMI ANTONELLI': 'https://images.ctfassets.net/1fvlg6xqnm65/5YiTw6xQHuM94ty9yLDnyk/ff67d40c690940307f48d1b370352577/Kimi_Antonelli.png',
-    'ISACK HADJAR' : 'https://soymotor.com/sites/default/files/2025-03/ihadjar_2025.png',
-    'NYCK DE VRIES' : 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyMy9kcml2ZXJzL2hlYWRzaG90cy9mMS9kZXYucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
-    'LIAM LAWSON' : 'https://static.sky.it/images/skysport/it/motori/formula-1/piloti/liam-lawson.png?im=Resize,width=270'
+    'ISACK HADJAR': 'https://soymotor.com/sites/default/files/2025-03/ihadjar_2025.png',
+    'NYCK DE VRIES': 'https://image-service.zaonce.net/eyJidWNrZXQiOiJmcm9udGllci1jbXMiLCJrZXkiOiJmMW1hbmFnZXIvMjAyMy9kcml2ZXJzL2hlYWRzaG90cy9mMS9kZXYucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo1MDB9fX0=',
+    'LIAM LAWSON': 'https://static.sky.it/images/skysport/it/motori/formula-1/piloti/liam-lawson.png?im=Resize,width=270'
   };
 
   async ngOnInit() {
@@ -99,10 +132,15 @@ export class DriversComponent implements OnInit {
   async loadAllDrivers() {
     this.loading = true;
     this.error = undefined;
+    this.errorSource = 'openf1';
 
     try {
-      // Tutte le gare di tutte le stagioni (una richiesta) e griglia attuale, insieme
-      const [races] = await Promise.all([this.openF1Service.getRaceSessions(), this.loadCurrentPhotos()]);
+      // Tutte le gare di tutte le stagioni, stagioni Jolpica e griglia attuale in parallelo
+      const [races, jolpicaSeasons] = await Promise.all([
+        this.openF1Service.getRaceSessions(),
+        this.jolpicaService.getSeasons().catch(() => [] as number[]),
+        this.loadCurrentPhotos()
+      ]);
 
       // Gare già corse, raggruppate per stagione in ordine di data
       const now = Date.now();
@@ -116,14 +154,11 @@ export class DriversComponent implements OnInit {
           racesByYear.get(year)!.push(r.session_key);
         });
 
-      // Per ogni stagione i piloti della prima e dell'ultima gara: così compaiono anche i cambi
-      // a metà stagione, ma non chi ha girato solo nelle prove libere.
-      // Tutto in parallelo: il service mette in fila le richieste rispettando il limite dell'API
+      // Per ogni stagione i piloti della prima e dell'ultima gara
       await Promise.all([...racesByYear.entries()].map(async ([year, sessionKeys]) => {
         const keys = [...new Set([sessionKeys[0], sessionKeys[sessionKeys.length - 1]])];
         const lists = await Promise.all(keys.map(k => this.openF1Service.getDrivers(k, 'session').catch(() => [] as Driver[])));
 
-        // Unione per nome: per chi c'è in entrambe resta il dato dell'ultima gara (team attuale)
         const byName = new Map<string, Driver>();
         for (const driver of lists.flat()) {
           if (this.isExcluded(driver)) continue;
@@ -143,76 +178,172 @@ export class DriversComponent implements OnInit {
         throw new Error('API OpenF1 non disponibile');
       }
 
-      // Popola gli anni disponibili
-      this.populateYears();
+      // Popola gli anni disponibili (OpenF1 + Jolpica dal 1950)
+      this.populateYears(jolpicaSeasons);
 
-      // Inizialmente mostra tutti i piloti senza anno selezionato
-      this.applyFilters();
+      // Inizialmente mostra i piloti della stagione più recente
+      await this.applyFilters();
     } catch (err: any) {
       this.error = err?.message || 'Errore caricamento piloti';
+      this.errorSource = 'openf1';
     } finally {
       this.loading = false;
     }
   }
 
-  private populateYears() {
-    const sortedYears = Array.from(this.allDrivers.keys()).sort((a, b) => b - a);
+  private populateYears(jolpicaYears: number[] = []) {
+    const openF1Years = Array.from(this.allDrivers.keys());
+    const sortedYears = Array.from(new Set([...openF1Years, ...jolpicaYears])).sort((a, b) => b - a);
     this.years = sortedYears.map(year => ({
       label: year.toString(),
       value: year
     }));
   }
 
-  onYearSelect(year: number | null) {
+  async onYearSelect(year: number | null) {
     this.selectedYear = year;
-    this.applyFilters();
+    await this.applyFilters();
   }
 
-  onSearch() {
-    this.applyFilters();
+  async onSearch() {
+    await this.applyFilters();
   }
 
-  resetFilters() {
+  async resetFilters() {
     this.selectedYear = null;
     this.searchQuery = '';
-    this.applyFilters();
+    await this.applyFilters();
   }
 
-  private applyFilters() {
+  async retryLoad(): Promise<void> {
+    if ((this.selectedYear && this.selectedYear < 2023) || (!this.selectedYear && this.searchQuery.trim())) {
+      await this.applyFilters();
+    } else {
+      await this.loadAllDrivers();
+    }
+  }
+
+  private async applyFilters() {
+    const seq = ++this.filterSeq;
+    this.error = undefined;
+    this.searchLimited = false;
+
+    // Caso 1: Anno storico (< 2023) tramite archivio Jolpica
+    if (this.selectedYear && this.selectedYear < 2023) {
+      this.loading = true;
+      try {
+        const standings = await this.jolpicaService.getDriverStandings(this.selectedYear);
+        if (seq !== this.filterSeq) return;
+
+        const wikiTitles = standings.map(s => s.wikiTitle).filter((t): t is string => !!t);
+        const images = await this.wikipediaService.getImages(wikiTitles);
+        if (seq !== this.filterSeq) return;
+
+        let cards: HistoricCard[] = standings.map(s => ({
+          driverId: s.driverId,
+          name: s.fullName,
+          team: s.constructorName,
+          color: constructorColor(s.constructorId),
+          badge: 'P' + s.position,
+          photo: s.wikiTitle ? images.get(s.wikiTitle) : undefined,
+          initials: getInitials(s.fullName),
+          link: ['/drivers', 'storico', s.driverId],
+          flag: undefined
+        }));
+
+        if (this.searchQuery.trim()) {
+          const q = plain(this.searchQuery);
+          cards = cards.filter(c => plain(c.name).includes(q) || (c.team && plain(c.team).includes(q)));
+        }
+
+        this.historicCards = cards;
+        this.drivers = [];
+      } catch (err: any) {
+        if (seq !== this.filterSeq) return;
+        this.error = err?.message || 'Errore archivio storico Jolpica';
+        this.errorSource = 'jolpica';
+        this.historicCards = null;
+      } finally {
+        if (seq === this.filterSeq) {
+          this.loading = false;
+        }
+      }
+      return;
+    }
+
+    // Caso 2: Nessun anno selezionato ma con ricerca testuale -> cerca tra tutti i piloti dal 1950
+    if (!this.selectedYear && this.searchQuery.trim()) {
+      this.loading = true;
+      try {
+        if (!this.allHistoricDrivers) {
+          this.allHistoricDrivers = await this.jolpicaService.getAllDrivers();
+        }
+        if (seq !== this.filterSeq) return;
+
+        const query = plain(this.searchQuery);
+        const matched = this.allHistoricDrivers.filter(d => plain(d.fullName).includes(query));
+
+        // Ordinamento alfabetico per cognome
+        matched.sort((a, b) =>
+          (a.familyName || '').localeCompare(b.familyName || '', 'it') ||
+          (a.givenName || '').localeCompare(b.givenName || '', 'it')
+        );
+
+        this.searchLimited = matched.length > 48;
+        const top = matched.slice(0, 48);
+
+        const titles = top.map(d => d.wikiTitle).filter((t): t is string => !!t);
+        const images = await this.wikipediaService.getImages(titles);
+        if (seq !== this.filterSeq) return;
+
+        const cards: HistoricCard[] = top.map(d => {
+          const openF1Match = this.findOpenF1Driver(d);
+          const link = openF1Match ? ['/drivers', openF1Match.name_acronym || openF1Match.driver_number.toString()] : ['/drivers', 'storico', d.driverId];
+          const countryCode = d.nationality ? nationalityToCountryCode(d.nationality) : undefined;
+          return {
+            driverId: d.driverId,
+            name: d.fullName,
+            team: undefined,
+            color: '555555',
+            badge: undefined,
+            flag: flagUrl(countryCode) || undefined,
+            photo: d.wikiTitle ? images.get(d.wikiTitle) : undefined,
+            initials: getInitials(d.fullName),
+            link
+          };
+        });
+
+        this.historicCards = cards;
+        this.drivers = [];
+      } catch (err: any) {
+        if (seq !== this.filterSeq) return;
+        this.error = err?.message || 'Errore archivio storico Jolpica';
+        this.errorSource = 'jolpica';
+        this.historicCards = null;
+      } finally {
+        if (seq === this.filterSeq) {
+          this.loading = false;
+        }
+      }
+      return;
+    }
+
+    // Caso 3: Anno OpenF1 selezionato (>= 2023) o vista iniziale senza filtri
+    this.historicCards = null;
     let result: Driver[] = [];
 
     if (this.selectedYear) {
-      // Mostra solo i piloti dell'anno selezionato con la scuderia
+      // Mostra solo i piloti dell'anno selezionato
       const yearDrivers = this.allDrivers.get(this.selectedYear) || [];
       result = yearDrivers.map(driver => ({ ...driver }));
     } else {
-      // Mostra tutti i piloti di tutti gli anni, senza duplicati per nome
-      // (non per numero: un pilota può cambiarlo, es. Norris dal #4 al #1 da campione)
-      const uniqueDriversMap = new Map<string, Driver>();
-
-      // Itera tutti gli anni dal più recente al più vecchio, così resta il numero attuale
-      const sortedYears = Array.from(this.allDrivers.keys()).sort((a, b) => b - a);
-
-      for (const year of sortedYears) {
-        const drivers = this.allDrivers.get(year) || [];
-        for (const driver of drivers) {
-          // Se il pilota non è ancora presente, aggiungilo
-          const key = this.photoKey(driver);
-          if (!uniqueDriversMap.has(key)) {
-            uniqueDriversMap.set(key, {
-              ...driver,
-              team_name: '' // Nascondi la scuderia quando non c'è filtro anno
-            });
-          }
-        }
-      }
-
-      result = Array.from(uniqueDriversMap.values()).sort((a, b) =>
-        a.driver_number - b.driver_number
-      );
+      // Senza anno e senza ricerca: mostra solo la griglia dell'anno più recente con i loro colori
+      const latestYear = this.allDrivers.size ? Math.max(...this.allDrivers.keys()) : undefined;
+      const latestDrivers = latestYear ? (this.allDrivers.get(latestYear) || []) : [];
+      result = latestDrivers.map(driver => ({ ...driver }));
     }
 
-    // Applica ricerca se presente
+    // Applica ricerca sulle card OpenF1
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase().trim();
       result = result.filter(driver =>
@@ -225,6 +356,30 @@ export class DriversComponent implements OnInit {
 
     this.filteredDrivers = result;
     this.drivers = result;
+  }
+
+  private findOpenF1Driver(historic: JolpicaDriverInfo): Driver | undefined {
+    if (!historic.code) return undefined;
+    const code = historic.code.toUpperCase();
+    for (const list of this.allDrivers.values()) {
+      const match = list.find(d => {
+        if (d.name_acronym?.toUpperCase() !== code) return false;
+        const dName = plain(d.full_name || `${d.first_name} ${d.last_name}`);
+        const hName = plain(historic.fullName);
+        if (dName === hName) return true;
+        const dLast = plain(d.last_name || '');
+        const hLast = plain(historic.familyName || '');
+        const dFirst = plain(d.first_name || '');
+        const hFirst = plain(historic.givenName || '');
+        if (dLast && hLast && dLast === hLast) {
+          if (dFirst && hFirst) return dFirst === hFirst;
+          return true;
+        }
+        return false;
+      });
+      if (match) return match;
+    }
+    return undefined;
   }
 
   getDriverImage(driver: Driver): string {
@@ -257,30 +412,26 @@ export class DriversComponent implements OnInit {
     }
   }
 
-getTeamColor(driver: Driver): string {
-  // Se non c'è anno selezionato, usa colore neutro
-  if (!this.selectedYear) {
-    return '555555'; // Grigio neutro
+  getTeamColor(driver: Driver): string {
+    // Prova prima con team_color dall'API
+    let color = driver.team_color ? driver.team_color.replace('#', '').toUpperCase() : null;
+
+    // Se manca o è nero, usa il colore mappato
+    if (!color || color === '000000' || color === '000') {
+      color = driver.team_name ? (this.teamColors[driver.team_name] || '555555') : '555555';
+    }
+
+    return color;
   }
 
-  // Prova prima con team_color dall'API
-  let color = driver.team_color ? driver.team_color.replace('#', '').toUpperCase() : null;
-
-  // Se manca o è nero, usa il colore mappato
-  if (!color || color === '000000' || color === '000') {
-    color = driver.team_name ? (this.teamColors[driver.team_name] || '555555') : '555555';
+  getDriverImageWithTeamColor(driver: Driver): string {
+    const teamColor = this.getTeamColor(driver).replace('#', '');
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(driver.full_name)}&size=800&background=${teamColor}&color=fff&bold=true&font-size=0.35&format=svg`;
   }
 
-  return color;
-}
+  trackByDriverNumber = (index: number, driver: Driver): string =>
+    this.photoKey(driver);
 
-getDriverImageWithTeamColor(driver: Driver): string {
-  const teamColor = this.getTeamColor(driver).replace('#', '');
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(driver.full_name)}&size=800&background=${teamColor}&color=fff&bold=true&font-size=0.35&format=svg`;
-}
-
-// TrackBy per evitare duplicati nel rendering
-// Arrow function: Angular chiama trackBy senza "this", così resta legata al componente
-trackByDriverNumber = (index: number, driver: Driver): string =>
-  this.photoKey(driver); // il nome, perché lo stesso numero può appartenere a piloti di anni diversi
+  trackByHistoricCard = (index: number, card: HistoricCard): string =>
+    card.driverId;
 }

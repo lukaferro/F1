@@ -36,7 +36,11 @@
           <p>Piloti della stagione {{ selectedYear }}</p>
         }
         @if (!selectedYear) {
-          <p>Tutti i piloti di tutte le stagioni</p>
+          @if (searchQuery.trim()) {
+            <p>Ricerca nell'archivio storico (dal 1950)</p>
+          } @else {
+            <p>Piloti della stagione più recente</p>
+          }
         }
       </div>
 
@@ -50,39 +54,83 @@
             (ngModelChange)="onSearch()"
             placeholder="Cerca pilota..."
             class="search-input" />
-          </span>
-        </div>
+        </span>
       </div>
+    </div>
 
-      <!-- Loading -->
-      @if (loading) {
-        <div class="drivers-grid" aria-busy="true" aria-label="Caricamento piloti">
-          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
-            <div class="driver-card skeleton-card">
-              <div class="skeleton" style="height: 112px; border-radius: 0;"></div>
-              <div class="driver-body">
-                <div class="skeleton" style="height: 300px; margin-bottom: 1rem;"></div>
-                <div class="skeleton skeleton-line" style="width: 60%; margin: 0 auto;"></div>
-                <div class="skeleton skeleton-line" style="width: 25%; margin: 0.75rem auto 0;"></div>
-              </div>
+    <!-- Loading -->
+    @if (loading) {
+      <div class="drivers-grid" aria-busy="true" aria-label="Caricamento piloti">
+        @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+          <div class="driver-card skeleton-card">
+            <div class="skeleton" style="height: 112px; border-radius: 0;"></div>
+            <div class="driver-body">
+              <div class="skeleton" style="height: 300px; margin-bottom: 1rem;"></div>
+              <div class="skeleton skeleton-line" style="width: 60%; margin: 0 auto;"></div>
+              <div class="skeleton skeleton-line" style="width: 25%; margin: 0.75rem auto 0;"></div>
             </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Errore -->
+    @if (error && !loading) {
+      <app-api-unavailable [source]="errorSource" (retry)="retryLoad()"></app-api-unavailable>
+    }
+
+    <!-- Griglia piloti -->
+    @if (!loading && !error) {
+      @if (historicCards) {
+        @if (searchLimited) {
+          <div class="search-limit-notice">
+            <i class="pi pi-info-circle"></i>
+            <span>Affina la ricerca per vedere altri piloti (mostrati i primi 48)</span>
+          </div>
+        }
+        <div class="drivers-grid">
+          @for (card of historicCards; track trackByHistoricCard($index, card)) {
+            <a class="driver-card" [style.--i]="$index" [routerLink]="card.link">
+              <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + card.color + '33, #' + card.color + '66)'">
+                @if (card.badge) {
+                  <div class="driver-number" [style.color]="'#ffffff'">{{ card.badge }}</div>
+                } @else {
+                  <div></div>
+                }
+                @if (card.flag) {
+                  <img [src]="card.flag" [alt]="card.name" class="card-flag" />
+                }
+              </div>
+              <div class="driver-body">
+                <div class="driver-image-container">
+                  @if (card.photo) {
+                    <img [src]="card.photo" (error)="card.photo = undefined" [alt]="card.name" class="driver-image" />
+                  } @else {
+                    <div class="portrait-initials" [style.background]="'#' + card.color" aria-hidden="true">{{ card.initials }}</div>
+                  }
+                </div>
+                <div class="driver-info">
+                  <h3>{{ card.name }}</h3>
+                  @if (card.team) {
+                    <div class="driver-team" [style.color]="'#ffffff'">
+                      <i class="pi pi-building"></i>
+                      {{ card.team }}
+                    </div>
+                  }
+                </div>
+              </div>
+              @if (card.color !== '555555') {
+                <div class="driver-accent" [style.background-color]="'#' + card.color"></div>
+              }
+            </a>
           }
         </div>
-      }
-
-      <!-- Errore -->
-      @if (error && !loading) {
-        <app-api-unavailable (retry)="loadAllDrivers()"></app-api-unavailable>
-      }
-
-      <!-- Griglia piloti -->
-      @if (!loading && !error) {
+      } @else {
         <div class="drivers-grid">
           @for (driver of drivers; track trackByDriverNumber($index, driver)) {
             <a class="driver-card" [style.--i]="$index" [routerLink]="['/drivers', driver.name_acronym || driver.driver_number]">
               <div class="driver-header" [style.background]="'linear-gradient(135deg, #' + getTeamColor(driver) + '33, #' + getTeamColor(driver) + '66)'">
                 <div class="driver-number" [style.color]="'#ffffff'">#{{ driver.driver_number }}</div>
-                <!-- bandiere rimosse su richiesta -->
               </div>
               <div class="driver-body">
                 <div class="driver-image-container">
@@ -108,13 +156,14 @@
           }
         </div>
       }
+    }
 
-      <!-- Nessun pilota trovato -->
-      @if (!loading && !error && drivers.length === 0) {
-        <div class="no-drivers">
-          <i class="pi pi-info-circle"></i>
-          <p>Nessun pilota trovato con i filtri selezionati</p>
-        </div>
-      }
-    </div>
+    <!-- Nessun pilota trovato -->
+    @if (!loading && !error && (historicCards ? historicCards.length === 0 : drivers.length === 0)) {
+      <div class="no-drivers">
+        <i class="pi pi-info-circle"></i>
+        <p>Nessun pilota trovato con i filtri selezionati</p>
+      </div>
+    }
   </div>
+</div>

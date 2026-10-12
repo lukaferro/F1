@@ -211,7 +211,7 @@
   DriversComponent.searchLimited: boolean;                // true se la ricerca ha più di 48 risultati
   ```
 
-- [ ] **Step 1: Scrivi i test** (Jolpica, Wikipedia e OpenF1 finti; servizio OpenF1 con 2023–2026):
+- [x] **Step 1: Scrivi i test** (Jolpica, Wikipedia e OpenF1 finti; servizio OpenF1 con 2023–2026):
   - `'offers every season since 1950'`: `years` contiene 2026 e 1950.
   - `'shows the latest season in team colours when no year is chosen'`: senza anno → solo i piloti dell'anno più recente, `getTeamColor` diverso da `'555555'`.
   - `'shows a historic season with teams, colours and positions'`: anno 1988 → `historicCards` con `{ name: 'Ayrton Senna', team: 'McLaren', color: constructorColor('mclaren'), badge: 'P1', link: ['/drivers', 'storico', 'senna'] }`.
@@ -220,13 +220,13 @@
   - `'searches every driver when no year is chosen'`: testo "schum" → Michael, Ralf, Mick; Mick (presente nella griglia OpenF1 con sigla `MSC`) ha link `['/drivers', 'MSC']`, gli altri il link storico.
   - `'limits a broad search to 48 results'`: 100 piloti che contengono "a" → 48 card, `searchLimited` true e testo "Affina la ricerca per vedere altri piloti"; `getImages` chiamato con 48 titoli.
   - `'shows the Jolpica notice when a historic season fails'`.
-- [ ] **Step 2: Esegui** → falliscono.
-- [ ] **Step 3: Implementa.**
+- [x] **Step 2: Esegui** → falliscono.
+- [x] **Step 3: Implementa.**
   - Anni: unione degli anni OpenF1 e di `getSeasons()`; se Jolpica non risponde restano gli anni OpenF1.
   - Senza anno e senza ricerca: piloti dell'anno più recente con i loro colori (oggi tutti i piloti dal 2023 in grigio).
   - Anno < 2023: `historicCards` dalla classifica, foto con `getImages` sui `wikiTitle`; numero di sequenza per i cambi rapidi.
   - Ricerca senza anno: `getAllDrivers()` alla prima ricerca, confronto senza accenti su nome completo, ordinamento alfabetico per cognome, primi 48, colore neutro `'555555'`, bandiera da `nationalityToCountryCode` + `flagUrl`.
   - Template: blocco `@if (historicCards)` con card dello stesso stile (`.driver-card`, `.driver-header` col colore, `.driver-accent`) e, al posto del numero, il `badge`; foto con `object-fit: cover; object-position: top`; iniziali in un riquadro col colore.
-- [ ] **Step 4: Esegui** test e build → verdi.
-- [ ] **Step 5: Verifica nel browser** (dev server, Edge + puppeteer-core in scratchpad): Piloti senza anno (griglia attuale colorata); anno 1988 (Senna P1 McLaren, foto); anno 1955 (molti piloti, iniziali dove mancano foto); ricerca "schumacher"; ricerca "a" (48 e nota); clic su Senna → `/drivers/storico/senna` con biografia in italiano, carriera e grafico; Fangio; un pilota senza foto; Hamilton (biografia con 2 richieste Wikipedia, controllando la rete); Classifiche 1988 → clic su un pilota; Jolpica bloccata; larghezza 375 px senza scroll orizzontale. Errori in console: nessuno nuovo.
-- [ ] **Step 6: Commit** — `feat: drivers page from 1950 with historic seasons and search`
+- [x] **Step 4: Esegui** test e build → verdi.
+- [x] **Step 5: Verifica nel browser** (dev server, Edge + puppeteer-core in scratchpad): Piloti senza anno (griglia attuale colorata); anno 1988 (Senna P1 McLaren, foto); anno 1955 (molti piloti, iniziali dove mancano foto); ricerca "schumacher"; ricerca "a" (48 e nota); clic su Senna → `/drivers/storico/senna` con biografia in italiano, carriera e grafico; Fangio; un pilota senza foto; Hamilton (biografia con 2 richieste Wikipedia, controllando la rete); Classifiche 1988 → clic su un pilota; Jolpica bloccata; larghezza 375 px senza scroll orizzontale. Errori in console: nessuno nuovo.
+- [x] **Step 6: Commit** — `feat: drivers page from 1950 with historic seasons and search`
