@@ -10,7 +10,7 @@ OpenF1 copre solo dal 2023. Rendere consultabili tutti i piloti della F1 dal 195
 Criteri di riuscita:
 
 - nella pagina Piloti il selettore Anno va dal 1950 all'anno corrente; per gli anni prima del 2023 compaiono i piloti di quella stagione con la scuderia, il suo colore e la posizione finale;
-- senza anno si vede la griglia della stagione in corso (comportamento attuale per il 2023+); la ricerca senza anno trova qualsiasi pilota dal 1950 (es. "Senna", "Schumacher");
+- senza anno si vede la griglia della stagione in corso, colorata per scuderia (oggi tutti i piloti dal 2023 in grigio); la ricerca senza anno trova qualsiasi pilota dal 1950 (es. "Senna", "Schumacher");
 - ogni pilota precedente al 2023 si apre in `/drivers/storico/<driverId>` con foto, dati anagrafici, biografia e la sezione carriera del progetto B;
 - nella pagina Classifiche i piloti storici diventano cliccabili;
 - la biografia dei piloti (storici e attuali) richiede al massimo 2 richieste a Wikipedia quando il titolo della pagina è noto;
@@ -82,7 +82,7 @@ Il pannello "Profilo" estratto da `DriverDetailComponent` (stesso aspetto: testo
 - Anni: dal 1950 all'anno corrente nel selettore (da `JolpicaService.getSeasons()`, unito agli anni OpenF1).
 - Anno ≥ 2023: comportamento attuale.
 - Anno < 2023: `getDriverStandings(anno)` → card con nome, scuderia, colore `#` + `constructorColor`, "P<posizione>" e foto da `getImages` (titoli della stagione in blocchi da 50); senza foto, iniziali sul colore della squadra. Link `/drivers/storico/<driverId>`.
-- Senza anno: griglia della stagione in corso (OpenF1, come oggi).
+- Senza anno: i piloti della stagione più recente (OpenF1) con il colore della loro scuderia; oggi invece compaiono tutti i piloti dal 2023 in grigio.
 - Ricerca:
   - con un anno: filtra le card mostrate (come oggi);
   - senza anno e con testo: alla prima ricerca carica `getAllDrivers()` e mostra i piloti il cui nome contiene il testo (senza accenti/maiuscole), al massimo 48 risultati con nota "Affina la ricerca" oltre; card con nome, bandiera della nazionalità, bordo neutro, foto da `getImages`. Link: `/drivers/<code>` se il `code` del pilota coincide con la sigla di un pilota OpenF1 già caricato dalla pagina (stagioni dal 2023), altrimenti `/drivers/storico/<driverId>`.
