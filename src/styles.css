@@ -271,6 +271,7 @@ main.app-content > :not(router-outlet) {
 
 /* righe delle tabelle in dissolvenza (in sequenza nelle Classifiche) */
 .standings-table tbody tr,
+.career-table tbody tr,
 .p-datatable-tbody > tr {
   animation: fade-in 0.3s ease both;
   animation-delay: calc(min(var(--i, 0), 20) * 20ms);
