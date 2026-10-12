@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, injec
 
 import { CareerTotals, JolpicaService } from '../../services/jolpica.service';
 import { ConstructorLogo, constructorColor, constructorLogo } from '../../utils/constructor-branding';
+import { buildPositionChart, PositionChart } from '../../utils/position-chart';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 
 export interface CareerSeason {
@@ -138,6 +139,13 @@ export class DriverCareerComponent implements OnChanges {
 
   private replace(index: number, row: CareerSeason): void {
     this.seasons = this.seasons.map((s, i) => i === index ? row : s);
+  }
+
+  /** Grafico delle posizioni finali: solo stagioni caricate in cui il pilota è in classifica */
+  get chart(): PositionChart | null {
+    return buildPositionChart(this.seasons
+      .filter(s => s.state === 'ready' && s.position !== undefined)
+      .map(s => ({ season: s.season, position: s.position!, color: this.teamColor(s), inProgress: s.inProgress })));
   }
 
   teamNames(row: CareerSeason): string {

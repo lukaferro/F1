@@ -195,6 +195,18 @@ describe('DriverCareerComponent', () => {
     expect(component.totalPoints).toBe(150);
   });
 
+  it('draws the chart only with two or more ranked seasons', async () => {
+    await create({ seasons: [2023], standings: () => Promise.resolve([standing('hamilton', 3, 234)]) });
+    expect(el().querySelector('svg.position-chart')).toBeNull();
+
+    TestBed.resetTestingModule();
+    await create({ seasons: [2024, 2023], standings: season => Promise.resolve([standing('hamilton', season === 2024 ? 7 : 3, 200)]) });
+    const svg = el().querySelector('svg.position-chart');
+    expect(svg).toBeTruthy();
+    expect(svg?.querySelectorAll('circle').length).toBe(2);
+    expect(svg?.getAttribute('aria-label')).toBe('Posizione finale dal 2023 al 2024, migliore: 3ª');
+  });
+
   it('shows every constructor of a season', async () => {
     await create({
       seasons: [2025],

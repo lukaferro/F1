@@ -92,6 +92,28 @@
     }
   </div>
 
+  @if (chart; as c) {
+    <h3 class="chart-title">Posizione finale</h3>
+    <svg class="position-chart" [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height" role="img" [attr.aria-label]="c.label">
+      @for (t of c.yTicks; track t.label) {
+        <line class="grid-line" [attr.x1]="40" [attr.x2]="c.width - 16" [attr.y1]="t.y" [attr.y2]="t.y" />
+        <text class="axis-label" x="32" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
+      }
+      @for (s of c.segments; track $index) {
+        <line class="trend" [attr.x1]="s.x1" [attr.y1]="s.y1" [attr.x2]="s.x2" [attr.y2]="s.y2"
+          [attr.stroke-dasharray]="s.dashed ? '4 4' : null" />
+      }
+      @for (p of c.points; track p.season) {
+        <circle [attr.cx]="p.x" [attr.cy]="p.y" r="5" [attr.fill]="p.color">
+          <title>{{ p.season }}: P{{ p.position }}</title>
+        </circle>
+      }
+      @for (l of c.xLabels; track l.label) {
+        <text class="axis-label" [attr.x]="l.x" [attr.y]="c.height - 8" text-anchor="middle">{{ l.label }}</text>
+      }
+    </svg>
+  }
+
   <div class="seasons-header">
     <h3>Stagione per stagione</h3>
     @if (seasonsComplete && seasonsFailed) {

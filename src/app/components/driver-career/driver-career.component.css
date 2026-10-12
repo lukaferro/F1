@@ -241,3 +241,31 @@
     width: fit-content;
   }
 }
+
+/* Grafico della posizione finale per stagione */
+.chart-title {
+  margin: 1.75rem 0 0.75rem;
+  font-size: 1.1rem;
+}
+.position-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.position-chart .grid-line {
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 1;
+}
+.position-chart .trend {
+  stroke: rgba(255,255,255,0.45);
+  stroke-width: 2;
+}
+.position-chart circle {
+  stroke: #0f1013;
+  stroke-width: 2;
+}
+.position-chart .axis-label {
+  fill: #9aa0a6;
+  font-size: 12px;
+}
