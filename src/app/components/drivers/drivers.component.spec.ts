@@ -163,7 +163,8 @@ describe('DriversComponent', () => {
   it('offers every season since 1950', async () => {
     await create();
     const values = component.years.map(y => y.value);
-    expect(values).toContain(2026);
+    expect(values).not.toContain(2026);
+    expect(values).toContain(null);
     expect(values).toContain(1950);
   });
 

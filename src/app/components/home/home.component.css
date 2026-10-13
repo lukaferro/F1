@@ -54,7 +54,7 @@
   z-index: 3;
   padding: 3rem;
   color: #ffffff;
-  max-width: 600px;
+  max-width: 650px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -64,13 +64,14 @@
 h1 {
   font-size: 3rem;
   margin-bottom: 2rem;
-  line-height: 1.2;
+  line-height: 1.25;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .f1-text {
   color: #ff0000;
   font-weight: bold;
+  white-space: nowrap;
 }
 
 .hero p {
@@ -83,6 +84,10 @@ h1 {
 .hero-buttons {
   display: flex;
   gap: 1rem;
+}
+
+.hero-buttons ::ng-deep .p-button {
+  gap: 0.5rem;
 }
 
 .features {

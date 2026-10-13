@@ -69,6 +69,8 @@ export class DriversComponent implements OnInit {
 
   private allHistoricDrivers?: JolpicaDriverInfo[];
   private filterSeq = 0;
+  private loadRemainingYearsPromise?: Promise<any>;
+  private readonly racesByYear = new Map<number, number[]>();
 
   // Colori di riserva dei team (stessi usati in gran-premi-detail)
   readonly teamColors = TEAM_COLORS;
@@ -129,6 +131,29 @@ export class DriversComponent implements OnInit {
     return this.excludedDrivers.has(name);
   }
 
+  private async loadYearDrivers(year: number, sessionKeys: number[]): Promise<Driver[]> {
+    if (this.allDrivers.has(year)) {
+      return this.allDrivers.get(year)!;
+    }
+    const keys = [...new Set([sessionKeys[0], sessionKeys[sessionKeys.length - 1]])];
+    const lists = await Promise.all(keys.map(k => this.openF1Service.getDrivers(k, 'session').catch(() => [] as Driver[])));
+
+    const byName = new Map<string, Driver>();
+    for (const driver of lists.flat()) {
+      if (this.isExcluded(driver)) continue;
+      byName.set(this.photoKey(driver), {
+        ...driver,
+        team_color: driver.team_color || this.teamColors[driver.team_name] || 'FFFFFF'
+      });
+    }
+
+    const result = byName.size ? [...byName.values()].sort((a, b) => a.driver_number - b.driver_number) : [];
+    if (result.length) {
+      this.allDrivers.set(year, result);
+    }
+    return result;
+  }
+
   async loadAllDrivers() {
     this.loading = true;
     this.error = undefined;
@@ -144,60 +169,76 @@ export class DriversComponent implements OnInit {
 
       // Gare già corse, raggruppate per stagione in ordine di data
       const now = Date.now();
-      const racesByYear = new Map<number, number[]>();
+      this.racesByYear.clear();
       [...races]
         .filter(r => !r.is_cancelled && new Date(r.date_end).getTime() < now)
         .sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime())
         .forEach(r => {
           const year = r.year ?? new Date(r.date_start).getFullYear();
-          if (!racesByYear.has(year)) racesByYear.set(year, []);
-          racesByYear.get(year)!.push(r.session_key);
+          if (!this.racesByYear.has(year)) this.racesByYear.set(year, []);
+          this.racesByYear.get(year)!.push(r.session_key);
         });
 
-      // Per ogni stagione i piloti della prima e dell'ultima gara
-      await Promise.all([...racesByYear.entries()].map(async ([year, sessionKeys]) => {
-        const keys = [...new Set([sessionKeys[0], sessionKeys[sessionKeys.length - 1]])];
-        const lists = await Promise.all(keys.map(k => this.openF1Service.getDrivers(k, 'session').catch(() => [] as Driver[])));
+      // Popola subito gli anni disponibili per il dropdown
+      this.populateYears(jolpicaSeasons);
 
-        const byName = new Map<string, Driver>();
-        for (const driver of lists.flat()) {
-          if (this.isExcluded(driver)) continue;
-          byName.set(this.photoKey(driver), {
-            ...driver,
-            team_color: driver.team_color || this.teamColors[driver.team_name] || 'FFFFFF'
-          });
-        }
+      // Carica prima di tutto i piloti della stagione più recente
+      const latestYear = this.racesByYear.size ? Math.max(...this.racesByYear.keys()) : undefined;
+      if (latestYear && this.racesByYear.has(latestYear)) {
+        await this.loadYearDrivers(latestYear, this.racesByYear.get(latestYear)!);
+      }
 
-        if (byName.size) {
-          this.allDrivers.set(year, [...byName.values()].sort((a, b) => a.driver_number - b.driver_number));
+      // Se non ci sono gare o sono fallite, tenta il fallback da getLatestDrivers
+      if (this.allDrivers.size === 0) {
+        try {
+          const latest = await this.openF1Service.getLatestDrivers();
+          if (latest.length) {
+            const currentYear = new Date().getFullYear();
+            const valid = latest.filter(d => !this.isExcluded(d)).map(d => ({
+              ...d,
+              team_color: d.team_color || this.teamColors[d.team_name] || 'FFFFFF'
+            }));
+            this.allDrivers.set(currentYear, valid);
+          }
+        } catch {
+          // Ignora fallback se non disponibile
         }
-      }));
+      }
 
       // Nessun pilota caricato perché l'API non risponde: mostriamo l'avviso
       if (this.allDrivers.size === 0 && this.openF1Service.apiStatus() === 'error') {
         throw new Error('API OpenF1 non disponibile');
       }
 
-      // Popola gli anni disponibili (OpenF1 + Jolpica dal 1950)
-      this.populateYears(jolpicaSeasons);
-
-      // Inizialmente mostra i piloti della stagione più recente
+      // Mostra subito i piloti della stagione più recente
       await this.applyFilters();
+      this.loading = false;
+
+      // In background carica in parallelo le altre stagioni OpenF1 senza bloccare l'interfaccia
+      const remainingYears = [...this.racesByYear.entries()].filter(([y]) => y !== latestYear);
+      this.loadRemainingYearsPromise = Promise.all(
+        remainingYears.map(([y, keys]) => this.loadYearDrivers(y, keys))
+      );
     } catch (err: any) {
       this.error = err?.message || 'Errore caricamento piloti';
       this.errorSource = 'openf1';
-    } finally {
       this.loading = false;
     }
   }
 
   private populateYears(jolpicaYears: number[] = []) {
-    const openF1Years = Array.from(this.allDrivers.keys());
-    const sortedYears = Array.from(new Set([...openF1Years, ...jolpicaYears])).sort((a, b) => b - a);
-    this.years = sortedYears.map(year => ({
-      label: year.toString(),
-      value: year
-    }));
+    const openF1Years = Array.from(new Set([...this.racesByYear.keys(), ...this.allDrivers.keys()]));
+    const allYears = Array.from(new Set([...openF1Years, ...jolpicaYears]));
+    const latestYear = allYears.length ? Math.max(...allYears) : new Date().getFullYear();
+    const pastYears = allYears.filter(y => y !== latestYear).sort((a, b) => b - a);
+
+    this.years = [
+      { label: 'Stagione attuale', value: null },
+      ...pastYears.map(year => ({
+        label: year.toString(),
+        value: year
+      }))
+    ];
   }
 
   async onYearSelect(year: number | null) {
@@ -275,6 +316,10 @@ export class DriversComponent implements OnInit {
     if (!this.selectedYear && this.searchQuery.trim()) {
       this.loading = true;
       try {
+        if (this.loadRemainingYearsPromise) {
+          await this.loadRemainingYearsPromise;
+        }
+        if (seq !== this.filterSeq) return;
         if (!this.allHistoricDrivers) {
           this.allHistoricDrivers = await this.jolpicaService.getAllDrivers();
         }
@@ -329,6 +374,18 @@ export class DriversComponent implements OnInit {
     }
 
     // Caso 3: Anno OpenF1 selezionato (>= 2023) o vista iniziale senza filtri
+    if (this.selectedYear && this.selectedYear >= 2023 && !this.allDrivers.has(this.selectedYear) && this.racesByYear.has(this.selectedYear)) {
+      this.loading = true;
+      try {
+        await this.loadYearDrivers(this.selectedYear, this.racesByYear.get(this.selectedYear)!);
+      } finally {
+        if (seq === this.filterSeq) {
+          this.loading = false;
+        }
+      }
+      if (seq !== this.filterSeq) return;
+    }
+
     this.historicCards = null;
     let result: Driver[] = [];
 

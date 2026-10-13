@@ -1,11 +1,15 @@
 <nav>
   <div class="nav-left">
     <ul>
-      <li><a routerLink="/"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/New_era_F1_logo.png" alt="Logo" /></a></li>
-      <li><a routerLink="/granpremi">Gran Premi</a></li>
-      <li><a routerLink="/circuits">Circuiti</a></li>
-      <li><a routerLink="/drivers">Drivers</a></li>
-      <li><a routerLink="/classifiche">Classifiche</a></li>
+      <li>
+        <a routerLink="/" class="logo-link" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" aria-label="Home">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/New_era_F1_logo.png" alt="Logo" />
+        </a>
+      </li>
+      <li><a routerLink="/granpremi" routerLinkActive="active" class="nav-link">Gran Premi</a></li>
+      <li><a routerLink="/circuits" routerLinkActive="active" class="nav-link">Circuiti</a></li>
+      <li><a routerLink="/drivers" routerLinkActive="active" class="nav-link">Piloti</a></li>
+      <li><a routerLink="/classifiche" routerLinkActive="active" class="nav-link">Classifiche</a></li>
     </ul>
   </div>
   <div class="nav-right">

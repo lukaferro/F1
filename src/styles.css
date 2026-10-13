@@ -226,17 +226,12 @@ body .p-select.gp-dropdown .p-overlay {
   transform: rotate(180deg);
 }
 
-/* ---------- Animazioni ----------
-   Brevi (200-500 ms) e solo all'entrata dei contenuti; disattivate con "riduci movimento". */
+/* ---------- Animazioni Leggere e Micro-interazioni ----------
+   Brevi (150-250 ms), senza cali di opacità a zero, disattivate con "riduci movimento". */
 
-@keyframes page-enter {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
-}
-
-@keyframes rise-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
+@keyframes card-settle {
+  from { transform: translateY(6px); }
+  to { transform: translateY(0); }
 }
 
 @keyframes podium-rise {
@@ -249,20 +244,81 @@ body .p-select.gp-dropdown .p-overlay {
   to { opacity: 1; }
 }
 
-/* ogni pagina compare con una breve dissolvenza quando si cambia rotta */
-main.app-content > :not(router-outlet) {
-  animation: page-enter 0.35s ease both;
-}
-
-/* card che entrano all'apertura (senza ritardi lunghi che lasciano lo schermo nero) */
+/* Card segnaposto per il caricamento */
 .skeleton-card {
   animation: none !important;
+  cursor: default !important;
+  pointer-events: none;
 }
 
-.driver-card,
+/* Card: arrivo morbido (solo leggera traslazione di 6px, senza schermo nero) */
+.driver-card:not(.skeleton-card),
+.gp-card:not(.skeleton-card),
+.circuit-card:not(.skeleton-card) {
+  animation: card-settle 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Hover e tocco tattile fluido sulle card */
 .gp-card,
+.driver-card,
 .circuit-card {
-  animation: rise-in 0.25s ease-out;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.gp-card:active,
+.driver-card:active,
+.circuit-card:active {
+  transform: translateY(-2px) scale(0.995);
+  transition-duration: 0.1s;
+}
+
+/* Micro-interazione bandierine sulle card */
+.country-flag {
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gp-card:hover .country-flag,
+.driver-card:hover .country-flag {
+  transform: scale(1.08);
+}
+
+/* Pulsanti PrimeNG e link: feedback moderno e tocco elastico */
+.p-button,
+.wiki-link {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.2s ease,
+              background-color 0.2s ease,
+              border-color 0.2s ease !important;
+}
+
+.p-button:not(:disabled):hover,
+.wiki-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(255, 0, 0, 0.25);
+}
+
+.p-button:not(:disabled):active,
+.wiki-link:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.08s;
+}
+
+/* Pulsante reset filtro: rotazione sfiziosa su passaggio mouse */
+.reset-filter {
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.2s ease;
+}
+.reset-filter:hover {
+  transform: rotate(90deg) scale(1.15);
+  color: #ff3b30;
+}
+
+/* Chip informative: tocco interattivo */
+.chip {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.chip:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 /* podio: salgono terzo, secondo e primo */

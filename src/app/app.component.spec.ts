@@ -21,7 +21,7 @@ describe('AppComponent', () => {
     const nav = (fixture.nativeElement as HTMLElement).querySelector('nav')?.textContent ?? '';
     expect(nav).toContain('Gran Premi');
     expect(nav).toContain('Circuiti');
-    expect(nav).toContain('Drivers');
+    expect(nav).toContain('Piloti');
     expect(nav).toContain('Classifiche');
   });
 });
