@@ -16,6 +16,67 @@
     </div>
   </section>
 
+  @if (nextMeeting) {
+    <section class="next-race-section">
+      <div class="next-race-card">
+        <div class="next-race-badge">
+          <i class="pi" [class.pi-calendar]="isUpcoming" [class.pi-check-circle]="!isUpcoming"></i>
+          <span>{{ isUpcoming ? 'Prossimo Gran Premio' : 'Ultimo Gran Premio disputato' }}</span>
+        </div>
+
+        <div class="next-race-body">
+          <div class="next-race-info">
+            <div class="next-race-location">
+              @if (getFlag(nextMeeting.country_code); as flag) {
+                <img [src]="flag" [alt]="nextMeeting.country_name" class="country-flag" width="24" height="18" loading="lazy" />
+              }
+              <span>{{ nextMeeting.location }}, {{ nextMeeting.country_name }}</span>
+            </div>
+            <h2 class="next-race-title">{{ nextMeeting.meeting_official_name }}</h2>
+            <div class="next-race-circuit">
+              <i class="pi pi-compass"></i>
+              <span>{{ nextMeeting.circuit_short_name }} • {{ nextMeeting.date_start | date:'d MMMM yyyy' }}</span>
+            </div>
+          </div>
+
+          @if (isUpcoming) {
+            <div class="next-race-countdown">
+              <div class="countdown-title">Inizio weekend tra:</div>
+              <div class="countdown-grid">
+                <div class="countdown-unit">
+                  <span class="countdown-val">{{ countdown.days }}</span>
+                  <span class="countdown-lbl">Giorni</span>
+                </div>
+                <div class="countdown-unit">
+                  <span class="countdown-val">{{ countdown.hours }}</span>
+                  <span class="countdown-lbl">Ore</span>
+                </div>
+                <div class="countdown-unit">
+                  <span class="countdown-val">{{ countdown.minutes }}</span>
+                  <span class="countdown-lbl">Minuti</span>
+                </div>
+                <div class="countdown-unit">
+                  <span class="countdown-val">{{ countdown.seconds }}</span>
+                  <span class="countdown-lbl">Secondi</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="next-race-action">
+            <p-button
+              label="Dettagli Gran Premio"
+              icon="pi pi-arrow-right"
+              iconPos="right"
+              [routerLink]="['/granpremi', nextMeeting.meeting_key]"
+              styleClass="p-button-danger">
+            </p-button>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
   <section class="features">
     <h2>Scopri la Formula 1</h2>
     <div class="feature-cards">
@@ -43,9 +104,19 @@
         <ng-template pTemplate="header">
           <img alt="Piloti" src="https://img.freepik.com/foto-premium/ritratto-del-pilota-di-f1-che-indossa-il-casco-pilota-di-formula-uno-in-piedi-sulla-pista-dopo-la-competizione_46383-9870.jpg" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
         </ng-template>
-        <p>Tutti i piloti che partecipano al campionato mondiale di Formula 1.</p>
+        <p>Tutti i piloti che partecipano al campionato mondiale di Formula 1 con biografie e statistiche.</p>
         <ng-template pTemplate="footer">
           <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/drivers"></p-button>
+        </ng-template>
+      </p-card>
+
+      <p-card header="Classifiche" subheader="Campionato Mondiale" [style]="{ width: '360px' }">
+        <ng-template pTemplate="header">
+          <img alt="Classifiche" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/2019_Formula_One_Italian_Grand_Prix_Podium_%2848719266736%29.jpg/640px-2019_Formula_One_Italian_Grand_Prix_Podium_%2848719266736%29.jpg" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
+        </ng-template>
+        <p>Classifiche mondiali piloti e costruttori aggiornate, con l'archivio storico completo dal 1950.</p>
+        <ng-template pTemplate="footer">
+          <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/classifiche"></p-button>
         </ng-template>
       </p-card>
     </div>

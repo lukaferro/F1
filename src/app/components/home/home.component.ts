@@ -1,19 +1,21 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnInit, OnDestroy, inject } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
 import { Meeting } from '../../models/meeting';
+import { smallFlagUrl } from '../../utils/country-flags';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, ButtonModule, CardModule],
+  imports: [CommonModule, DatePipe, RouterLink, ButtonModule, CardModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
-export class HomeComponent implements AfterViewInit, OnInit {
+export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild('heroVideo') heroVideo?: ElementRef<HTMLVideoElement>;
 
   seasonYear = new Date().getFullYear();
@@ -22,10 +24,26 @@ export class HomeComponent implements AfterViewInit, OnInit {
   teamsCount: string | number = '—';
   countriesCount: string | number = '—';
 
+  nextMeeting: Meeting | null = null;
+  isUpcoming = false;
+  countdown = {
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  };
+  private timerInterval?: any;
+
   private readonly openF1 = inject(Openf1ServiceService);
 
   async ngOnInit() {
     await this.loadSeasonStats();
+  }
+
+  ngOnDestroy(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
   }
 
   ngAfterViewInit(): void {
@@ -56,6 +74,23 @@ export class HomeComponent implements AfterViewInit, OnInit {
       });
       this.countriesCount = countries.size || (meetingsToUse.length ? '—' : 'N/D');
 
+      // Calcolo del prossimo Gran Premio (o ultimo disputato)
+      if (meetingsToUse.length > 0) {
+        const now = Date.now();
+        const sorted = [...meetingsToUse].sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime());
+        const upcoming = sorted.filter(m => new Date(m.date_start).getTime() + (3 * 86_400_000) >= now);
+
+        if (upcoming.length > 0) {
+          this.nextMeeting = upcoming[0];
+          this.isUpcoming = true;
+          this.updateCountdown();
+          this.startCountdownTimer();
+        } else {
+          this.nextMeeting = sorted[sorted.length - 1];
+          this.isUpcoming = false;
+        }
+      }
+
       // Prova a ricavare piloti e team dal primo meeting disponibile
       const referenceMeeting = meetingsToUse[0];
       if (referenceMeeting) {
@@ -75,4 +110,37 @@ export class HomeComponent implements AfterViewInit, OnInit {
       // Lascia valori di fallback
     }
   }
+
+  private startCountdownTimer(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
+    this.timerInterval = setInterval(() => {
+      this.updateCountdown();
+    }, 1000);
+  }
+
+  updateCountdown(): void {
+    if (!this.nextMeeting || !this.isUpcoming) return;
+    const now = Date.now();
+    const target = new Date(this.nextMeeting.date_start).getTime();
+    const diff = target - now;
+
+    if (diff <= 0) {
+      this.countdown = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      return;
+    }
+
+    this.countdown = {
+      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((diff / (1000 * 60)) % 60),
+      seconds: Math.floor((diff / 1000) % 60)
+    };
+  }
+
+  getFlag(countryCode?: string): string {
+    return smallFlagUrl(countryCode);
+  }
 }
+

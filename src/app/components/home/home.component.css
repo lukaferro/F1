@@ -164,9 +164,179 @@ h1 {
   margin-bottom: 0.5rem;
 }
 
-.stat-title {
-  font-size: 1.2rem;
-  color: #cccccc;
+.next-race-section {
+  margin-bottom: 4rem;
+}
+
+.next-race-card {
+  background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 5px solid #e10600;
+  border-radius: 12px;
+  padding: 1.75rem 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.next-race-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(225, 6, 0, 0.15);
+  color: #ff4d4d;
+  border: 1px solid rgba(225, 6, 0, 0.3);
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.next-race-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.next-race-info {
+  flex: 1 1 320px;
+}
+
+.next-race-location {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: #a1a1aa;
+  margin-bottom: 0.4rem;
+}
+
+.next-race-location .country-flag {
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  vertical-align: middle;
+}
+
+.next-race-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.25;
+  color: #ffffff;
+}
+
+.next-race-circuit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: #d4d4d8;
+}
+
+.next-race-circuit i {
+  color: #e10600;
+}
+
+.next-race-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.85rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.countdown-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a1a1aa;
+  font-weight: 600;
+}
+
+.countdown-grid {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.countdown-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 48px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+}
+
+.countdown-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-family: monospace;
+}
+
+.countdown-lbl {
+  font-size: 0.65rem;
+  color: #a1a1aa;
+  text-transform: uppercase;
+}
+
+.next-race-action {
+  display: flex;
+  align-items: center;
+}
+
+.feature-cards ::ng-deep .p-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.feature-cards ::ng-deep .p-card-header img {
+  width: 100% !important;
+  height: 190px;
+  object-fit: cover;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.feature-cards ::ng-deep .p-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.feature-cards ::ng-deep .p-card-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+@media (max-width: 900px) {
+  .next-race-body {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .next-race-countdown {
+    width: 100%;
+  }
+
+  .next-race-action {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 
 @media (max-width: 768px) {
