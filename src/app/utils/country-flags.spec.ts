@@ -1,4 +1,4 @@
-import { flagUrl, countryNameToCode } from './country-flags';
+import { flagUrl, smallFlagUrl, countryNameToCode } from './country-flags';
 
 describe('flagUrl', () => {
   it('turns a three-letter country code into a flag image', () => {
@@ -20,6 +20,14 @@ describe('flagUrl', () => {
   });
 });
 
+describe('smallFlagUrl', () => {
+  it('returns a small 24x18 flag URL', () => {
+    expect(smallFlagUrl('ITA')).toBe('https://flagcdn.com/24x18/it.png');
+    expect(smallFlagUrl('MAR')).toBe('https://flagcdn.com/24x18/ma.png');
+    expect(smallFlagUrl(undefined)).toBe('');
+  });
+});
+
 describe('countryNameToCode', () => {
   it('maps common circuit countries to 3-letter codes', () => {
     expect(countryNameToCode('Italy')).toBe('ITA');
@@ -37,4 +45,5 @@ describe('countryNameToCode', () => {
     expect(countryNameToCode('')).toBe('');
   });
 });
+
 

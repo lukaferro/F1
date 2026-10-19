@@ -122,6 +122,8 @@
 }
 
 .gp-card {
+  display: flex;
+  flex-direction: column;
   position: relative;
   border-radius: 12px;
   overflow: hidden;
@@ -130,6 +132,8 @@
   cursor: pointer;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
   border-left: 4px solid #ff0000;
+  height: 100%;
+  min-height: 250px;
 }
 
 .gp-card:hover {
@@ -138,6 +142,9 @@
 }
 
 .gp-card-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   padding: 1.5rem;
   color: #ffffff;
 }
@@ -158,8 +165,12 @@
 }
 
 .country-flag {
+  width: 24px;
+  height: 18px;
+  object-fit: cover;
   border-radius: 2px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 .gp-year {
@@ -187,7 +198,7 @@
 .gp-meta {
   display: flex;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -226,7 +237,8 @@
 }
 
 .gp-view-details {
-  margin-top: 1.5rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -241,6 +253,13 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin: 2.5rem 0 1rem;
+}
+
 
 
 .empty {

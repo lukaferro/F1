@@ -7,75 +7,34 @@ import { ButtonModule } from 'primeng/button';
 import { Meeting } from '../../models/meeting';
 import { Openf1ServiceService } from '../../services/openf1-service';
 import { JolpicaService, HistoricRaceSummary } from '../../services/jolpica.service';
-import { countryNameToCode, flagUrl } from '../../utils/country-flags';
+import { GranPremiStateService } from '../../services/gran-premi-state.service';
+import { countryNameToCode, smallFlagUrl } from '../../utils/country-flags';
 import { constructorColor } from '../../utils/constructor-branding';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 
-interface FilterOption {
+export interface FilterOption {
   name: string;
   code?: string;
   value?: number;
 }
 
-// Mappatura dei codici paese dell'API OpenF1 ai codici ISO 3166-1 alpha-2 per le bandiere
-const countryCodeMapping: Record<string, string> = {
-  'BRN': 'bh',
-  'SAU': 'sa',
-  'KSA': 'sa',
-  'AUS': 'au',
-  'JPN': 'jp',
-  'CHN': 'cn',
-  'USA': 'us',
-  'ITA': 'it',
-  'MCO': 'mc',
-  'MON': 'mc',
-  'CAN': 'ca',
-  'ESP': 'es',
-  'AUT': 'at',
-  'GBR': 'gb',
-  'HUN': 'hu',
-  'BEL': 'be',
-  'NLD': 'nl',
-  'NED': 'nl',
-  'AZE': 'az',
-  'SGP': 'sg',
-  'MEX': 'mx',
-  'BRA': 'br',
-  'ARE': 'ae',
-  'UAE': 'ae',
-  'QAT': 'qa',
-  'FRA': 'fr',
-  'DEU': 'de',
-  'GER': 'de',
-  'RUS': 'ru',
-  'PRT': 'pt',
-  'TUR': 'tr',
-  'MYS': 'my',
-  'JOR': 'jo',
-  'KOR': 'kr',
-  'IND': 'in',
-  'ZAF': 'za',
-  'ABU': 'ae',
-  'ARG': 'ar',
-  'BAH': 'bh',
-  'SIN': 'sg',
-  'JAP': 'jp',
-  'MAL': 'my',
-  'EUR': 'eu',
-  'STY': 'at',
-  'EMI': 'it',
-  'TUS': 'it',
-  'POR': 'pt',
-  'LUX': 'lu',
-  'MIA': 'us',
-  'LAS': 'us',
-  'TEX': 'us',
-  'CAT': 'es',
-  'SPA': 'be',
-  'EIF': 'de',
-  'MUG': 'it',
-  'AZB': 'az'
-};
+export interface GpCard {
+  id: string;
+  season: number;
+  locality: string;
+  country: string;
+  officialName: string;
+  subName: string;
+  date: string;
+  circuit: string;
+  flagUrl: string;
+  link: (string | number)[];
+  winner?: {
+    fullName: string;
+    constructorName: string;
+    constructorId: string;
+  };
+}
 
 @Component({
   selector: 'app-gran-premi',
@@ -87,6 +46,7 @@ const countryCodeMapping: Record<string, string> = {
 export class GranPremiComponent implements OnInit {
   private readonly openF1Service = inject(Openf1ServiceService);
   private readonly jolpica = inject(JolpicaService);
+  private readonly stateService = inject(GranPremiStateService);
 
   years: FilterOption[] = [];
   countries: FilterOption[] = [];
@@ -96,36 +56,60 @@ export class GranPremiComponent implements OnInit {
   selectedCountry: string | null = null;
   selectedCircuit: string | null = null;
 
+  // Tutte le card caricate (per la stagione scelta o per Tutti gli anni)
+  cards: GpCard[] = [];
+  // Card dopo i filtri di paese e circuito
+  filteredCards: GpCard[] = [];
+
+  // Mantenimento meeting OpenF1 originali
+  allMeetings: Meeting[] = [];
+  // Per retrocompatibilità con i test
   meetings: Meeting[] = [];
-  allMeetings: Meeting[] = []; // Mantiene tutti i meeting per il filtraggio
   historicRaces: HistoricRaceSummary[] | null = null;
   filteredHistoricRaces: HistoricRaceSummary[] = [];
 
   loading = true;
+  loadingMore = false;
   error?: string;
   errorSource: 'openf1' | 'jolpica' = 'openf1';
+
+  oldestLoadedHistoricYear = 2023;
+  canLoadMoreHistoric = true;
 
   private requestSeq = 0;
 
   async ngOnInit() {
-    this.loadYears();
-    await this.loadMeetings();
+    this.selectedYear = this.stateService.selectedYear;
+    this.selectedCountry = this.stateService.selectedCountry;
+    this.selectedCircuit = this.stateService.selectedCircuit;
+
+    await this.loadYears();
+    await this.loadInitialData();
+  }
+
+  private saveState() {
+    this.stateService.selectedYear = this.selectedYear;
+    this.stateService.selectedCountry = this.selectedCountry;
+    this.stateService.selectedCircuit = this.selectedCircuit;
   }
 
   async onYearChange(payload: number | null) {
     this.selectedYear = typeof payload === 'number' ? payload : null;
     this.selectedCountry = null;
     this.selectedCircuit = null;
+    this.saveState();
     await this.applyYearAndFilters();
   }
 
-  async onCountryChange(payload: string | null) {
+  onCountryChange(payload: string | null) {
     this.selectedCountry = payload;
+    this.saveState();
     this.applyCurrentFilters();
   }
 
-  async onCircuitChange(payload: string | null) {
+  onCircuitChange(payload: string | null) {
     this.selectedCircuit = payload;
+    this.saveState();
     this.applyCurrentFilters();
   }
 
@@ -133,16 +117,15 @@ export class GranPremiComponent implements OnInit {
     this.selectedYear = null;
     this.selectedCountry = null;
     this.selectedCircuit = null;
-    this.historicRaces = null;
-    this.filteredHistoricRaces = [];
-    this.populateFilters(this.allMeetings);
-    this.meetings = [...this.allMeetings];
+    this.saveState();
+    await this.applyYearAndFilters();
   }
 
   resetSingleFilter(filterType: 'year' | 'country' | 'circuit') {
     switch (filterType) {
       case 'year':
         this.selectedYear = null;
+        this.saveState();
         this.applyYearAndFilters();
         return;
       case 'country':
@@ -152,30 +135,101 @@ export class GranPremiComponent implements OnInit {
         this.selectedCircuit = null;
         break;
     }
+    this.saveState();
     this.applyCurrentFilters();
   }
 
-  private applyCurrentFilters() {
-    if (this.selectedYear && this.selectedYear < 2023 && this.historicRaces) {
-      this.filterHistoricRaces();
-    } else {
-      this.applyFilters();
-    }
+  private meetingToCard(m: Meeting): GpCard {
+    return {
+      id: String(m.meeting_key),
+      season: m.year,
+      locality: m.location,
+      country: m.country_name,
+      officialName: m.meeting_official_name,
+      subName: m.meeting_name,
+      date: m.date_start,
+      circuit: m.circuit_short_name || 'Circuit',
+      flagUrl: smallFlagUrl(m.country_code),
+      link: ['/granpremi', m.meeting_key]
+    };
   }
 
-  private async applyYearAndFilters() {
-    if (!this.selectedYear || this.selectedYear >= 2023) {
+  private historicToCard(r: HistoricRaceSummary): GpCard {
+    return {
+      id: `${r.season}-${r.round}`,
+      season: r.season,
+      locality: r.locality,
+      country: r.country,
+      officialName: r.raceName,
+      subName: `Round ${r.round}`,
+      date: r.date,
+      circuit: r.circuitName,
+      flagUrl: smallFlagUrl(countryNameToCode(r.country)),
+      link: ['/granpremi', 'storico', r.season, r.round],
+      winner: r.winner ? {
+        fullName: r.winner.fullName,
+        constructorName: r.winner.constructorName,
+        constructorId: r.winner.constructorId
+      } : undefined
+    };
+  }
+
+  private applyCurrentFilters() {
+    let list = [...this.cards];
+
+    if (this.selectedCountry) {
+      list = list.filter(c => c.country === this.selectedCountry);
+    }
+
+    if (this.selectedCircuit) {
+      list = list.filter(c => c.circuit === this.selectedCircuit);
+    }
+
+    this.filteredCards = list;
+
+    // Aggiorna anche per retrocompatibilità con i test
+    if (this.historicRaces) {
+      let hList = [...this.historicRaces];
+      if (this.selectedCountry) hList = hList.filter(r => r.country === this.selectedCountry);
+      if (this.selectedCircuit) hList = hList.filter(r => r.circuitName === this.selectedCircuit || r.circuitId === this.selectedCircuit);
+      this.filteredHistoricRaces = hList;
+    }
+
+    let mList = [...this.allMeetings];
+    if (this.selectedYear) mList = mList.filter(m => m.year === this.selectedYear);
+    if (this.selectedCountry) mList = mList.filter(m => m.country_name === this.selectedCountry || m.country_code === this.selectedCountry);
+    if (this.selectedCircuit) mList = mList.filter(m => m.circuit_short_name === this.selectedCircuit);
+    this.meetings = mList;
+  }
+
+  async applyYearAndFilters() {
+    const seq = ++this.requestSeq;
+    this.error = undefined;
+
+    if (!this.selectedYear) {
+      // "Tutti gli anni": mostra le gare OpenF1 e le stagioni storiche caricate finora
       this.historicRaces = null;
       this.filteredHistoricRaces = [];
-      this.populateFilters(this.allMeetings);
-      this.applyFilters();
+      const openF1Cards = this.allMeetings.map(m => this.meetingToCard(m));
+      this.cards = openF1Cards;
+      this.populateFiltersFromCards(this.cards);
+      this.applyCurrentFilters();
       return;
     }
 
-    // Anno storico (< 2023): carichiamo il calendario da Jolpica
-    const seq = ++this.requestSeq;
+    if (this.selectedYear >= 2023) {
+      // Anno moderno (2023+): usa OpenF1
+      this.historicRaces = null;
+      this.filteredHistoricRaces = [];
+      const meetings = this.allMeetings.filter(m => m.year === this.selectedYear);
+      this.cards = meetings.map(m => this.meetingToCard(m));
+      this.populateFiltersFromCards(this.cards);
+      this.applyCurrentFilters();
+      return;
+    }
+
+    // Anno storico (< 2023): carica la stagione da Jolpica
     this.loading = true;
-    this.error = undefined;
     this.errorSource = 'jolpica';
 
     try {
@@ -183,12 +237,15 @@ export class GranPremiComponent implements OnInit {
       if (seq !== this.requestSeq) return;
 
       this.historicRaces = races;
-      this.populateHistoricFilters(races);
-      this.filterHistoricRaces();
+      this.cards = races.map(r => this.historicToCard(r));
+      this.populateFiltersFromCards(this.cards);
+      this.applyCurrentFilters();
     } catch (err: any) {
       if (seq !== this.requestSeq) return;
       this.historicRaces = null;
       this.filteredHistoricRaces = [];
+      this.cards = [];
+      this.filteredCards = [];
       this.error = err?.message || 'Errore caricamento gare storiche';
       this.errorSource = 'jolpica';
     } finally {
@@ -198,66 +255,63 @@ export class GranPremiComponent implements OnInit {
     }
   }
 
-  private filterHistoricRaces() {
-    if (!this.historicRaces) return;
-    let list = [...this.historicRaces];
+  /**
+   * In modalità "Tutti gli anni", permette di caricare stagioni storiche precedenti
+   * (ad es. 2022, 2021, 2020) e aggiungerle progressivamente in fondo all'elenco.
+   */
+  async loadMorePreviousSeasons() {
+    if (this.loadingMore || !this.canLoadMoreHistoric) return;
 
-    if (this.selectedCountry) {
-      list = list.filter(r => r.country === this.selectedCountry);
+    this.loadingMore = true;
+    const startYear = this.oldestLoadedHistoricYear - 1;
+    const yearsToLoad = [startYear, startYear - 1, startYear - 2].filter(y => y >= 1950);
+
+    if (yearsToLoad.length === 0) {
+      this.canLoadMoreHistoric = false;
+      this.loadingMore = false;
+      return;
     }
 
-    if (this.selectedCircuit) {
-      list = list.filter(r => r.circuitId === this.selectedCircuit);
-    }
-
-    this.filteredHistoricRaces = list;
-  }
-
-  private populateHistoricFilters(races: HistoricRaceSummary[]) {
-    // Paesi delle gare storiche
-    const countrySet = new Set<string>();
-    races.forEach(r => {
-      if (r.country) countrySet.add(r.country);
-    });
-
-    this.countries = Array.from(countrySet).map(country => ({
-      name: country,
-      code: country
-    })).sort((a, b) => a.name.localeCompare(b.name));
-
-    // Circuiti delle gare storiche
-    const circuitMap = new Map<string, string>();
-    races.forEach(r => {
-      if (r.circuitId && r.circuitName) {
-        circuitMap.set(r.circuitId, r.circuitName);
+    try {
+      for (const year of yearsToLoad) {
+        const races = await this.jolpica.getSeasonRaces(year);
+        const newCards = races.map(r => this.historicToCard(r));
+        this.cards = [...this.cards, ...newCards];
+        this.oldestLoadedHistoricYear = year;
       }
+      this.populateFiltersFromCards(this.cards);
+      this.applyCurrentFilters();
+    } catch {
+      // In caso di errore durante il caricamento progressivo, mantiene ciò che è caricato
+    } finally {
+      this.loadingMore = false;
+      if (this.oldestLoadedHistoricYear <= 1950) {
+        this.canLoadMoreHistoric = false;
+      }
+    }
+  }
+
+  private populateFiltersFromCards(cards: GpCard[]) {
+    const countrySet = new Set<string>();
+    const circuitSet = new Set<string>();
+
+    cards.forEach(c => {
+      if (c.country) countrySet.add(c.country);
+      if (c.circuit) circuitSet.add(c.circuit);
     });
 
-    this.circuits = Array.from(circuitMap).map(([id, name]) => ({
+    this.countries = Array.from(countrySet).sort().map(name => ({
       name,
-      code: id
-    })).sort((a, b) => a.name.localeCompare(b.name));
+      code: name
+    }));
+
+    this.circuits = Array.from(circuitSet).sort().map(name => ({
+      name,
+      code: name
+    }));
   }
 
-  private applyFilters() {
-    let filteredMeetings = [...this.allMeetings];
-
-    if (this.selectedYear) {
-      filteredMeetings = filteredMeetings.filter(m => m.year === this.selectedYear);
-    }
-
-    if (this.selectedCountry) {
-      filteredMeetings = filteredMeetings.filter(m => m.country_code === this.selectedCountry);
-    }
-
-    if (this.selectedCircuit) {
-      filteredMeetings = filteredMeetings.filter(m => m.circuit_short_name === this.selectedCircuit);
-    }
-
-    this.meetings = filteredMeetings;
-  }
-
-  async loadMeetings() {
+  async loadInitialData() {
     this.loading = true;
     this.error = undefined;
     this.errorSource = 'openf1';
@@ -272,63 +326,24 @@ export class GranPremiComponent implements OnInit {
         meetings = (resp as any).data;
       }
 
-      // Filtra solo i meeting che sono già iniziati o in corso
       const now = new Date();
-      meetings = meetings.filter(m => {
-        const startDate = new Date(m.date_start);
-        return startDate <= now;
-      });
-
-      // Ordina per data (più recenti prima)
-      meetings.sort((a, b) => {
-        const dateA = new Date(a.date_start).getTime();
-        const dateB = new Date(b.date_start).getTime();
-        return dateB - dateA;
-      });
+      meetings = meetings.filter(m => new Date(m.date_start) <= now);
+      meetings.sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime());
 
       this.allMeetings = meetings;
       this.meetings = [...meetings];
 
-      // Popola i filtri OpenF1
-      this.populateFilters(meetings);
+      await this.applyYearAndFilters();
     } catch (err: any) {
-      this.meetings = [];
       this.allMeetings = [];
-      this.error = err?.message || 'Errore caricamento meeting';
+      this.meetings = [];
+      this.cards = [];
+      this.filteredCards = [];
+      this.error = err?.message || 'Errore caricamento Gran Premi';
       this.errorSource = 'openf1';
     } finally {
       this.loading = false;
     }
-  }
-
-  private populateFilters(meetings: Meeting[]) {
-    const countries = new Map<string, string>();
-    meetings.forEach(m => {
-      if (m.country_code && m.country_name) {
-        countries.set(m.country_code, m.country_name);
-      }
-    });
-
-    this.countries = Array.from(countries).map(([code, name]) => ({
-      name,
-      code
-    })).sort((a, b) => a.name.localeCompare(b.name));
-
-    const circuits = new Map<string, string>();
-    meetings.forEach(m => {
-      if (m.circuit_short_name) {
-        circuits.set(m.circuit_short_name, m.circuit_short_name);
-      }
-    });
-
-    this.circuits = Array.from(circuits).map(([code, name]) => ({
-      name,
-      code
-    })).sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  trackById(_: number, item: Meeting) {
-    return item?.meeting_key ?? item?.id ?? _;
   }
 
   async loadYears(startYear = 2023) {
@@ -348,23 +363,11 @@ export class GranPremiComponent implements OnInit {
         value: year
       }));
     } catch {
-      // Fallback a OpenF1 se Jolpica non risponde
       this.years = openF1Years.map(year => ({
         name: String(year),
         value: year
       }));
     }
-  }
-
-  // Converte i codici paese dell'API OpenF1 in codici ISO 3166-1 alpha-2 per le bandiere
-  getCountryFlagCode(apiCountryCode: string): string {
-    return countryCodeMapping[apiCountryCode] || apiCountryCode.toLowerCase();
-  }
-
-  // Bandiera per le gare storiche da nome paese
-  getCountryFlag(countryName: string): string {
-    const code = countryNameToCode(countryName);
-    return flagUrl(code);
   }
 
   getConstructorColor(constructorId: string): string {

@@ -4,6 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { GranPremiComponent } from './gran-premi.component';
 import { Openf1ServiceService } from '../../services/openf1-service';
 import { JolpicaService, HistoricRaceSummary } from '../../services/jolpica.service';
+import { GranPremiStateService } from '../../services/gran-premi-state.service';
 import { Meeting } from '../../models/meeting';
 
 const fakeMeetings: Meeting[] = [
@@ -80,6 +81,7 @@ const fakeHistoricRaces: HistoricRaceSummary[] = [
 describe('GranPremiComponent', () => {
   let component: GranPremiComponent;
   let fixture: ComponentFixture<GranPremiComponent>;
+  let stateService: GranPremiStateService;
   let openF1Mock: {
     getMeetings: ReturnType<typeof vi.fn>;
     apiStatus: ReturnType<typeof vi.fn>;
@@ -96,7 +98,9 @@ describe('GranPremiComponent', () => {
     };
     jolpicaMock = {
       getSeasons: vi.fn().mockResolvedValue([2026, 2025, 2024, 2023, 1988, 1950]),
-      getSeasonRaces: vi.fn().mockResolvedValue(fakeHistoricRaces)
+      getSeasonRaces: vi.fn().mockImplementation((year: number) =>
+        Promise.resolve(fakeHistoricRaces.map(r => ({ ...r, season: year })))
+      )
     };
 
     await TestBed.configureTestingModule({
@@ -107,6 +111,11 @@ describe('GranPremiComponent', () => {
         { provide: JolpicaService, useValue: jolpicaMock }
       ]
     }).compileComponents();
+
+    stateService = TestBed.inject(GranPremiStateService);
+    stateService.selectedYear = null;
+    stateService.selectedCountry = null;
+    stateService.selectedCircuit = null;
 
     fixture = TestBed.createComponent(GranPremiComponent);
     component = fixture.componentInstance;
@@ -206,4 +215,59 @@ describe('GranPremiComponent', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('app-api-unavailable')).toBeTruthy();
   });
+
+  it('persists selected filters to GranPremiStateService', async () => {
+    await component.onYearChange(1988);
+    component.onCountryChange('Italy');
+    component.onCircuitChange('imola');
+
+    expect(stateService.selectedYear).toBe(1988);
+    expect(stateService.selectedCountry).toBe('Italy');
+    expect(stateService.selectedCircuit).toBe('imola');
+  });
+
+  it('restores filters from GranPremiStateService on init', async () => {
+    stateService.selectedYear = 2024;
+    stateService.selectedCountry = 'Italy';
+
+    const newFixture = TestBed.createComponent(GranPremiComponent);
+    const newComp = newFixture.componentInstance;
+    newFixture.detectChanges();
+    await newFixture.whenStable();
+    newFixture.detectChanges();
+
+    expect(newComp.selectedYear).toBe(2024);
+    expect(newComp.selectedCountry).toBe('Italy');
+    expect(newComp.filteredCards.length).toBe(1);
+    expect(newComp.filteredCards[0].locality).toBe('Monza');
+  });
+
+  it('unifies cards in filteredCards for OpenF1 and Jolpica with standard flags', async () => {
+    // OpenF1
+    await component.onYearChange(2024);
+    fixture.detectChanges();
+    expect(component.filteredCards.length).toBe(2);
+    expect(component.filteredCards[0].flagUrl).toContain('flagcdn.com/24x18/it.png');
+
+    // Jolpica
+    await component.onYearChange(1988);
+    fixture.detectChanges();
+    expect(component.filteredCards.length).toBe(2);
+    expect(component.filteredCards[0].flagUrl).toContain('flagcdn.com/24x18/br.png');
+    expect(component.filteredCards[1].flagUrl).toContain('flagcdn.com/24x18/it.png');
+  });
+
+  it('loads previous seasons when loadMorePreviousSeasons is triggered in all-years mode', async () => {
+    await component.onYearChange(null);
+    fixture.detectChanges();
+
+    expect(component.cards.length).toBe(2); // Only OpenF1 cards initially
+
+    await component.loadMorePreviousSeasons();
+    fixture.detectChanges();
+
+    expect(jolpicaMock.getSeasonRaces).toHaveBeenCalled();
+    expect(component.cards.length).toBeGreaterThan(2);
+  });
 });
+

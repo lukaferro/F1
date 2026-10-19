@@ -134,3 +134,10 @@ export function flagUrl(countryCode: string | undefined): string {
   return `https://flagcdn.com/w320/${iso2}.png`;
 }
 
+export function smallFlagUrl(countryCode: string | undefined): string {
+  if (!countryCode) return '';
+  const iso2 = COUNTRY_CODES[countryCode] || countryCode.toLowerCase();
+  return `https://flagcdn.com/24x18/${iso2}.png`;
+}
+
+
