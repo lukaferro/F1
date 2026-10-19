@@ -75,11 +75,62 @@ const COUNTRY_CODES: Record<string, string> = {
   INA: 'id',  // Indonesia
   CHI: 'cl',  // Cile
   MAS: 'my',  // Malesia
-  LIE: 'li'   // Liechtenstein
+  LIE: 'li',  // Liechtenstein
+  MAR: 'ma',  // Marocco
+  MA: 'ma'
 };
+
+const CIRCUIT_COUNTRIES: Record<string, string> = {
+  'Australia': 'AUS',
+  'Morocco': 'MAR',
+  'UK': 'GBR',
+  'Great Britain': 'GBR',
+  'United Kingdom': 'GBR',
+  'USA': 'USA',
+  'United States': 'USA',
+  'Sweden': 'SWE',
+  'Germany': 'GER',
+  'West Germany': 'GER',
+  'Bahrain': 'BRN',
+  'Azerbaijan': 'AZE',
+  'Portugal': 'POR',
+  'Switzerland': 'SUI',
+  'India': 'IND',
+  'Spain': 'ESP',
+  'France': 'FRA',
+  'Japan': 'JPN',
+  'Argentina': 'ARG',
+  'South Africa': 'RSA',
+  'Hungary': 'HUN',
+  'Italy': 'ITA',
+  'Brazil': 'BRA',
+  'Turkey': 'TUR',
+  'Saudi Arabia': 'KSA',
+  'Qatar': 'QAT',
+  'Singapore': 'SGP',
+  'Monaco': 'MON',
+  'Canada': 'CAN',
+  'Belgium': 'BEL',
+  'Austria': 'AUT',
+  'Mexico': 'MEX',
+  'Malaysia': 'MYS',
+  'China': 'CHN',
+  'Russia': 'RUS',
+  'UAE': 'UAE',
+  'United Arab Emirates': 'UAE',
+  'Korea': 'KOR',
+  'South Korea': 'KOR',
+  'Netherlands': 'NED'
+};
+
+export function countryNameToCode(countryName: string | undefined): string {
+  if (!countryName) return '';
+  return CIRCUIT_COUNTRIES[countryName] || '';
+}
 
 export function flagUrl(countryCode: string | undefined): string {
   if (!countryCode) return '';
   const iso2 = COUNTRY_CODES[countryCode] || countryCode.toLowerCase();
   return `https://flagcdn.com/w320/${iso2}.png`;
 }
+
