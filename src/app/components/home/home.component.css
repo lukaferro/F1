@@ -297,6 +297,29 @@ h1 {
   align-items: center;
 }
 
+.next-race-action ::ng-deep .p-button {
+  background: #e10600;
+  border-color: #e10600;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.next-race-action ::ng-deep .p-button:not(:disabled):hover {
+  transform: translateY(-2px);
+  background: #cc0500;
+  border-color: #cc0500;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.next-race-action ::ng-deep .p-button:not(:disabled):focus,
+.next-race-action ::ng-deep .p-button:not(:disabled):active {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 .feature-cards ::ng-deep .p-card {
   display: flex;
   flex-direction: column;

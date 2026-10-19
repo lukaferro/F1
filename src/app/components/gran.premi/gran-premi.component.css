@@ -243,7 +243,9 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: #ff0000;
+  color: #ff3b30;
+  text-shadow: none !important;
+  box-shadow: none !important;
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -252,6 +254,8 @@
 .gp-card:hover .gp-view-details {
   opacity: 1;
   transform: translateY(0);
+  text-shadow: none !important;
+  box-shadow: none !important;
 }
 
 .load-more-container {
