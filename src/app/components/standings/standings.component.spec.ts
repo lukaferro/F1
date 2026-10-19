@@ -5,6 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { StandingsComponent } from './standings.component';
 import { ConstructorStanding, DriverStanding, JolpicaService } from '../../services/jolpica.service';
+import { StandingsStateService } from '../../services/standings-state.service';
 import { Openf1ServiceService } from '../../services/openf1-service';
 import { ApiStatus } from '../../services/http-cache';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -21,6 +22,7 @@ interface Setup {
   failInit?: boolean;
   grid?: object[];
   status?: ApiStatus;
+  initialState?: { selectedSeason: number | null; tab: 'drivers' | 'constructors' };
 }
 
 describe('StandingsComponent', () => {
@@ -44,6 +46,15 @@ describe('StandingsComponent', () => {
         { provide: Openf1ServiceService, useValue: { getLatestDrivers: () => Promise.resolve(setup.grid ?? []) } }
       ]
     }).compileComponents();
+
+    const stateService = TestBed.inject(StandingsStateService);
+    if (setup.initialState) {
+      stateService.selectedSeason = setup.initialState.selectedSeason;
+      stateService.tab = setup.initialState.tab;
+    } else {
+      stateService.selectedSeason = null;
+      stateService.tab = 'drivers';
+    }
 
     fixture = TestBed.createComponent(StandingsComponent);
     component = fixture.componentInstance;
@@ -237,4 +248,21 @@ describe('StandingsComponent', () => {
     expect(notice).not.toBeNull();
     expect(notice?.textContent).toContain('Jolpica');
   });
+
+  it('persists selectedSeason and tab to StandingsStateService', async () => {
+    await create();
+    await component.selectSeason(1988);
+    await component.setTab('constructors');
+
+    const state = TestBed.inject(StandingsStateService);
+    expect(state.selectedSeason).toBe(1988);
+    expect(state.tab).toBe('constructors');
+  });
+
+  it('restores selectedSeason and tab from StandingsStateService on init', async () => {
+    await create({ initialState: { selectedSeason: 1988, tab: 'constructors' } });
+    expect(component.selectedSeason).toBe(1988);
+    expect(component.tab).toBe('constructors');
+  });
 });
+

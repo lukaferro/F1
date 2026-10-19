@@ -1,4 +1,4 @@
-<nav>
+<nav [class.nav-hidden]="isNavHidden" [class.nav-scrolled]="isScrolled">
   <div class="nav-left">
     <ul>
       <li>
@@ -21,4 +21,15 @@
   <router-outlet></router-outlet>
 </main>
 
-<app-footer></app-footer>
+@if (showBackToTop) {
+  <button
+    type="button"
+    class="back-to-top"
+    (click)="scrollToTop()"
+    aria-label="Torna in cima"
+    title="Torna in cima">
+    <i class="pi pi-chevron-up"></i>
+  </button>
+}
+
+<app-footer></app-footer>

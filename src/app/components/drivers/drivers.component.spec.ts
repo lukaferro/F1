@@ -8,6 +8,7 @@ import { DriversComponent, HistoricCard } from './drivers.component';
 import { Driver, Openf1ServiceService, Session } from '../../services/openf1-service';
 import { DriverStanding, JolpicaDriverInfo, JolpicaService } from '../../services/jolpica.service';
 import { WikipediaService } from '../../services/wikipedia.service';
+import { DriversStateService } from '../../services/drivers-state.service';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { constructorColor } from '../../utils/constructor-branding';
 
@@ -97,6 +98,7 @@ interface SetupOptions {
 describe('DriversComponent', () => {
   let fixture: ComponentFixture<DriversComponent>;
   let component: DriversComponent;
+  let stateService: DriversStateService;
   let jolpicaMock: any;
   let openF1Mock: any;
   let wikipediaMock: any;
@@ -114,7 +116,7 @@ describe('DriversComponent', () => {
     }
   };
 
-  const create = async (setup: SetupOptions = {}) => {
+  const create = async (setup: SetupOptions & { initialState?: { selectedYear: number | null; searchQuery: string } } = {}) => {
     const allSeasons = setup.seasons ?? Array.from({ length: 2026 - 1950 + 1 }, (_, i) => 2026 - i);
 
     openF1Mock = {
@@ -151,6 +153,15 @@ describe('DriversComponent', () => {
         { provide: WikipediaService, useValue: wikipediaMock }
       ]
     }).compileComponents();
+
+    stateService = TestBed.inject(DriversStateService);
+    if (setup.initialState) {
+      stateService.selectedYear = setup.initialState.selectedYear;
+      stateService.searchQuery = setup.initialState.searchQuery;
+    } else {
+      stateService.selectedYear = null;
+      stateService.searchQuery = '';
+    }
 
     fixture = TestBed.createComponent(DriversComponent);
     component = fixture.componentInstance;
@@ -294,4 +305,23 @@ describe('DriversComponent', () => {
     expect(unavailable).toBeTruthy();
     expect(unavailable.componentInstance.source).toBe('jolpica');
   });
+
+  it('persists selected filters to DriversStateService', async () => {
+    await create();
+    await component.onYearSelect(1988);
+    component.searchQuery = 'Senna';
+    await component.onSearch();
+
+    expect(stateService.selectedYear).toBe(1988);
+    expect(stateService.searchQuery).toBe('Senna');
+  });
+
+  it('restores filters from DriversStateService on init', async () => {
+    await create({ initialState: { selectedYear: 1988, searchQuery: 'Senna' } });
+    expect(component.selectedYear).toBe(1988);
+    expect(component.searchQuery).toBe('Senna');
+    expect(component.historicCards).toHaveLength(1);
+    expect(component.historicCards?.[0].name).toBe('Ayrton Senna');
+  });
 });
+

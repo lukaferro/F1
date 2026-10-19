@@ -6,6 +6,7 @@ import { SelectModule } from 'primeng/select';
 import { ConstructorStanding, DriverStanding, JolpicaService } from '../../services/jolpica.service';
 import { Driver, Openf1ServiceService } from '../../services/openf1-service';
 import { WikipediaService } from '../../services/wikipedia.service';
+import { StandingsStateService } from '../../services/standings-state.service';
 import { currentSeasonPhotoUrl } from '../../utils/f1-media';
 import { constructorColor, ConstructorLogo, constructorLogo } from '../../utils/constructor-branding';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
@@ -49,6 +50,7 @@ export class StandingsComponent implements OnInit, OnDestroy {
   private readonly jolpica = inject(JolpicaService);
   private readonly openF1 = inject(Openf1ServiceService);
   private readonly wikipedia = inject(WikipediaService, { optional: true });
+  private readonly stateService = inject(StandingsStateService);
 
   seasons: number[] = [];
   seasonOptions: { label: string; value: number }[] = [];
@@ -80,6 +82,7 @@ export class StandingsComponent implements OnInit, OnDestroy {
   private readonly failedLogos = new Set<string>();
 
   async ngOnInit(): Promise<void> {
+    this.tab = this.stateService.tab;
     await this.load();
   }
 
@@ -96,7 +99,8 @@ export class StandingsComponent implements OnInit, OnDestroy {
       this.seasonOptions = seasons.map(year => ({ label: String(year), value: year }));
       this.latestSeason = latest;
       this.loadCurrentGrid();
-      await this.selectSeason(latest);
+      const targetSeason = this.stateService.selectedSeason ?? latest;
+      await this.selectSeason(targetSeason);
     } catch {
       this.initError = true;
       this.loading = false;
@@ -114,6 +118,7 @@ export class StandingsComponent implements OnInit, OnDestroy {
 
   async selectSeason(year: number): Promise<void> {
     this.selectedSeason = year;
+    this.stateService.selectedSeason = year;
     this.setDrivers([]);
     this.setConstructors([]);
     this.constructorsLoadedFor = null;
@@ -129,6 +134,7 @@ export class StandingsComponent implements OnInit, OnDestroy {
 
   async setTab(tab: StandingsTab): Promise<void> {
     this.tab = tab;
+    this.stateService.tab = tab;
     const year = this.selectedSeason;
     if (tab !== 'constructors' || year === null || this.constructorsLoadedFor === year) return;
     await this.withLoading(year, () => this.fetchConstructors(year));

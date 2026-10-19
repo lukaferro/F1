@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
 import { JolpicaService, JolpicaDriverInfo } from '../../services/jolpica.service';
 import { WikipediaService } from '../../services/wikipedia.service';
+import { DriversStateService } from '../../services/drivers-state.service';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
 import { TEAM_COLORS } from '../../utils/team-colors';
@@ -52,6 +53,7 @@ export class DriversComponent implements OnInit {
   private readonly openF1Service = inject(Openf1ServiceService);
   private readonly jolpicaService = inject(JolpicaService);
   private readonly wikipediaService = inject(WikipediaService);
+  private readonly stateService = inject(DriversStateService);
   private readonly excludedDrivers = new Set<string>(['FELIPE DRUGOVICH']);
 
   drivers: Driver[] = [];
@@ -105,6 +107,8 @@ export class DriversComponent implements OnInit {
   };
 
   async ngOnInit() {
+    this.selectedYear = this.stateService.selectedYear;
+    this.searchQuery = this.stateService.searchQuery;
     await this.loadAllDrivers();
   }
 
@@ -188,6 +192,11 @@ export class DriversComponent implements OnInit {
         await this.loadYearDrivers(latestYear, this.racesByYear.get(latestYear)!);
       }
 
+      // Se era selezionato un anno OpenF1 specifico diverso dal più recente, carichiamo subito i suoi piloti
+      if (this.selectedYear && this.selectedYear >= 2023 && this.racesByYear.has(this.selectedYear) && this.selectedYear !== latestYear) {
+        await this.loadYearDrivers(this.selectedYear, this.racesByYear.get(this.selectedYear)!);
+      }
+
       // Se non ci sono gare o sono fallite, tenta il fallback da getLatestDrivers
       if (this.allDrivers.size === 0) {
         try {
@@ -241,18 +250,26 @@ export class DriversComponent implements OnInit {
     ];
   }
 
+  private saveState() {
+    this.stateService.selectedYear = this.selectedYear;
+    this.stateService.searchQuery = this.searchQuery;
+  }
+
   async onYearSelect(year: number | null) {
     this.selectedYear = year;
+    this.saveState();
     await this.applyFilters();
   }
 
   async onSearch() {
+    this.saveState();
     await this.applyFilters();
   }
 
   async resetFilters() {
     this.selectedYear = null;
     this.searchQuery = '';
+    this.saveState();
     await this.applyFilters();
   }
 
