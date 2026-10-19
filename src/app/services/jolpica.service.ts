@@ -59,6 +59,72 @@ export interface ConstructorStanding {
   nationality: string;
 }
 
+export interface HistoricRaceSummary {
+  season: number;
+  round: number;
+  raceName: string;
+  circuitId: string;
+  circuitName: string;
+  locality: string;
+  country: string;
+  date: string;
+  time?: string;
+  url?: string;
+  winner?: {
+    driverId: string;
+    code?: string;
+    fullName: string;
+    constructorId: string;
+    constructorName: string;
+    time?: string;
+  };
+}
+
+export interface HistoricRaceResult {
+  position: number;
+  positionText: string;
+  points: number;
+  driverId: string;
+  code?: string;
+  permanentNumber?: number;
+  fullName: string;
+  nationality: string;
+  wikiTitle?: string;
+  constructorId: string;
+  constructorName: string;
+  grid: number;
+  laps: number;
+  status: string;
+  time?: string;
+}
+
+export interface HistoricRaceDetail {
+  season: number;
+  round: number;
+  raceName: string;
+  circuitId: string;
+  circuitName: string;
+  locality: string;
+  country: string;
+  date: string;
+  time?: string;
+  url?: string;
+  wikiTitle?: string;
+  results: HistoricRaceResult[];
+}
+
+export interface HistoricQualifyingResult {
+  position: number;
+  driverId: string;
+  code?: string;
+  fullName: string;
+  constructorId: string;
+  constructorName: string;
+  q1?: string;
+  q2?: string;
+  q3?: string;
+}
+
 // Forme delle risposte Jolpica (solo i campi usati)
 interface JolpicaConstructor { constructorId: string; name: string; nationality: string; }
 interface JolpicaDriver {
@@ -80,6 +146,56 @@ interface StandingsResponse<Row> {
 interface SeasonsResponse { MRData: { total?: string; SeasonTable: { Seasons: Array<{ season: string }> } }; }
 interface DriversResponse { MRData: { total?: string; DriverTable: { Drivers: JolpicaDriver[] } }; }
 interface RacesResponse { MRData: { total: string; RaceTable: { Races: Array<{ season: string; raceName: string }> } }; }
+
+interface JolpicaResultRow {
+  position?: string;
+  positionText?: string;
+  points?: string;
+  grid?: string;
+  laps?: string;
+  status?: string;
+  Driver: JolpicaDriver;
+  Constructor: JolpicaConstructor;
+  Time?: { millis?: string; time?: string };
+}
+
+interface JolpicaQualifyingRow {
+  position: string;
+  Driver: JolpicaDriver;
+  Constructor: JolpicaConstructor;
+  Q1?: string;
+  Q2?: string;
+  Q3?: string;
+}
+
+interface JolpicaRaceRow {
+  season: string;
+  round: string;
+  url?: string;
+  raceName: string;
+  date: string;
+  time?: string;
+  Circuit: {
+    circuitId: string;
+    circuitName: string;
+    url?: string;
+    Location: { locality: string; country: string; lat?: string; long?: string };
+  };
+  Results?: JolpicaResultRow[];
+  QualifyingResults?: JolpicaQualifyingRow[];
+}
+
+interface RaceResponse {
+  MRData: {
+    total?: string;
+    RaceTable: {
+      season?: string;
+      round?: string;
+      Races: JolpicaRaceRow[];
+    };
+  };
+}
+
 
 /** Le stagioni concluse non cambiano più (7 giorni); stagione in corso ed elenchi generali 1 ora */
 export function jolpicaTtl(url: string, currentYear: number): number {
@@ -274,4 +390,99 @@ export class JolpicaService {
       nationality: row.Constructor.nationality
     }));
   }
+
+  /** Tutte le gare di una stagione con vincitore (una singola richiesta) */
+  async getSeasonRaces(season: number): Promise<HistoricRaceSummary[]> {
+    const res = await this.cache.get<RaceResponse>(`${BASE_URL}/${season}/results/1/?limit=${PAGE_SIZE}`);
+    const races = res.MRData.RaceTable.Races || [];
+    return races.map(r => {
+      const w = r.Results?.[0];
+      return {
+        season: Number(r.season),
+        round: Number(r.round),
+        raceName: r.raceName,
+        circuitId: r.Circuit.circuitId,
+        circuitName: r.Circuit.circuitName,
+        locality: r.Circuit.Location.locality,
+        country: r.Circuit.Location.country,
+        date: r.date,
+        time: r.time,
+        url: r.url,
+        winner: w ? {
+          driverId: w.Driver.driverId,
+          code: w.Driver.code,
+          fullName: `${w.Driver.givenName} ${w.Driver.familyName}`,
+          constructorId: w.Constructor.constructorId,
+          constructorName: w.Constructor.name,
+          time: w.Time?.time
+        } : undefined
+      };
+    });
+  }
+
+  /** Risultati completi di una gara storica; null se non trovata */
+  async getRaceResults(season: number, round: number): Promise<HistoricRaceDetail | null> {
+    try {
+      const res = await this.cache.get<RaceResponse>(`${BASE_URL}/${season}/${round}/results/?limit=${PAGE_SIZE}`);
+      const race = res.MRData.RaceTable.Races?.[0];
+      if (!race) return null;
+      return {
+        season: Number(race.season),
+        round: Number(race.round),
+        raceName: race.raceName,
+        circuitId: race.Circuit.circuitId,
+        circuitName: race.Circuit.circuitName,
+        locality: race.Circuit.Location.locality,
+        country: race.Circuit.Location.country,
+        date: race.date,
+        time: race.time,
+        url: race.url,
+        wikiTitle: wikiTitleFromUrl(race.url),
+        results: (race.Results || []).map((row, i) => ({
+          position: toPosition(row.position, i),
+          positionText: row.positionText || String(i + 1),
+          points: Number(row.points) || 0,
+          driverId: row.Driver.driverId,
+          code: row.Driver.code,
+          permanentNumber: row.Driver.permanentNumber ? Number(row.Driver.permanentNumber) : undefined,
+          fullName: `${row.Driver.givenName} ${row.Driver.familyName}`,
+          nationality: row.Driver.nationality,
+          wikiTitle: wikiTitleFromUrl(row.Driver.url),
+          constructorId: row.Constructor.constructorId,
+          constructorName: row.Constructor.name,
+          grid: Number(row.grid) || 0,
+          laps: Number(row.laps) || 0,
+          status: row.status || 'Finished',
+          time: row.Time?.time
+        }))
+      };
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 404) return null;
+      throw err;
+    }
+  }
+
+  /** Qualifiche di una gara storica; array vuoto se non disponibili */
+  async getRaceQualifying(season: number, round: number): Promise<HistoricQualifyingResult[]> {
+    try {
+      const res = await this.cache.get<RaceResponse>(`${BASE_URL}/${season}/${round}/qualifying/?limit=${PAGE_SIZE}`);
+      const race = res.MRData.RaceTable.Races?.[0];
+      if (!race?.QualifyingResults) return [];
+      return race.QualifyingResults.map(q => ({
+        position: Number(q.position),
+        driverId: q.Driver.driverId,
+        code: q.Driver.code,
+        fullName: `${q.Driver.givenName} ${q.Driver.familyName}`,
+        constructorId: q.Constructor.constructorId,
+        constructorName: q.Constructor.name,
+        q1: q.Q1,
+        q2: q.Q2,
+        q3: q.Q3
+      }));
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 404) return [];
+      throw err;
+    }
+  }
 }
+

@@ -313,5 +313,158 @@ describe('JolpicaService', () => {
 
       expect(await result).toBe(0);
     });
+
+    it('reads the season races with winner', async () => {
+      const result = service.getSeasonRaces(1988);
+      (await request(`${API}/1988/results/1/?limit=100`)).flush({
+        MRData: {
+          total: '1',
+          RaceTable: {
+            season: '1988',
+            Races: [{
+              season: '1988',
+              round: '1',
+              raceName: 'Brazilian Grand Prix',
+              Circuit: {
+                circuitId: 'jacarepagua',
+                circuitName: 'Autódromo Internacional Nelson Piquet',
+                Location: { locality: 'Rio de Janeiro', country: 'Brazil' }
+              },
+              date: '1988-04-03',
+              url: 'https://en.wikipedia.org/wiki/1988_Brazilian_Grand_Prix',
+              Results: [{
+                position: '1',
+                Driver: { driverId: 'prost', givenName: 'Alain', familyName: 'Prost' },
+                Constructor: { constructorId: 'mclaren', name: 'McLaren' },
+                Time: { time: '1:36:06.857' }
+              }]
+            }]
+          }
+        }
+      });
+
+      const [race] = await result;
+      expect(race).toEqual(expect.objectContaining({
+        season: 1988,
+        round: 1,
+        raceName: 'Brazilian Grand Prix',
+        circuitId: 'jacarepagua',
+        country: 'Brazil',
+        winner: {
+          driverId: 'prost',
+          fullName: 'Alain Prost',
+          constructorId: 'mclaren',
+          constructorName: 'McLaren',
+          time: '1:36:06.857'
+        }
+      }));
+    });
+
+    it('reads full race results', async () => {
+      const result = service.getRaceResults(1950, 1);
+      (await request(`${API}/1950/1/results/?limit=100`)).flush({
+        MRData: {
+          RaceTable: {
+            season: '1950',
+            round: '1',
+            Races: [{
+              season: '1950',
+              round: '1',
+              raceName: 'British Grand Prix',
+              Circuit: {
+                circuitId: 'silverstone',
+                circuitName: 'Silverstone Circuit',
+                Location: { locality: 'Silverstone', country: 'UK' }
+              },
+              date: '1950-05-13',
+              url: 'http://en.wikipedia.org/wiki/1950_British_Grand_Prix',
+              Results: [
+                {
+                  position: '1',
+                  positionText: '1',
+                  points: '9',
+                  grid: '1',
+                  laps: '70',
+                  status: 'Finished',
+                  Driver: { driverId: 'farina', givenName: 'Nino', familyName: 'Farina', nationality: 'Italian', url: 'http://en.wikipedia.org/wiki/Nino_Farina' },
+                  Constructor: { constructorId: 'alfa', name: 'Alfa Romeo' },
+                  Time: { time: '2:13:23.600' }
+                },
+                {
+                  position: '2',
+                  positionText: '2',
+                  points: '6',
+                  grid: '2',
+                  laps: '70',
+                  status: 'Finished',
+                  Driver: { driverId: 'fagioli', givenName: 'Luigi', familyName: 'Fagioli', nationality: 'Italian' },
+                  Constructor: { constructorId: 'alfa', name: 'Alfa Romeo' },
+                  Time: { time: '+2.600' }
+                }
+              ]
+            }]
+          }
+        }
+      });
+
+      const detail = await result;
+      expect(detail).not.toBeNull();
+      expect(detail?.raceName).toBe('British Grand Prix');
+      expect(detail?.results.length).toBe(2);
+      expect(detail?.results[0]).toEqual(expect.objectContaining({
+        position: 1,
+        fullName: 'Nino Farina',
+        wikiTitle: 'Nino_Farina',
+        time: '2:13:23.600'
+      }));
+    });
+
+    it('returns null for an unknown race round', async () => {
+      const result = service.getRaceResults(1950, 99);
+      (await request(`${API}/1950/99/results/?limit=100`)).flush({
+        MRData: { RaceTable: { Races: [] } }
+      });
+
+      expect(await result).toBeNull();
+    });
+
+    it('reads qualifying results when available', async () => {
+      const result = service.getRaceQualifying(2006, 1);
+      (await request(`${API}/2006/1/qualifying/?limit=100`)).flush({
+        MRData: {
+          RaceTable: {
+            Races: [{
+              QualifyingResults: [{
+                position: '1',
+                Driver: { driverId: 'michael_schumacher', code: 'MSC', givenName: 'Michael', familyName: 'Schumacher' },
+                Constructor: { constructorId: 'ferrari', name: 'Ferrari' },
+                Q1: '1:33.310',
+                Q2: '1:32.025',
+                Q3: '1:31.431'
+              }]
+            }]
+          }
+        }
+      });
+
+      const [q] = await result;
+      expect(q).toEqual(expect.objectContaining({
+        position: 1,
+        driverId: 'michael_schumacher',
+        fullName: 'Michael Schumacher',
+        q1: '1:33.310',
+        q3: '1:31.431'
+      }));
+    });
+
+    it('returns empty array when qualifying is not available', async () => {
+      const result = service.getRaceQualifying(1988, 1);
+      (await request(`${API}/1988/1/qualifying/?limit=100`)).flush({
+        MRData: { RaceTable: { Races: [] } }
+      });
+
+      expect(await result).toEqual([]);
+    });
   });
 });
+
