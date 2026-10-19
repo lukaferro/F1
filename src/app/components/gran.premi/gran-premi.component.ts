@@ -139,7 +139,43 @@ export class GranPremiComponent implements OnInit {
     this.applyCurrentFilters();
   }
 
-  private meetingToCard(m: Meeting): GpCard {
+  private getModernSeasonRaces(year: number): Promise<HistoricRaceSummary[]> {
+    return this.jolpica.getSeasonRaces(year).catch(() => []);
+  }
+
+  private findMatchingWinner(meeting: Meeting, races: HistoricRaceSummary[]): GpCard['winner'] | undefined {
+    if (!races.length) return undefined;
+    const meetingDate = new Date(meeting.date_start).getTime();
+
+    const candidate = races.find(r => {
+      if (r.season !== meeting.year) return false;
+      const raceDate = new Date(r.date).getTime();
+      const diffDays = Math.abs(raceDate - meetingDate) / (1000 * 60 * 60 * 24);
+      if (diffDays <= 4) return true;
+
+      // Fallback nel caso in cui date_start differisca leggermente
+      const normalize = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const mCountry = normalize(meeting.country_name);
+      const rCountry = normalize(r.country);
+      const mLoc = normalize(meeting.location);
+      const rLoc = normalize(r.locality);
+
+      const samePlace = (mCountry && mCountry === rCountry) ||
+                        (mLoc && (mLoc.includes(rLoc) || rLoc.includes(mLoc)));
+      return samePlace && diffDays <= 7;
+    });
+
+    if (candidate?.winner) {
+      return {
+        fullName: candidate.winner.fullName,
+        constructorName: candidate.winner.constructorName,
+        constructorId: candidate.winner.constructorId
+      };
+    }
+    return undefined;
+  }
+
+  private meetingToCard(m: Meeting, races: HistoricRaceSummary[] = []): GpCard {
     return {
       id: String(m.meeting_key),
       season: m.year,
@@ -150,7 +186,8 @@ export class GranPremiComponent implements OnInit {
       date: m.date_start,
       circuit: m.circuit_short_name || 'Circuit',
       flagUrl: smallFlagUrl(m.country_code),
-      link: ['/granpremi', m.meeting_key]
+      link: ['/granpremi', m.meeting_key],
+      winner: this.findMatchingWinner(m, races)
     };
   }
 
@@ -207,10 +244,14 @@ export class GranPremiComponent implements OnInit {
     this.error = undefined;
 
     if (!this.selectedYear) {
-      // "Tutti gli anni": mostra le gare OpenF1 e le stagioni storiche caricate finora
+      // "Tutti gli anni": mostra le gare OpenF1 con vincitori e le stagioni storiche caricate finora
       this.historicRaces = null;
       this.filteredHistoricRaces = [];
-      const openF1Cards = this.allMeetings.map(m => this.meetingToCard(m));
+      const modernYears = Array.from(new Set(this.allMeetings.map(m => m.year)));
+      const racesArrays = await Promise.all(modernYears.map(y => this.getModernSeasonRaces(y)));
+      if (seq !== this.requestSeq) return;
+      const allModernRaces = racesArrays.flat();
+      const openF1Cards = this.allMeetings.map(m => this.meetingToCard(m, allModernRaces));
       this.cards = openF1Cards;
       this.populateFiltersFromCards(this.cards);
       this.applyCurrentFilters();
@@ -218,11 +259,13 @@ export class GranPremiComponent implements OnInit {
     }
 
     if (this.selectedYear >= 2023) {
-      // Anno moderno (2023+): usa OpenF1
+      // Anno moderno (2023+): usa OpenF1 arricchito con il vincitore da Jolpica
       this.historicRaces = null;
       this.filteredHistoricRaces = [];
       const meetings = this.allMeetings.filter(m => m.year === this.selectedYear);
-      this.cards = meetings.map(m => this.meetingToCard(m));
+      const seasonRaces = await this.getModernSeasonRaces(this.selectedYear);
+      if (seq !== this.requestSeq) return;
+      this.cards = meetings.map(m => this.meetingToCard(m, seasonRaces));
       this.populateFiltersFromCards(this.cards);
       this.applyCurrentFilters();
       return;

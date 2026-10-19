@@ -269,5 +269,48 @@ describe('GranPremiComponent', () => {
     expect(jolpicaMock.getSeasonRaces).toHaveBeenCalled();
     expect(component.cards.length).toBeGreaterThan(2);
   });
+
+  it('enriches modern (>=2023) race cards with winner info from Jolpica when available', async () => {
+    // For 2024, return a race matching the Italian GP at Monza on 2024-09-01
+    jolpicaMock.getSeasonRaces.mockImplementation((year: number) => {
+      if (year === 2024) {
+        return Promise.resolve([
+          {
+            season: 2024,
+            round: 16,
+            raceName: 'Italian Grand Prix',
+            circuitId: 'monza',
+            circuitName: 'Autodromo Nazionale di Monza',
+            locality: 'Monza',
+            country: 'Italy',
+            date: '2024-09-01',
+            winner: {
+              driverId: 'leclerc',
+              fullName: 'Charles Leclerc',
+              constructorId: 'ferrari',
+              constructorName: 'Ferrari'
+            }
+          }
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+
+    await component.onYearChange(2024);
+    fixture.detectChanges();
+
+    const monzaCard = component.filteredCards.find(c => c.locality === 'Monza');
+    expect(monzaCard).toBeTruthy();
+    expect(monzaCard?.winner).toEqual({
+      fullName: 'Charles Leclerc',
+      constructorName: 'Ferrari',
+      constructorId: 'ferrari'
+    });
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('Charles Leclerc');
+    expect(el.textContent).toContain('Ferrari');
+  });
 });
+
 
