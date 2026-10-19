@@ -198,6 +198,33 @@
   font-size: 0.8rem;
 }
 
+.gp-winner {
+  --team-color: #ff3b30;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+  padding: 0.35rem 0.65rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--team-color);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.85rem;
+}
+
+.winner-trophy {
+  font-size: 0.95rem;
+}
+
+.winner-name {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.winner-team {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
 .gp-view-details {
   margin-top: 1.5rem;
   display: flex;
@@ -214,6 +241,7 @@
   opacity: 1;
   transform: translateY(0);
 }
+
 
 .empty {
   display: flex;

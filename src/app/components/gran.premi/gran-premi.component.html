@@ -87,7 +87,7 @@
     </div>
 
     @if (error && !loading) {
-      <app-api-unavailable (retry)="loadMeetings()"></app-api-unavailable>
+      <app-api-unavailable [source]="errorSource" (retry)="loadMeetings()"></app-api-unavailable>
     }
 
     @if (loading) {
@@ -105,51 +105,105 @@
       </div>
     }
 
-    @if (!error && !loading && meetings.length) {
-      <div class="cards-grid">
-        @for (meeting of meetings; track trackById($index, meeting)) {
-          <article
-            class="gp-card"
-            [style.--i]="$index"
-            [routerLink]="['/granpremi', meeting.meeting_key]"
-            >
-            <div class="gp-card-content">
-              <div class="gp-card-header">
-                <div class="gp-country">
-                  <img
-                    [src]="'https://flagcdn.com/24x18/' + getCountryFlagCode(meeting.country_code) + '.png'"
-                    [alt]="meeting.country_name"
-                    class="country-flag"
-                    />
-                    {{ meeting.location }}
+    @if (!error && !loading) {
+      @if (historicRaces !== null) {
+        @if (filteredHistoricRaces.length) {
+          <div class="cards-grid">
+            @for (race of filteredHistoricRaces; track race.season + '-' + race.round) {
+              <article
+                class="gp-card"
+                [style.--i]="$index"
+                [routerLink]="['/granpremi', 'storico', race.season, race.round]"
+                >
+                <div class="gp-card-content">
+                  <div class="gp-card-header">
+                    <div class="gp-country">
+                      @if (getCountryFlag(race.country); as flag) {
+                        <img
+                          [src]="flag"
+                          [alt]="race.country"
+                          class="country-flag"
+                          />
+                      }
+                      {{ race.locality }}
+                    </div>
+                    <div class="gp-year">{{ race.season }}</div>
                   </div>
-                  <div class="gp-year">{{ meeting.year }}</div>
+                  <h3 class="gp-official">{{ race.raceName }}</h3>
+                  <div class="gp-sub">
+                    <span class="gp-name">Round {{ race.round }}</span>
+                    <span class="gp-date">{{ race.date | date:'mediumDate' }}</span>
+                  </div>
+                  <div class="gp-meta">
+                    <span class="chip">{{ race.circuitName }}</span>
+                    <span class="chip">{{ race.country }}</span>
+                  </div>
+                  @if (race.winner; as winner) {
+                    <div class="gp-winner" [style.--team-color]="'#' + getConstructorColor(winner.constructorId)">
+                      <span class="winner-trophy">🏆</span>
+                      <span class="winner-name">{{ winner.fullName }}</span>
+                      <span class="winner-team">({{ winner.constructorName }})</span>
+                    </div>
+                  }
+                  <div class="gp-view-details">
+                    <i class="pi pi-arrow-right"></i> Visualizza dettagli
+                  </div>
                 </div>
-                <h3 class="gp-official">{{ meeting.meeting_official_name }}</h3>
-                <div class="gp-sub">
-                  <span class="gp-name">{{ meeting.meeting_name }}</span>
-                  <span class="gp-date">{{ meeting.date_start | date:'mediumDate' }}</span>
-                </div>
-                <div class="gp-meta">
-                  <span class="chip">{{ meeting.circuit_short_name || 'Circuit' }}</span>
-                  <span class="chip">{{ meeting.country_name }}</span>
-                </div>
-                <div class="gp-view-details">
-                  <i class="pi pi-arrow-right"></i> Visualizza dettagli
-                </div>
-              </div>
-            </article>
-          }
-        </div>
-      } @else {
-        @if (!error && !loading) {
+              </article>
+            }
+          </div>
+        } @else {
           <div class="empty">
             <i class="pi pi-exclamation-circle empty-icon"></i>
             <p>Nessun Gran Premio disponibile con i filtri selezionati.</p>
             <p-button label="Mostra tutti" icon="pi pi-refresh" (click)="resetFilters()"></p-button>
           </div>
         }
+      } @else if (meetings.length) {
+        <div class="cards-grid">
+          @for (meeting of meetings; track trackById($index, meeting)) {
+            <article
+              class="gp-card"
+              [style.--i]="$index"
+              [routerLink]="['/granpremi', meeting.meeting_key]"
+              >
+              <div class="gp-card-content">
+                <div class="gp-card-header">
+                  <div class="gp-country">
+                    <img
+                      [src]="'https://flagcdn.com/24x18/' + getCountryFlagCode(meeting.country_code) + '.png'"
+                      [alt]="meeting.country_name"
+                      class="country-flag"
+                      />
+                      {{ meeting.location }}
+                    </div>
+                    <div class="gp-year">{{ meeting.year }}</div>
+                  </div>
+                  <h3 class="gp-official">{{ meeting.meeting_official_name }}</h3>
+                  <div class="gp-sub">
+                    <span class="gp-name">{{ meeting.meeting_name }}</span>
+                    <span class="gp-date">{{ meeting.date_start | date:'mediumDate' }}</span>
+                  </div>
+                  <div class="gp-meta">
+                    <span class="chip">{{ meeting.circuit_short_name || 'Circuit' }}</span>
+                    <span class="chip">{{ meeting.country_name }}</span>
+                  </div>
+                  <div class="gp-view-details">
+                    <i class="pi pi-arrow-right"></i> Visualizza dettagli
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+      } @else {
+        <div class="empty">
+          <i class="pi pi-exclamation-circle empty-icon"></i>
+          <p>Nessun Gran Premio disponibile con i filtri selezionati.</p>
+          <p-button label="Mostra tutti" icon="pi pi-refresh" (click)="resetFilters()"></p-button>
+        </div>
       }
+    }
+
 
     </section>
   </div>
