@@ -7,6 +7,7 @@ import { DriverDetailComponent } from './components/driver-detail/driver-detail.
 import { CircuitsComponent } from './components/circuits/circuits.component';
 import { StandingsComponent } from './components/standings/standings.component';
 import { HistoricDriverDetailComponent } from './components/historic-driver-detail/historic-driver-detail.component';
+import { HistoricGranPremiDetailComponent } from './components/historic-gran-premi-detail/historic-gran-premi-detail.component';
 
 export const routes: Routes = [
   {
@@ -18,9 +19,15 @@ export const routes: Routes = [
     component: GranPremiComponent,
   },
   {
+    // prima di granpremi/:id: le gare storiche hanno rotta con anno e round
+    path: 'granpremi/storico/:season/:round',
+    component: HistoricGranPremiDetailComponent,
+  },
+  {
     path: 'granpremi/:id',
     component: GranPremiDetailComponent,
   },
+
   {
     path: 'drivers',
     component: DriversComponent,

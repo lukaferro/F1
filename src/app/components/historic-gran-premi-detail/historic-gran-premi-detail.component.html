@@ -1,0 +1,201 @@
+<div class="gp-detail-container">
+  <div class="back-nav">
+    <a routerLink="/granpremi" class="back-btn">
+      <i class="pi pi-arrow-left"></i> Torna ai Gran Premi
+    </a>
+  </div>
+
+  @if (loading) {
+    <div class="loading-state" aria-busy="true" aria-label="Caricamento Gran Premio">
+      <div class="skeleton hero-skeleton"></div>
+      <div class="podium">
+        @for (h of [190, 230, 170]; track $index) {
+          <div class="skeleton podium-skeleton" [style.height.px]="h"></div>
+        }
+      </div>
+      <div class="skeleton table-skeleton"></div>
+    </div>
+  } @else if (error) {
+    <app-api-unavailable source="jolpica" (retry)="retry()"></app-api-unavailable>
+  } @else if (notFound || !raceDetail) {
+    <div class="empty-state">
+      <i class="pi pi-exclamation-circle empty-icon"></i>
+      <h2>Gran Premio non trovato</h2>
+      <p>I dati di questa gara non sono presenti nell'archivio storico.</p>
+      <a routerLink="/granpremi" class="btn-primary">Torna ai Gran Premi</a>
+    </div>
+  } @else {
+    <header class="gp-hero">
+      <div class="hero-top">
+        <span class="badge badge-round">Round {{ raceDetail.round }}</span>
+        <span class="badge badge-season">{{ raceDetail.season }}</span>
+        <span class="badge badge-date">{{ raceDetail.date | date:'longDate' }}</span>
+        @if (raceDetail.url) {
+          <a [href]="raceDetail.url" target="_blank" rel="noopener noreferrer" class="wiki-link">
+            <i class="pi pi-external-link"></i> Wikipedia
+          </a>
+        }
+      </div>
+
+      <h1 class="gp-title">{{ raceDetail.raceName }}</h1>
+
+      <div class="gp-location">
+        @if (countryFlag(raceDetail.country); as flag) {
+          <img [src]="flag" [alt]="raceDetail.country" class="gp-flag" />
+        }
+        <span class="location-text">{{ raceDetail.locality }}, {{ raceDetail.country }}</span>
+        <span class="circuit-divider">•</span>
+        <span class="circuit-name">{{ raceDetail.circuitName }}</span>
+      </div>
+    </header>
+
+    @if (qualifyingResults.length > 0) {
+      <div class="gp-tabs" role="tablist">
+        <button
+          class="tab-button"
+          role="tab"
+          [class.active]="selectedTab === 'results'"
+          [attr.aria-selected]="selectedTab === 'results'"
+          (click)="selectedTab = 'results'">
+          Risultati Gara
+        </button>
+        <button
+          class="tab-button"
+          role="tab"
+          [class.active]="selectedTab === 'qualifying'"
+          [attr.aria-selected]="selectedTab === 'qualifying'"
+          (click)="selectedTab = 'qualifying'">
+          Qualifiche
+        </button>
+      </div>
+    }
+
+    <main class="gp-content">
+      @if (selectedTab === 'results') {
+        <!-- Podio -->
+        @if (driverPodium.length >= 3) {
+          <section class="podium-section" aria-label="Podio Gran Premio">
+            <h2 class="section-title">Podio</h2>
+            <div class="podium">
+              @for (s of driverPodium; track s.driverId) {
+                <div class="podium-item"
+                  [class.first]="s.position === 1"
+                  [class.second]="s.position === 2"
+                  [class.third]="s.position === 3"
+                  [style.--team-color]="'#' + driverColor(s.constructorId)">
+                  <div class="podium-visual">
+                    @if (photoFor(s); as photo) {
+                      <img [src]="photo" [alt]="s.fullName" />
+                    } @else {
+                      <span class="podium-initials">{{ initials(s.fullName) }}</span>
+                    }
+                  </div>
+                  <span class="podium-position">{{ s.position }}°</span>
+                  <a [routerLink]="driverLink(s.driverId, s.code)" class="podium-name">{{ s.fullName }}</a>
+                  <span class="podium-team">{{ s.constructorName }}</span>
+                  <span class="podium-time">{{ s.time || s.status }}</span>
+                  <span class="podium-points">{{ s.points }} pt</span>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- Classifica Completa Gara -->
+        <section class="classification-section" aria-label="Classifica gara">
+          <h2 class="section-title">Classifica Ufficiale</h2>
+          <div class="table-container">
+            <table class="race-results-table">
+              <thead>
+                <tr>
+                  <th class="col-pos">Pos</th>
+                  <th class="col-driver">Pilota</th>
+                  <th class="col-team">Scuderia</th>
+                  <th class="col-grid">Griglia</th>
+                  <th class="col-laps">Giri</th>
+                  <th class="col-time">Tempo / Distacco</th>
+                  <th class="col-pts">Punti</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of raceDetail.results; track row.driverId + '-' + $index) {
+                  <tr [class.podium-row]="row.position <= 3" [class.dnf-row]="row.status !== 'Finished' && !row.status.startsWith('+')">
+                    <td class="col-pos">
+                      <span class="pos-badge" [class.p1]="row.position === 1" [class.p2]="row.position === 2" [class.p3]="row.position === 3">
+                        {{ row.positionText }}
+                      </span>
+                    </td>
+                    <td class="col-driver">
+                      <a [routerLink]="driverLink(row.driverId, row.code)" class="driver-link">
+                        {{ row.fullName }}
+                      </a>
+                    </td>
+                    <td class="col-team">
+                      <span class="team-badge" [style.--team-color]="'#' + driverColor(row.constructorId)">
+                        <span class="team-indicator"></span>
+                        {{ row.constructorName }}
+                      </span>
+                    </td>
+                    <td class="col-grid">
+                      {{ row.grid || '-' }}
+                      @if (posDiff(row.grid, row.position); as diff) {
+                        <span class="pos-diff" [ngClass]="diff.cls">({{ diff.text }})</span>
+                      }
+                    </td>
+                    <td class="col-laps">{{ row.laps }}</td>
+                    <td class="col-time">{{ row.time || row.status }}</td>
+                    <td class="col-pts">{{ row.points }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      } @else if (selectedTab === 'qualifying') {
+        <!-- Risultati Qualifiche -->
+        <section class="classification-section" aria-label="Risultati qualifiche">
+          <h2 class="section-title">Griglia di Partenza / Qualifiche</h2>
+          <div class="table-container">
+            <table class="race-results-table">
+              <thead>
+                <tr>
+                  <th class="col-pos">Pos</th>
+                  <th class="col-driver">Pilota</th>
+                  <th class="col-team">Scuderia</th>
+                  @if (qualifyingResults[0]?.q1) { <th>Q1</th> }
+                  @if (qualifyingResults[0]?.q2) { <th>Q2</th> }
+                  @if (qualifyingResults[0]?.q3) { <th>Q3</th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (q of qualifyingResults; track q.driverId + '-' + $index) {
+                  <tr [class.pole-row]="q.position === 1">
+                    <td class="col-pos">
+                      <span class="pos-badge" [class.p1]="q.position === 1">
+                        {{ q.position }}
+                      </span>
+                    </td>
+                    <td class="col-driver">
+                      <a [routerLink]="driverLink(q.driverId, q.code)" class="driver-link">
+                        {{ q.fullName }}
+                      </a>
+                    </td>
+                    <td class="col-team">
+                      <span class="team-badge" [style.--team-color]="'#' + driverColor(q.constructorId)">
+                        <span class="team-indicator"></span>
+                        {{ q.constructorName }}
+                      </span>
+                    </td>
+                    @if (qualifyingResults[0]?.q1) { <td>{{ q.q1 || '-' }}</td> }
+                    @if (qualifyingResults[0]?.q2) { <td>{{ q.q2 || '-' }}</td> }
+                    @if (qualifyingResults[0]?.q3) { <td>{{ q.q3 || '-' }}</td> }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    </main>
+  }
+</div>
