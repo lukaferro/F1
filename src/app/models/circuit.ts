@@ -4,6 +4,8 @@ export interface Circuit {
   location: string;
   country: string;
   country_code: string;
+  continent?: string;
+  gp_circuit_filter?: string;
   length_km: number;
   turns: number;
   first_grand_prix: number;

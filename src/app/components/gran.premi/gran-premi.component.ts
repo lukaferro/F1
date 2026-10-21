@@ -219,7 +219,12 @@ export class GranPremiComponent implements OnInit {
     }
 
     if (this.selectedCircuit) {
-      list = list.filter(c => c.circuit === this.selectedCircuit);
+      const target = this.selectedCircuit.toLowerCase();
+      list = list.filter(c =>
+        c.circuit === this.selectedCircuit ||
+        c.circuit.toLowerCase().includes(target) ||
+        c.locality.toLowerCase().includes(target)
+      );
     }
 
     this.filteredCards = list;
@@ -228,14 +233,29 @@ export class GranPremiComponent implements OnInit {
     if (this.historicRaces) {
       let hList = [...this.historicRaces];
       if (this.selectedCountry) hList = hList.filter(r => r.country === this.selectedCountry);
-      if (this.selectedCircuit) hList = hList.filter(r => r.circuitName === this.selectedCircuit || r.circuitId === this.selectedCircuit);
+      if (this.selectedCircuit) {
+        const target = this.selectedCircuit.toLowerCase();
+        hList = hList.filter(r =>
+          r.circuitName === this.selectedCircuit ||
+          r.circuitId === this.selectedCircuit ||
+          r.circuitName.toLowerCase().includes(target) ||
+          r.locality.toLowerCase().includes(target)
+        );
+      }
       this.filteredHistoricRaces = hList;
     }
 
     let mList = [...this.allMeetings];
     if (this.selectedYear) mList = mList.filter(m => m.year === this.selectedYear);
     if (this.selectedCountry) mList = mList.filter(m => m.country_name === this.selectedCountry || m.country_code === this.selectedCountry);
-    if (this.selectedCircuit) mList = mList.filter(m => m.circuit_short_name === this.selectedCircuit);
+    if (this.selectedCircuit) {
+      const target = this.selectedCircuit.toLowerCase();
+      mList = mList.filter(m =>
+        m.circuit_short_name === this.selectedCircuit ||
+        (m.circuit_short_name || '').toLowerCase().includes(target) ||
+        (m.location || '').toLowerCase().includes(target)
+      );
+    }
     this.meetings = mList;
   }
 
@@ -352,6 +372,14 @@ export class GranPremiComponent implements OnInit {
       name,
       code: name
     }));
+
+    if (this.selectedCircuit && !circuitSet.has(this.selectedCircuit)) {
+      const target = this.selectedCircuit.toLowerCase();
+      const match = this.circuits.find(c => (c.code || '').toLowerCase().includes(target));
+      if (match?.code) {
+        this.selectedCircuit = match.code;
+      }
+    }
   }
 
   async loadInitialData() {
