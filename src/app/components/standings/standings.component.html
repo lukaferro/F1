@@ -1,33 +1,38 @@
 <div class="standings-container">
   <header class="standings-header">
     <div>
-      <h1 class="standings-title">Classifiche</h1>
-      <p class="standings-subtitle">Campionato piloti e costruttori di ogni stagione, dal 1950 a oggi.</p>
+      <h1 class="standings-title">Classifiche & Albo d'Oro</h1>
+      <p class="standings-subtitle">Campionato piloti, costruttori e Albo d'Oro completo di ogni stagione dal 1950 a oggi.</p>
     </div>
-    <div class="season-filter">
-      <label class="season-label" for="season">Stagione</label>
-      <p-select
-        inputId="season"
-        [options]="seasonOptions"
-        [ngModel]="selectedSeason"
-        (ngModelChange)="selectSeason($event)"
-        optionLabel="label"
-        optionValue="value"
-        [disabled]="!seasonOptions.length"
-        class="gp-dropdown"
-        panelStyleClass="gp-dropdown-panel">
-      </p-select>
-    </div>
+    @if (tab !== 'hall-of-fame') {
+      <div class="season-filter">
+        <label class="season-label" for="season">Stagione</label>
+        <p-select
+          inputId="season"
+          [options]="seasonOptions"
+          [ngModel]="selectedSeason"
+          (ngModelChange)="selectSeason($event)"
+          optionLabel="label"
+          optionValue="value"
+          [disabled]="!seasonOptions.length"
+          class="gp-dropdown"
+          panelStyleClass="gp-dropdown-panel">
+        </p-select>
+      </div>
+    }
   </header>
 
   <div class="standings-tabs" role="tablist">
     <button class="tab-button" role="tab" id="tab-drivers" aria-controls="standings-panel" [class.active]="tab === 'drivers'" [attr.aria-selected]="tab === 'drivers'" (click)="setTab('drivers')">Piloti</button>
     <button class="tab-button" role="tab" id="tab-constructors" aria-controls="standings-panel" [class.active]="tab === 'constructors'" [attr.aria-selected]="tab === 'constructors'" (click)="setTab('constructors')">Costruttori</button>
+    <button class="tab-button" role="tab" id="tab-hall-of-fame" aria-controls="standings-panel" [class.active]="tab === 'hall-of-fame'" [attr.aria-selected]="tab === 'hall-of-fame'" (click)="setTab('hall-of-fame')">🏆 Albo d'Oro (1950–Oggi)</button>
   </div>
 
   <!-- altezza minima: cambiando stagione o tab l'area non si richiude -->
-  <section class="standings-content" id="standings-panel" role="tabpanel" [attr.aria-labelledby]="tab === 'drivers' ? 'tab-drivers' : 'tab-constructors'">
-    @if (loading) {
+  <section class="standings-content" id="standings-panel" role="tabpanel" [attr.aria-labelledby]="tab === 'drivers' ? 'tab-drivers' : (tab === 'constructors' ? 'tab-constructors' : 'tab-hall-of-fame')">
+    @if (tab === 'hall-of-fame') {
+      <app-hall-of-fame (selectYear)="openSeasonFromHallOfFame($event)"></app-hall-of-fame>
+    } @else if (loading) {
       <div aria-busy="true" aria-label="Caricamento classifica">
         @if (slowLoading) {
           <p class="standings-status slow-hint">Molte richieste in corso: la classifica arriva tra poco…</p>

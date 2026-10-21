@@ -24,7 +24,7 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 - **Filtri e ordinamento**:
   - Filtro per paese e continente.
   - Ordinamento per lunghezza tracciato, numero di curve o anno del primo GP disputato.
-- **Collegamento gare**: Pulsante rapido "Edizioni GP" su ogni circuito per visualizzare le gare disputate su quel tracciato.
+  - **Collegamento gare**: Pulsante rapido "Edizioni GP" su ogni circuito per visualizzare le gare disputate su quel tracciato.
 
 ---
 
@@ -64,5 +64,9 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-## 8. Albo d'Oro (Hall of Fame 1950-Oggi) (Da fare) 🏆
-- Riepilogo storico completo dal 1950 a oggi di tutti i Campioni del Mondo Piloti e Costruttori stagione per stagione.
+## 8. Albo d'Oro (Hall of Fame 1950-Oggi) (Completato) ✅
+- **Tab dedicato `🏆 Albo d'Oro (1950–Oggi)` in `/classifiche`**:
+  - Riepilogo storico completo dal 1950 a oggi di tutti i Campioni del Mondo Piloti e Costruttori stagione per stagione.
+  - Bacheca interattiva **Pluricampioni Piloti** e **Pluricampioni Costruttori** cliccabile per filtrare i titoli.
+  - Filtri per epoca/decennio (*Anni ’50* – *Anni 2020*) e barra di ricerca per anno, pilota o scuderia.
+  - Collegamento diretto alla scheda pilota e pulsante rapido *"Classifica stagione →"* per aprire la classifica completa di quell'anno.

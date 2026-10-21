@@ -6,12 +6,11 @@ import { SelectModule } from 'primeng/select';
 import { ConstructorStanding, DriverStanding, JolpicaService } from '../../services/jolpica.service';
 import { Driver, Openf1ServiceService } from '../../services/openf1-service';
 import { WikipediaService } from '../../services/wikipedia.service';
-import { StandingsStateService } from '../../services/standings-state.service';
+import { StandingsStateService, StandingsTab } from '../../services/standings-state.service';
 import { currentSeasonPhotoUrl } from '../../utils/f1-media';
 import { constructorColor, ConstructorLogo, constructorLogo } from '../../utils/constructor-branding';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
-
-type StandingsTab = 'drivers' | 'constructors';
+import { HallOfFameComponent } from '../hall-of-fame/hall-of-fame.component';
 
 // Prima stagione con dati OpenF1: da qui in poi esiste la pagina di dettaglio del pilota
 const FIRST_OPENF1_SEASON = 2023;
@@ -42,7 +41,7 @@ const isNotFound = (err: unknown) => err instanceof HttpErrorResponse && err.sta
 @Component({
   selector: 'app-standings',
   standalone: true,
-  imports: [FormsModule, RouterLink, SelectModule, ApiUnavailableComponent],
+  imports: [FormsModule, RouterLink, SelectModule, ApiUnavailableComponent, HallOfFameComponent],
   templateUrl: './standings.component.html',
   styleUrl: './standings.component.css'
 })
@@ -140,7 +139,14 @@ export class StandingsComponent implements OnInit, OnDestroy {
     await this.withLoading(year, () => this.fetchConstructors(year));
   }
 
+  async openSeasonFromHallOfFame(year: number): Promise<void> {
+    this.tab = 'drivers';
+    this.stateService.tab = 'drivers';
+    await this.selectSeason(year);
+  }
+
   get error(): boolean {
+    if (this.tab === 'hall-of-fame') return false;
     return this.initError || (this.tab === 'drivers' ? this.driversError : this.constructorsError);
   }
 

@@ -5,7 +5,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { StandingsComponent } from './standings.component';
 import { ConstructorStanding, DriverStanding, JolpicaService } from '../../services/jolpica.service';
-import { StandingsStateService } from '../../services/standings-state.service';
+import { StandingsStateService, StandingsTab } from '../../services/standings-state.service';
 import { Openf1ServiceService } from '../../services/openf1-service';
 import { ApiStatus } from '../../services/http-cache';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -22,7 +22,7 @@ interface Setup {
   failInit?: boolean;
   grid?: object[];
   status?: ApiStatus;
-  initialState?: { selectedSeason: number | null; tab: 'drivers' | 'constructors' };
+  initialState?: { selectedSeason: number | null; tab: StandingsTab };
 }
 
 describe('StandingsComponent', () => {
@@ -48,12 +48,10 @@ describe('StandingsComponent', () => {
     }).compileComponents();
 
     const stateService = TestBed.inject(StandingsStateService);
+    stateService.reset();
     if (setup.initialState) {
       stateService.selectedSeason = setup.initialState.selectedSeason;
       stateService.tab = setup.initialState.tab;
-    } else {
-      stateService.selectedSeason = null;
-      stateService.tab = 'drivers';
     }
 
     fixture = TestBed.createComponent(StandingsComponent);
@@ -264,5 +262,21 @@ describe('StandingsComponent', () => {
     expect(component.selectedSeason).toBe(1988);
     expect(component.tab).toBe('constructors');
   });
-});
 
+  it('renders the Hall of Fame tab and opens a season when selected', async () => {
+    await create({
+      drivers: season => Promise.resolve([driver(1, season === 1988 ? 'Ayrton Senna' : 'Max Verstappen')])
+    });
+    await component.setTab('hall-of-fame');
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('app-hall-of-fame')).not.toBeNull();
+
+    await component.openSeasonFromHallOfFame(1988);
+    fixture.detectChanges();
+    expect(component.tab).toBe('drivers');
+    expect(component.selectedSeason).toBe(1988);
+    expect(component.driverStandings[0]?.fullName).toBe('Ayrton Senna');
+  });
+});

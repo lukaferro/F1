@@ -1,0 +1,164 @@
+<div class="hof-wrapper">
+  <!-- Riepilogo Pluricampioni -->
+  <div class="hof-leaderboards">
+    <div class="hof-board-card">
+      <div class="hof-board-header">
+        <span class="hof-board-icon" aria-hidden="true">👑</span>
+        <div>
+          <h2 class="hof-board-title">Pluricampioni Piloti</h2>
+          <p class="hof-board-subtitle">Piloti con almeno 3 Titoli Mondiali (clicca per filtrare)</p>
+        </div>
+      </div>
+      <div class="hof-board-list">
+        @for (driver of topDrivers; track driver.driverId) {
+          <button
+            type="button"
+            class="hof-leader-item"
+            [class.active]="searchTerm.toLowerCase() === driver.driverName.toLowerCase()"
+            (click)="filterByQuery(driver.driverName)">
+            <div class="hof-leader-main">
+              @if (flagForNationality(driver.nationality); as flag) {
+                <img class="hof-flag" [src]="flag" [alt]="driver.nationality" />
+              }
+              <span class="hof-leader-name">{{ driver.driverName }}</span>
+            </div>
+            <span class="hof-leader-badge">{{ driver.titles }} 🏆</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="hof-board-card">
+      <div class="hof-board-header">
+        <span class="hof-board-icon" aria-hidden="true">🏁</span>
+        <div>
+          <h2 class="hof-board-title">Pluricampioni Costruttori</h2>
+          <p class="hof-board-subtitle">Scuderie pluricampioni del mondo dal 1958 (clicca per filtrare)</p>
+        </div>
+      </div>
+      <div class="hof-board-list">
+        @for (team of topConstructors; track team.constructorId) {
+          <button
+            type="button"
+            class="hof-leader-item"
+            [class.active]="searchTerm.toLowerCase() === team.constructorName.toLowerCase()"
+            [style.--team-color]="'#' + colorFor(team.constructorId)"
+            (click)="filterByQuery(team.constructorName)">
+            <div class="hof-leader-main">
+              <span class="hof-team-dot" [style.background]="'#' + colorFor(team.constructorId)"></span>
+              @if (logoFor(team.constructorId); as logo) {
+                <img class="hof-team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" (error)="onLogoError(team.constructorId)" />
+              }
+              <span class="hof-leader-name">{{ team.constructorName }}</span>
+            </div>
+            <span class="hof-leader-badge">{{ team.titles }} 🏆</span>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra filtri per epoca e ricerca -->
+  <div class="hof-controls">
+    <div class="hof-search-row">
+      <div class="hof-search-box">
+        <input
+          pInputText
+          type="text"
+          [(ngModel)]="searchTerm"
+          placeholder="Cerca per anno, pilota o scuderia (es. 2004, Senna, Ferrari)..."
+          aria-label="Cerca nell'Albo d'Oro"
+          class="hof-search-input" />
+      </div>
+      <div class="hof-count-info">
+        <span><strong>{{ filteredSeasons.length }}</strong> stagioni visualizzate</span>
+        @if (hasActiveFilters) {
+          <button type="button" class="hof-reset-btn" (click)="resetFilters()">Resetta filtri</button>
+        }
+      </div>
+    </div>
+
+    <div class="hof-decade-chips" role="group" aria-label="Filtra per decennio">
+      @for (decade of decadeFilters; track decade.id) {
+        <button
+          type="button"
+          class="hof-decade-chip"
+          [class.active]="selectedDecade === decade.id"
+          (click)="setDecade(decade.id)">
+          {{ decade.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Tabella Albo d'Oro stagione per stagione -->
+  @if (!filteredSeasons.length) {
+    <p class="hof-empty">Nessuna stagione trovata con i filtri selezionati.</p>
+  } @else {
+    <div class="hof-table-wrapper">
+      <table class="hof-table">
+        <thead>
+          <tr>
+            <th class="col-year">Stagione</th>
+            <th class="col-driver">Campione del Mondo Piloti</th>
+            <th class="col-driver-team">Vettura / Team Pilota</th>
+            <th class="col-constructor">Campione del Mondo Costruttori</th>
+            <th class="col-action">Dettaglio</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of filteredSeasons; track entry.year) {
+            <tr class="hof-row">
+              <td class="col-year">
+                <span class="year-pill">{{ entry.year }}</span>
+              </td>
+              <td class="col-driver">
+                <div class="driver-cell">
+                  @if (flagForNationality(entry.driverNationality); as dFlag) {
+                    <img class="hof-flag" [src]="dFlag" [alt]="entry.driverNationality" />
+                  }
+                  <a class="hof-driver-link" [routerLink]="driverLink(entry)">{{ entry.driverName }}</a>
+                </div>
+              </td>
+              <td class="col-driver-team">
+                <div class="team-cell">
+                  <span class="hof-team-dot" [style.background]="'#' + colorFor(entry.driverTeamId)"></span>
+                  @if (logoFor(entry.driverTeamId); as dLogo) {
+                    <img class="hof-team-logo" [class.on-light]="dLogo.onLight" [src]="dLogo.url" alt="" (error)="onLogoError(entry.driverTeamId)" />
+                  }
+                  <span>{{ entry.driverTeamName }}</span>
+                </div>
+              </td>
+              <td class="col-constructor">
+                @if (entry.constructorId && entry.constructorName) {
+                  <div class="team-cell">
+                    @if (flagForNationality(entry.constructorNationality); as cFlag) {
+                      <img class="hof-flag" [src]="cFlag" [alt]="entry.constructorNationality!" />
+                    }
+                    @if (logoFor(entry.constructorId); as cLogo) {
+                      <img class="hof-team-logo" [class.on-light]="cLogo.onLight" [src]="cLogo.url" alt="" (error)="onLogoError(entry.constructorId)" />
+                    } @else {
+                      <span class="hof-team-dot" [style.background]="'#' + colorFor(entry.constructorId)"></span>
+                    }
+                    <span class="hof-constructor-name">{{ entry.constructorName }}</span>
+                  </div>
+                } @else {
+                  <span class="hof-no-constructor">Non assegnato (istituito nel 1958)</span>
+                }
+              </td>
+              <td class="col-action">
+                <button
+                  type="button"
+                  class="hof-season-btn"
+                  (click)="openSeasonStandings(entry.year)"
+                  [attr.aria-label]="'Apri classifica completa stagione ' + entry.year">
+                  Classifica {{ entry.year }} →
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
