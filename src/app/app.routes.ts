@@ -8,6 +8,7 @@ import { CircuitsComponent } from './components/circuits/circuits.component';
 import { StandingsComponent } from './components/standings/standings.component';
 import { HistoricDriverDetailComponent } from './components/historic-driver-detail/historic-driver-detail.component';
 import { HistoricGranPremiDetailComponent } from './components/historic-gran-premi-detail/historic-gran-premi-detail.component';
+import { NewsComponent } from './components/news/news.component';
 
 export const routes: Routes = [
   {
@@ -27,12 +28,10 @@ export const routes: Routes = [
     path: 'granpremi/:id',
     component: GranPremiDetailComponent,
   },
-
   {
     path: 'drivers',
     component: DriversComponent,
-  }
-  ,
+  },
   {
     // prima di drivers/:id: alcuni driverId storici sono di tre lettere (es. "ide") come le sigle
     path: 'drivers/storico/:driverId',
@@ -49,5 +48,9 @@ export const routes: Routes = [
   {
     path: 'classifiche',
     component: StandingsComponent,
+  },
+  {
+    path: 'news',
+    component: NewsComponent,
   }
 ];

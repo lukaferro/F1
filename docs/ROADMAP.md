@@ -36,3 +36,27 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
   - Percentuale di vittorie su gare disputate
   - Podi totali e Pole Position
   - Giri veloci in gara.
+
+---
+
+## 5. Sezione News F1 & Ultime dal Paddock (Completato) ✅
+- **Pagina dedicata `/news`**:
+  - Feed notizie Formula 1 in lingua italiana con caching e articoli di approfondimento di fallback.
+  - Notizia in **Primo Piano (Hero Article)** e griglia notizie con filtro per categoria (*Tutte*, *Gare & Paddock*, *Scuderie*, *Piloti*, *Tecnica*) e barra di ricerca testuale.
+  - Modale di lettura rapida dell'articolo con link diretto alla fonte originale.
+- **Anteprima in Home**: Sezione *"Ultime Notizie F1"* con le 3 notizie più recenti e collegamento rapido a `/news`.
+
+---
+
+## 6. Sezione Scuderie / Costruttori (Da fare) 🏎️
+- Pagina dedicata alle scuderie della stagione in corso e ai costruttori storici della Formula 1 (Ferrari, McLaren, Williams, Red Bull, Mercedes, ecc.) con colori ufficiali, palmarès, mondiali vinti e piloti.
+
+---
+
+## 7. Strategie Gomme & Stint nei dettagli Gran Premio (Da fare) 🛞
+- Visualizzazione grafica delle mescole utilizzate giro per giro (*Soft*, *Medium*, *Hard*, *Inter*, *Wet*) e dei pit-stop per ogni pilota nel dettaglio dei Gran Premi moderni tramite OpenF1 (`/stints`).
+
+---
+
+## 8. Albo d'Oro (Hall of Fame 1950-Oggi) (Da fare) 🏆
+- Riepilogo storico completo dal 1950 a oggi di tutti i Campioni del Mondo Piloti e Costruttori stagione per stagione.

@@ -3,6 +3,21 @@
   "outputDirectory": "dist/f1/browser",
   "framework": null,
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/rss/motorsport",
+      "destination": "https://it.motorsport.com/rss/f1/news/"
+    },
+    {
+      "source": "/api/rss/formulapassion",
+      "destination": "https://www.formulapassion.it/f1/feed"
+    },
+    {
+      "source": "/api/rss/gazzetta",
+      "destination": "https://www.gazzetta.it/dynamic-feed/rss/section/Formula-1.xml"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

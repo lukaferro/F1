@@ -1,0 +1,189 @@
+<div class="news-page">
+  <header class="news-header">
+    <div class="news-header-left">
+      <h1><i class="pi pi-megaphone"></i> News <span class="f1-accent">Formula 1</span></h1>
+      <p>Ultime notizie, approfondimenti tecnici e aggiornamenti dal paddock</p>
+    </div>
+
+    <div class="news-header-right">
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          pInputText
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange()"
+          placeholder="Cerca notizia, pilota o scuderia..."
+          class="news-search-input" />
+        @if (searchQuery) {
+          <button type="button" class="clear-search-btn" (click)="searchQuery = ''; onSearchChange()" aria-label="Cancella ricerca">
+            <i class="pi pi-times"></i>
+          </button>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="refresh-news-btn"
+        [disabled]="loading"
+        (click)="loadNews(true)"
+        title="Aggiorna notizie">
+        <i class="pi pi-refresh" [class.pi-spin]="loading"></i>
+        <span>Aggiorna</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Barra categorie -->
+  <div class="category-bar" role="tablist" aria-label="Filtra per categoria">
+    @for (cat of categories; track cat) {
+      <button
+        type="button"
+        class="category-chip"
+        [class.active]="selectedCategory === cat"
+        (click)="selectCategory(cat)">
+        <span>{{ cat }}</span>
+        <span class="category-count">{{ countByCategory(cat) }}</span>
+      </button>
+    }
+  </div>
+
+  <!-- Stato caricamento -->
+  @if (loading) {
+    <div class="news-loading" aria-busy="true">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Caricamento ultime notizie Formula 1...</span>
+    </div>
+  }
+
+  <!-- Contenuto notizie -->
+  @if (!loading) {
+    @if (featuredArticle; as hero) {
+      <!-- Notizia in Primo Piano -->
+      <article class="hero-article" (click)="openArticleModal(hero)">
+        <div class="hero-image-wrap">
+          <img [src]="hero.imageUrl" [alt]="hero.title" (error)="onImageError($event)" class="hero-image" />
+          <span class="badge-featured">
+            <i class="pi pi-bolt"></i> Primo Piano
+          </span>
+        </div>
+
+        <div class="hero-body">
+          <div class="article-meta">
+            <span class="cat-badge" [attr.data-cat]="hero.category">{{ hero.category }}</span>
+            <span class="meta-dot">•</span>
+            <span class="meta-source">{{ hero.source }}</span>
+            <span class="meta-dot">•</span>
+            <span class="meta-date">{{ hero.publishedAt | date:'d MMM yyyy, HH:mm' }}</span>
+          </div>
+
+          <h2 class="hero-title">{{ hero.title }}</h2>
+          <p class="hero-summary">{{ hero.summary }}</p>
+
+          <div class="hero-footer">
+            <span class="reading-time">
+              <i class="pi pi-clock"></i> {{ hero.readingMinutes }} min di lettura
+            </span>
+            <div class="article-actions" (click)="$event.stopPropagation()">
+              <button type="button" class="read-more-btn" (click)="openArticleModal(hero)">
+                <span>Approfondisci</span>
+                <i class="pi pi-eye"></i>
+              </button>
+              <a [href]="hero.link" target="_blank" rel="noopener" class="external-source-btn">
+                <span>Fonte</span>
+                <i class="pi pi-external-link"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Griglia altre notizie -->
+      @if (gridArticles.length > 0) {
+        <div class="news-grid">
+          @for (item of gridArticles; track item.id) {
+            <article class="news-card" (click)="openArticleModal(item)">
+              <div class="card-image-wrap">
+                <img [src]="item.imageUrl" [alt]="item.title" (error)="onImageError($event)" loading="lazy" class="card-image" />
+                <span class="cat-badge floating-cat" [attr.data-cat]="item.category">{{ item.category }}</span>
+              </div>
+
+              <div class="card-body">
+                <div class="article-meta">
+                  <span class="meta-source">{{ item.source }}</span>
+                  <span class="meta-dot">•</span>
+                  <span class="meta-date">{{ item.publishedAt | date:'d MMM yyyy' }}</span>
+                </div>
+
+                <h3 class="card-title">{{ item.title }}</h3>
+                <p class="card-summary">{{ item.summary }}</p>
+
+                <div class="card-footer" (click)="$event.stopPropagation()">
+                  <span class="reading-time">
+                    <i class="pi pi-clock"></i> {{ item.readingMinutes }} min
+                  </span>
+                  <div class="card-links">
+                    <button type="button" class="card-read-btn" (click)="openArticleModal(item)">
+                      Leggi <i class="pi pi-angle-right"></i>
+                    </button>
+                    <a [href]="item.link" target="_blank" rel="noopener" class="card-ext-link" title="Apri articolo originale">
+                      <i class="pi pi-external-link"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    } @else {
+      <div class="no-news">
+        <i class="pi pi-inbox"></i>
+        <p>Nessuna notizia trovata per i filtri selezionati.</p>
+        <button type="button" class="reset-news-btn" (click)="resetFilters()">Mostra tutte le notizie</button>
+      </div>
+    }
+  }
+
+  <!-- Modale di lettura rapida articolo -->
+  @if (selectedArticle; as active) {
+    <div class="news-modal-backdrop" (click)="closeArticleModal()" role="dialog" aria-modal="true" [attr.aria-label]="active.title">
+      <div class="news-modal" (click)="$event.stopPropagation()">
+        <button type="button" class="modal-close-btn" (click)="closeArticleModal()" aria-label="Chiudi">
+          <i class="pi pi-times"></i>
+        </button>
+
+        <div class="modal-image-wrap">
+          <img [src]="active.imageUrl" [alt]="active.title" (error)="onImageError($event)" class="modal-image" />
+        </div>
+
+        <div class="modal-content">
+          <div class="article-meta">
+            <span class="cat-badge" [attr.data-cat]="active.category">{{ active.category }}</span>
+            <span class="meta-dot">•</span>
+            <span class="meta-source">{{ active.source }}</span>
+            @if (active.author) {
+              <span class="meta-dot">•</span>
+              <span class="meta-author">di {{ active.author }}</span>
+            }
+            <span class="meta-dot">•</span>
+            <span class="meta-date">{{ active.publishedAt | date:'d MMMM yyyy, HH:mm' }}</span>
+          </div>
+
+          <h2>{{ active.title }}</h2>
+          <p class="modal-lead">{{ active.summary }}</p>
+          @if (active.content && active.content !== active.summary) {
+            <p class="modal-body-text">{{ active.content }}</p>
+          }
+
+          <div class="modal-actions">
+            <a [href]="active.link" target="_blank" rel="noopener" class="modal-full-article-btn">
+              <span>Leggi l'articolo integrale su {{ active.source }}</span>
+              <i class="pi pi-external-link"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

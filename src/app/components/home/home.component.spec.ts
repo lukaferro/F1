@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 
 import { HomeComponent } from './home.component';
 import { Openf1ServiceService } from '../../services/openf1-service';
+import { NewsService, CURATED_F1_NEWS } from '../../services/news.service';
 import { Meeting } from '../../models/meeting';
 
 describe('HomeComponent', () => {
@@ -12,6 +13,9 @@ describe('HomeComponent', () => {
   let openF1Mock: {
     getMeetings: ReturnType<typeof vi.fn>;
     getDrivers: ReturnType<typeof vi.fn>;
+  };
+  let newsMock: {
+    getLatestNews: ReturnType<typeof vi.fn>;
   };
 
   const currentYear = new Date().getFullYear();
@@ -52,12 +56,16 @@ describe('HomeComponent', () => {
       getMeetings: vi.fn().mockResolvedValue([pastMeeting, futureMeeting]),
       getDrivers: vi.fn().mockResolvedValue([])
     };
+    newsMock = {
+      getLatestNews: vi.fn().mockResolvedValue(CURATED_F1_NEWS)
+    };
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
         provideRouter([]),
-        { provide: Openf1ServiceService, useValue: openF1Mock }
+        { provide: Openf1ServiceService, useValue: openF1Mock },
+        { provide: NewsService, useValue: newsMock }
       ]
     }).compileComponents();
 
@@ -111,5 +119,14 @@ describe('HomeComponent', () => {
     expect(text).toContain('Circuiti');
     expect(text).toContain('Piloti');
     expect(text).toContain('Classifiche');
+  });
+
+  it('should render the top 3 latest F1 news cards in Home', async () => {
+    await component.ngOnInit();
+    fixture.detectChanges();
+
+    expect(component.latestNews.length).toBe(3);
+    const newsCards = fixture.debugElement.queryAll(By.css('.home-news-card'));
+    expect(newsCards.length).toBe(3);
   });
 });

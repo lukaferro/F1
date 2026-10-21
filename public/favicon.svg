@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a22" />
+      <stop offset="100%" stop-color="#0d0d12" />
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff1e00" />
+      <stop offset="100%" stop-color="#cc0000" />
+    </linearGradient>
+  </defs>
+
+  <!-- Carbon dark rounded badge -->
+  <rect width="64" height="64" rx="14" fill="url(#bgGrad)" stroke="#2e2e38" stroke-width="2" />
+
+  <!-- Top speed accent bar -->
+  <path d="M10 10 H54 L50 15 H6 Z" fill="url(#redGrad)" />
+
+  <!-- Dynamic F1 Wing / Speed Emblem -->
+  <!-- "F" aerodynamic wing -->
+  <path d="M10 46 L18 22 H40 L37.5 29 H23.5 L22 33.5 H34.5 L32 40.5 H19.5 L17.5 46 Z" fill="#ffffff" />
+
+  <!-- Racing stripe speed slash -->
+  <path d="M35 46 L43 22 H48.5 L40.5 46 Z" fill="url(#redGrad)" />
+
+  <!-- "1" aerodynamic pillar -->
+  <path d="M44 46 L52 22 H57.5 L49.5 46 Z" fill="#e10600" />
+
+  <!-- Bottom checkered kerb accent -->
+  <rect x="10" y="51" width="11" height="3" rx="1" fill="#e10600" />
+  <rect x="24" y="51" width="11" height="3" rx="1" fill="#ffffff" opacity="0.85" />
+  <rect x="38" y="51" width="16" height="3" rx="1" fill="#e10600" />
+</svg>

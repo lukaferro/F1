@@ -1,0 +1,26 @@
+{
+  "/api/rss/motorsport": {
+    "target": "https://it.motorsport.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/rss/motorsport": "/rss/f1/news/"
+    }
+  },
+  "/api/rss/formulapassion": {
+    "target": "https://www.formulapassion.it",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/rss/formulapassion": "/f1/feed"
+    }
+  },
+  "/api/rss/gazzetta": {
+    "target": "https://www.gazzetta.it",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/rss/gazzetta": "/dynamic-feed/rss/section/Formula-1.xml"
+    }
+  }
+}

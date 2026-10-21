@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
+import { NewsService, F1NewsArticle } from '../../services/news.service';
 import { Meeting } from '../../models/meeting';
 import { smallFlagUrl } from '../../utils/country-flags';
 
@@ -32,12 +33,17 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
     minutes: 0,
     seconds: 0
   };
+  latestNews: F1NewsArticle[] = [];
   private timerInterval?: any;
 
   private readonly openF1 = inject(Openf1ServiceService);
+  private readonly newsService = inject(NewsService);
 
   async ngOnInit() {
-    await this.loadSeasonStats();
+    await Promise.all([
+      this.loadSeasonStats(),
+      this.loadLatestNews()
+    ]);
   }
 
   ngOnDestroy(): void {
@@ -56,6 +62,15 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
     video.volume = 0;
     // play() non restituisce sempre una Promise (browser datati, ambiente dei test)
     video.play()?.catch(() => {});
+  }
+
+  private async loadLatestNews(): Promise<void> {
+    try {
+      const all = await this.newsService.getLatestNews();
+      this.latestNews = all.slice(0, 3);
+    } catch {
+      this.latestNews = [];
+    }
   }
 
   private async loadSeasonStats() {

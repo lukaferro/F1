@@ -121,6 +121,34 @@
     </div>
   </section>
 
+  @if (latestNews.length > 0) {
+    <section class="home-news-section">
+      <div class="home-news-header">
+        <h2>Ultime Notizie F1</h2>
+        <a routerLink="/news" class="view-all-news-link">
+          <span>Tutte le News</span>
+          <i class="pi pi-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="home-news-grid">
+        @for (article of latestNews; track article.id) {
+          <a routerLink="/news" class="home-news-card">
+            <div class="home-news-img-wrap">
+              <img [src]="article.imageUrl" [alt]="article.title" loading="lazy" decoding="async" />
+              <span class="home-news-cat">{{ article.category }}</span>
+            </div>
+            <div class="home-news-body">
+              <span class="home-news-date">{{ article.source }} • {{ article.publishedAt | date:'d MMM yyyy' }}</span>
+              <h3>{{ article.title }}</h3>
+              <p>{{ article.summary }}</p>
+            </div>
+          </a>
+        }
+      </div>
+    </section>
+  }
+
   <section class="stats-section">
     <h2>Statistiche F1</h2>
     <div class="stats-container">

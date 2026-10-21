@@ -4,6 +4,7 @@ import { FooterComponent } from "./components/footer/footer.component";
 import { GranPremiStateService } from './services/gran-premi-state.service';
 import { DriversStateService } from './services/drivers-state.service';
 import { StandingsStateService } from './services/standings-state.service';
+import { NewsStateService } from './services/news-state.service';
 import { filter } from 'rxjs';
 
 @Component({
@@ -18,6 +19,7 @@ export class AppComponent implements OnInit {
   private readonly granPremiState = inject(GranPremiStateService);
   private readonly driversState = inject(DriversStateService);
   private readonly standingsState = inject(StandingsStateService);
+  private readonly newsState = inject(NewsStateService);
 
   showBackToTop = false;
   isNavHidden = false;
@@ -55,6 +57,10 @@ export class AppComponent implements OnInit {
     const isDriverDetail = path.startsWith('/drivers/') && path !== '/drivers';
     if (!path.startsWith('/classifiche') && !isDriverDetail) {
       this.standingsState.reset();
+    }
+
+    if (!path.startsWith('/news')) {
+      this.newsState.reset();
     }
   }
 
