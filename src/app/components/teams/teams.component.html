@@ -1,0 +1,199 @@
+<div class="teams-container">
+  <!-- Sidebar Filtri -->
+  <aside class="teams-sidebar">
+    <div class="filter-panel">
+      <div class="filter-panel-header">
+        <h3 class="filter-title">Filtri Scuderie</h3>
+        @if (hasActiveFilters) {
+          <button type="button" class="reset-all-btn" (click)="resetFilters()">
+            <i class="pi pi-filter-slash"></i> Reset
+          </button>
+        }
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Stagione (dal 1958)</label>
+        <p-select
+          [options]="years"
+          [(ngModel)]="selectedYear"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Stagione attuale"
+          (ngModelChange)="onYearChange($event)"
+          class="gp-dropdown"
+          panelStyleClass="gp-dropdown-panel">
+        </p-select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Ordina per</label>
+        <p-select
+          [options]="sortOptions"
+          [(ngModel)]="sortBy"
+          optionLabel="label"
+          optionValue="value"
+          (ngModelChange)="onFilterChange()"
+          class="gp-dropdown"
+          panelStyleClass="gp-dropdown-panel">
+        </p-select>
+      </div>
+
+      <div class="filter-group">
+        <button
+          type="button"
+          class="champions-toggle-btn"
+          [class.active]="onlyChampions"
+          (click)="toggleOnlyChampions()">
+          <i class="pi pi-trophy"></i>
+          <span>Solo Campioni del Mondo</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Contenuto Principale -->
+  <div class="teams-content">
+    <header class="teams-header">
+      <div class="header-left">
+        <h1><i class="pi pi-shield"></i> Scuderie <span class="f1-accent">Formula 1</span></h1>
+        <p>Costruttori, piloti e palmarès della stagione {{ activeSeasonYear }} ({{ filteredTeams.length }} team)</p>
+      </div>
+
+      <div class="header-right">
+        <div class="search-wrap">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            pInputText
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onFilterChange()"
+            placeholder="Cerca scuderia, pilota o motore..."
+            class="teams-search-input" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Loading -->
+    @if (loading) {
+      <div class="teams-grid" aria-busy="true">
+        @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+          <div class="team-card skeleton-card">
+            <div class="skeleton" style="height: 92px; border-radius: 0;"></div>
+            <div style="padding: 1.5rem;">
+              <div class="skeleton skeleton-line" style="width: 65%; height: 22px; margin-bottom: 1rem;"></div>
+              <div class="skeleton skeleton-line" style="width: 90%; margin-bottom: 0.75rem;"></div>
+              <div class="skeleton skeleton-line" style="width: 75%;"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Errore -->
+    @if (error && !loading) {
+      <app-api-unavailable source="jolpica" (retry)="retryLoad()"></app-api-unavailable>
+    }
+
+    <!-- Griglia Scuderie -->
+    @if (!loading && !error) {
+      @if (filteredTeams.length > 0) {
+        <div class="teams-grid">
+          @for (team of filteredTeams; track team.constructorId) {
+            <article class="team-card" [style.border-top-color]="'#' + team.color">
+              <!-- Testata Scuderia -->
+              <div
+                class="team-card-header"
+                [style.background]="'linear-gradient(135deg, #' + team.color + '2E 0%, #' + team.color + '0D 100%)'">
+                <div class="team-pos-badge">P{{ team.position }}</div>
+
+                <div class="team-title-wrap">
+                  <div class="team-name-row">
+                    @if (team.flag) {
+                      <img [src]="team.flag" [alt]="team.nationality" class="team-flag" />
+                    }
+                    <h2>{{ team.name }}</h2>
+                  </div>
+                  @if (team.base) {
+                    <span class="team-base"><i class="pi pi-map-marker"></i> {{ team.base }}</span>
+                  } @else {
+                    <span class="team-base">{{ team.nationality }}</span>
+                  }
+                </div>
+
+                @if (team.logo) {
+                  <div class="team-logo-box" [class.light-box]="team.logo.onLight">
+                    <img [src]="team.logo.url" [alt]="team.name" (error)="team.logo = undefined" class="team-logo-img" />
+                  </div>
+                }
+              </div>
+
+              <!-- Corpo Scuderia -->
+              <div class="team-card-body">
+                <!-- Statistiche chiave -->
+                <div class="team-stats-row">
+                  <div class="team-stat-pill">
+                    <span class="stat-val">{{ team.points }}</span>
+                    <span class="stat-lbl">Punti {{ activeSeasonYear }}</span>
+                  </div>
+                  <div class="team-stat-pill">
+                    <span class="stat-val">{{ team.seasonWins }}</span>
+                    <span class="stat-lbl">Vittorie {{ activeSeasonYear }}</span>
+                  </div>
+                  <div class="team-stat-pill" [class.has-titles]="team.worldTitles > 0">
+                    <span class="stat-val">
+                      @if (team.worldTitles > 0) {
+                        <i class="pi pi-trophy"></i>
+                      }
+                      {{ team.worldTitles }}
+                    </span>
+                    <span class="stat-lbl">Mondiali Costruttori</span>
+                  </div>
+                </div>
+
+                @if (team.worldTitles > 0) {
+                  <div class="team-titles-years" [title]="team.titleYears.join(', ')">
+                    <i class="pi pi-star-fill"></i>
+                    <span>Titoli iridati: {{ team.titleYears.join(', ') }}</span>
+                  </div>
+                }
+
+                @if (team.powerUnit || team.debutYear) {
+                  <div class="team-tech-meta">
+                    @if (team.powerUnit) {
+                      <span><strong>Power Unit:</strong> {{ team.powerUnit }}</span>
+                    }
+                    @if (team.debutYear) {
+                      <span><strong>Debutto F1:</strong> {{ team.debutYear }}</span>
+                    }
+                  </div>
+                }
+
+                <!-- Piloti della stagione -->
+                @if (team.drivers.length > 0) {
+                  <div class="team-drivers-section">
+                    <span class="drivers-section-label">Piloti {{ activeSeasonYear }}</span>
+                    <div class="team-drivers-list">
+                      @for (driver of team.drivers; track driver.driverId) {
+                        <a
+                          [routerLink]="['/drivers', 'storico', driver.driverId]"
+                          class="team-driver-chip">
+                          <span class="driver-chip-name">{{ driver.fullName }}</span>
+                          <span class="driver-chip-pts">{{ driver.points }} pt</span>
+                        </a>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="no-teams">
+          <i class="pi pi-info-circle"></i>
+          <p>Nessuna scuderia trovata con i filtri selezionati.</p>
+        </div>
+      }
+    }
+  </div>
+</div>

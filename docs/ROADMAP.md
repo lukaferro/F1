@@ -41,15 +41,19 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ## 5. Sezione News F1 & Ultime dal Paddock (Completato) ✅
 - **Pagina dedicata `/news`**:
-  - Feed notizie Formula 1 in lingua italiana con caching e articoli di approfondimento di fallback.
+  - Feed RSS XML reali in lingua italiana (*La Gazzetta dello Sport*, *Motorsport.com Italia*, *FormulaPassion*) con parser nativo e caching.
   - Notizia in **Primo Piano (Hero Article)** e griglia notizie con filtro per categoria (*Tutte*, *Gare & Paddock*, *Scuderie*, *Piloti*, *Tecnica*) e barra di ricerca testuale.
   - Modale di lettura rapida dell'articolo con link diretto alla fonte originale.
 - **Anteprima in Home**: Sezione *"Ultime Notizie F1"* con le 3 notizie più recenti e collegamento rapido a `/news`.
 
 ---
 
-## 6. Sezione Scuderie / Costruttori (Da fare) 🏎️
-- Pagina dedicata alle scuderie della stagione in corso e ai costruttori storici della Formula 1 (Ferrari, McLaren, Williams, Red Bull, Mercedes, ecc.) con colori ufficiali, palmarès, mondiali vinti e piloti.
+## 6. Sezione Scuderie / Costruttori (Completato) ✅
+- **Pagina dedicata `/scuderie`**:
+  - Esplorazione di tutte le scuderie della stagione in corso e dell'archivio storico dal 1958 a oggi.
+  - Card scuderia con colori e loghi ufficiali, bandiera nazionale, sede, Power Unit, anno di debutto, punti e vittorie di stagione.
+  - **Palmarès Mondiale Costruttori** (numero di titoli vinti ed elenco degli anni iridati) e filtro rapido *"Solo Campioni del Mondo"*.
+  - Elenco dei **piloti della stagione** per ciascuna scuderia con punti e link diretto alla scheda carriera.
 
 ---
 

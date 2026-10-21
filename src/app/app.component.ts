@@ -5,6 +5,7 @@ import { GranPremiStateService } from './services/gran-premi-state.service';
 import { DriversStateService } from './services/drivers-state.service';
 import { StandingsStateService } from './services/standings-state.service';
 import { NewsStateService } from './services/news-state.service';
+import { TeamsStateService } from './services/teams-state.service';
 import { filter } from 'rxjs';
 
 @Component({
@@ -20,6 +21,7 @@ export class AppComponent implements OnInit {
   private readonly driversState = inject(DriversStateService);
   private readonly standingsState = inject(StandingsStateService);
   private readonly newsState = inject(NewsStateService);
+  private readonly teamsState = inject(TeamsStateService);
 
   showBackToTop = false;
   isNavHidden = false;
@@ -57,6 +59,10 @@ export class AppComponent implements OnInit {
     const isDriverDetail = path.startsWith('/drivers/') && path !== '/drivers';
     if (!path.startsWith('/classifiche') && !isDriverDetail) {
       this.standingsState.reset();
+    }
+
+    if (!path.startsWith('/scuderie') && !isDriverDetail) {
+      this.teamsState.reset();
     }
 
     if (!path.startsWith('/news')) {

@@ -9,6 +9,7 @@ import { StandingsComponent } from './components/standings/standings.component';
 import { HistoricDriverDetailComponent } from './components/historic-driver-detail/historic-driver-detail.component';
 import { HistoricGranPremiDetailComponent } from './components/historic-gran-premi-detail/historic-gran-premi-detail.component';
 import { NewsComponent } from './components/news/news.component';
+import { TeamsComponent } from './components/teams/teams.component';
 
 export const routes: Routes = [
   {
@@ -40,6 +41,10 @@ export const routes: Routes = [
   {
     path: 'drivers/:id',
     component: DriverDetailComponent,
+  },
+  {
+    path: 'scuderie',
+    component: TeamsComponent,
   },
   {
     path: 'circuits',
