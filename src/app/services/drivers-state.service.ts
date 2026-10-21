@@ -6,4 +6,9 @@ import { Injectable } from '@angular/core';
 export class DriversStateService {
   selectedYear: number | null = null;
   searchQuery: string = '';
+
+  reset(): void {
+    this.selectedYear = null;
+    this.searchQuery = '';
+  }
 }

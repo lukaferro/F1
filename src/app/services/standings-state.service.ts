@@ -6,4 +6,9 @@ import { Injectable } from '@angular/core';
 export class StandingsStateService {
   selectedSeason: number | null = null;
   tab: 'drivers' | 'constructors' = 'drivers';
+
+  reset(): void {
+    this.selectedSeason = null;
+    this.tab = 'drivers';
+  }
 }

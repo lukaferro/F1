@@ -8,4 +8,11 @@ export class GranPremiStateService {
   selectedCountry: string | null = null;
   selectedCircuit: string | null = null;
   loadedHistoricYears: number[] = [];
+
+  reset(): void {
+    this.selectedYear = null;
+    this.selectedCountry = null;
+    this.selectedCircuit = null;
+    this.loadedHistoricYears = [];
+  }
 }

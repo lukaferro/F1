@@ -45,6 +45,15 @@
       </div>
 
       <div class="header-right">
+        <button
+          type="button"
+          class="compare-toggle-btn"
+          [class.active]="showComparison"
+          (click)="toggleComparison()">
+          <i class="pi" [class.pi-sliders-h]="!showComparison" [class.pi-times]="showComparison"></i>
+          <span>{{ showComparison ? 'Chiudi Testa a Testa' : 'Testa a Testa' }}</span>
+        </button>
+
         <span class="p-input-icon-left search-container">
           <i class="pi pi-search"></i>
           <input
@@ -57,6 +66,11 @@
         </span>
       </div>
     </div>
+
+    <!-- Pannello Confronto Piloti Testa a Testa -->
+    @if (showComparison) {
+      <app-driver-comparison></app-driver-comparison>
+    }
 
     <!-- Loading -->
     @if (loading) {

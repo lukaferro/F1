@@ -1,0 +1,187 @@
+<section class="h2h-panel" aria-label="Confronto Piloti Testa a Testa">
+  <div class="h2h-top-bar">
+    <div class="h2h-title-block">
+      <h2><i class="pi pi-sliders-h"></i> Confronto Piloti <span class="h2h-highlight">Testa a Testa</span></h2>
+      <p>Metti a confronto le statistiche di carriera di due piloti di Formula 1 dal 1950 a oggi</p>
+    </div>
+
+    <div class="h2h-presets" role="group" aria-label="Sfide storiche rapide">
+      @for (preset of presets; track preset.label) {
+        <button
+          type="button"
+          class="preset-chip"
+          [class.active]="isPresetActive(preset)"
+          (click)="selectPreset(preset)"
+          [title]="preset.subtitle">
+          <span class="preset-label">{{ preset.label }}</span>
+          <span class="preset-sub">{{ preset.subtitle }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Selettori dei due piloti -->
+  <div class="h2h-selectors">
+    <div class="selector-box selector-left">
+      <label class="selector-label">Pilota 1 (Angolo Rosso)</label>
+      <p-select
+        [options]="allDrivers"
+        [(ngModel)]="leftDriverId"
+        optionLabel="fullName"
+        optionValue="driverId"
+        [filter]="true"
+        filterBy="fullName,nationality"
+        filterPlaceholder="Cerca pilota..."
+        placeholder="Seleziona primo pilota"
+        (ngModelChange)="onDriverChange()"
+        class="gp-dropdown h2h-select"
+        panelStyleClass="gp-dropdown-panel">
+      </p-select>
+    </div>
+
+    <button
+      type="button"
+      class="swap-drivers-btn"
+      (click)="swapDrivers()"
+      title="Inverti i due piloti"
+      aria-label="Inverti i due piloti">
+      <i class="pi pi-arrow-right-arrow-left"></i>
+    </button>
+
+    <div class="selector-box selector-right">
+      <label class="selector-label">Pilota 2 (Angolo Ciano)</label>
+      <p-select
+        [options]="allDrivers"
+        [(ngModel)]="rightDriverId"
+        optionLabel="fullName"
+        optionValue="driverId"
+        [filter]="true"
+        filterBy="fullName,nationality"
+        filterPlaceholder="Cerca pilota..."
+        placeholder="Seleziona secondo pilota"
+        (ngModelChange)="onDriverChange()"
+        class="gp-dropdown h2h-select"
+        panelStyleClass="gp-dropdown-panel">
+      </p-select>
+    </div>
+  </div>
+
+  @if (loadingComparison) {
+    <div class="h2h-loading" aria-busy="true">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Caricamento statistiche di carriera a confronto...</span>
+    </div>
+  }
+
+  @if (error && !loadingComparison) {
+    <div class="h2h-error">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>{{ error }}</span>
+      <button type="button" class="retry-btn" (click)="loadComparison()">Riprova</button>
+    </div>
+  }
+
+  @if (!loadingComparison && !error && leftDriver && rightDriver) {
+    <div class="h2h-arena">
+      <!-- Schede sintetiche dei due piloti -->
+      <div class="h2h-fighters">
+        <div class="fighter-card fighter-left">
+          <div class="fighter-avatar-wrap">
+            @if (leftDriver.photo) {
+              <img [src]="leftDriver.photo" (error)="leftDriver.photo = undefined" [alt]="leftDriver.info.fullName" class="fighter-avatar" />
+            } @else {
+              <div class="fighter-initials left-bg">{{ leftDriver.initials }}</div>
+            }
+          </div>
+          <div class="fighter-meta">
+            <div class="fighter-name-row">
+              @if (leftDriver.flag) {
+                <img [src]="leftDriver.flag" [alt]="leftDriver.info.nationality || ''" class="fighter-flag" />
+              }
+              <h3>{{ leftDriver.info.fullName }}</h3>
+            </div>
+            @if (leftDriver.championships > 0) {
+              <div class="fighter-titles" [title]="leftDriver.championshipYears.join(', ')">
+                <i class="pi pi-trophy"></i>
+                <span>{{ leftDriver.championships }}x Campione del Mondo ({{ leftDriver.championshipYears.join(', ') }})</span>
+              </div>
+            } @else {
+              <div class="fighter-titles muted">
+                <span>Debutto: {{ leftDriver.totals.debut?.season || 'N/D' }}</span>
+              </div>
+            }
+            <a class="fighter-profile-link" [routerLink]="['/drivers', 'storico', leftDriver.info.driverId]">
+              Scheda carriera <i class="pi pi-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="vs-badge" aria-hidden="true">VS</div>
+
+        <div class="fighter-card fighter-right">
+          <div class="fighter-meta right-align">
+            <div class="fighter-name-row right-row">
+              <h3>{{ rightDriver.info.fullName }}</h3>
+              @if (rightDriver.flag) {
+                <img [src]="rightDriver.flag" [alt]="rightDriver.info.nationality || ''" class="fighter-flag" />
+              }
+            </div>
+            @if (rightDriver.championships > 0) {
+              <div class="fighter-titles" [title]="rightDriver.championshipYears.join(', ')">
+                <i class="pi pi-trophy"></i>
+                <span>{{ rightDriver.championships }}x Campione del Mondo ({{ rightDriver.championshipYears.join(', ') }})</span>
+              </div>
+            } @else {
+              <div class="fighter-titles muted">
+                <span>Debutto: {{ rightDriver.totals.debut?.season || 'N/D' }}</span>
+              </div>
+            }
+            <a class="fighter-profile-link" [routerLink]="['/drivers', 'storico', rightDriver.info.driverId]">
+              Scheda carriera <i class="pi pi-arrow-right"></i>
+            </a>
+          </div>
+          <div class="fighter-avatar-wrap">
+            @if (rightDriver.photo) {
+              <img [src]="rightDriver.photo" (error)="rightDriver.photo = undefined" [alt]="rightDriver.info.fullName" class="fighter-avatar" />
+            } @else {
+              <div class="fighter-initials right-bg">{{ rightDriver.initials }}</div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Barre comparative orizzontali -->
+      <div class="h2h-metrics">
+        @for (metric of metrics; track metric.key) {
+          <div class="metric-row" [attr.data-metric]="metric.key">
+            <div class="metric-header">
+              <span class="metric-val val-left" [class.is-winner]="metric.winner === 'left'">
+                {{ metric.leftDisplay }}
+              </span>
+              <span class="metric-label">
+                <i [class]="metric.icon"></i>
+                {{ metric.label }}
+              </span>
+              <span class="metric-val val-right" [class.is-winner]="metric.winner === 'right'">
+                {{ metric.rightDisplay }}
+              </span>
+            </div>
+
+            <div class="metric-bar-track" role="img" [attr.aria-label]="metric.label + ': ' + leftDriver.info.fullName + ' ' + metric.leftDisplay + ' vs ' + rightDriver.info.fullName + ' ' + metric.rightDisplay">
+              <div
+                class="metric-bar-fill fill-left"
+                [class.bar-winner]="metric.winner === 'left'"
+                [style.width.%]="metric.leftShare">
+              </div>
+              <div
+                class="metric-bar-fill fill-right"
+                [class.bar-winner]="metric.winner === 'right'"
+                [style.width.%]="metric.rightShare">
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>

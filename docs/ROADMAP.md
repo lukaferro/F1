@@ -28,11 +28,11 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-## 4. Confronto Piloti Testa a Testa (Head-to-Head) (Da fare) ⚔️
-- Nuova sezione o modale di confronto tra due piloti (storici o moderni, es. *Senna vs Prost*, *Schumacher vs Hamilton*, *Verstappen vs Leclerc*).
+## 4. Confronto Piloti Testa a Testa (Head-to-Head) (Completato) ✅
+- Sezione di confronto interattiva tra due piloti qualsiasi dal 1950 a oggi con sfide rapide preimpostate (*Senna vs Prost*, *Schumacher vs Hamilton*, *Verstappen vs Leclerc*, *Alonso vs Vettel*, *Lauda vs Hunt*).
 - Statistiche comparative a barre:
-  - Titoli Mondiali vinti
+  - Titoli Mondiali vinti (con anni dei titoli)
   - Gran Premi corsi e vittorie
+  - Percentuale di vittorie su gare disputate
   - Podi totali e Pole Position
-  - Giri veloci in gara
-  - Percentuale di vittorie su gare disputate.
+  - Giri veloci in gara.

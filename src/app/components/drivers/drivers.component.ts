@@ -10,6 +10,7 @@ import { JolpicaService, JolpicaDriverInfo } from '../../services/jolpica.servic
 import { WikipediaService } from '../../services/wikipedia.service';
 import { DriversStateService } from '../../services/drivers-state.service';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
+import { DriverComparisonComponent } from '../driver-comparison/driver-comparison.component';
 import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
 import { TEAM_COLORS } from '../../utils/team-colors';
 import { constructorColor } from '../../utils/constructor-branding';
@@ -45,7 +46,16 @@ const getInitials = (fullName: string): string => {
 @Component({
   selector: 'app-drivers',
   standalone: true,
-  imports: [FormsModule, RouterModule, CardModule, ButtonModule, SelectModule, InputTextModule, ApiUnavailableComponent],
+  imports: [
+    FormsModule,
+    RouterModule,
+    CardModule,
+    ButtonModule,
+    SelectModule,
+    InputTextModule,
+    ApiUnavailableComponent,
+    DriverComparisonComponent
+  ],
   templateUrl: './drivers.component.html',
   styleUrls: ['./drivers.component.css']
 })
@@ -64,6 +74,7 @@ export class DriversComponent implements OnInit {
   loading = false;
   error?: string;
   errorSource: 'openf1' | 'jolpica' = 'openf1';
+  showComparison = false;
 
   years: YearOption[] = [];
   selectedYear: number | null = null;
@@ -110,6 +121,10 @@ export class DriversComponent implements OnInit {
     this.selectedYear = this.stateService.selectedYear;
     this.searchQuery = this.stateService.searchQuery;
     await this.loadAllDrivers();
+  }
+
+  toggleComparison(): void {
+    this.showComparison = !this.showComparison;
   }
 
   // Foto ufficiali ad alta risoluzione dei piloti della griglia attuale (chiave: nome completo in maiuscolo)
