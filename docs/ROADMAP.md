@@ -57,8 +57,10 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-## 7. Strategie Gomme & Stint nei dettagli Gran Premio (Da fare) 🛞
-- Visualizzazione grafica delle mescole utilizzate giro per giro (*Soft*, *Medium*, *Hard*, *Inter*, *Wet*) e dei pit-stop per ogni pilota nel dettaglio dei Gran Premi moderni tramite OpenF1 (`/stints`).
+## 7. Strategie Gomme & Stint nei dettagli Gran Premio (Completato) ✅
+- **Riepilogo KPI Strategie Gomme**: Card di sintesi sopra la tabella stint con *Mescola più usata (% giri)*, *Stint più lungo (pilota, mescola e giri)* e *Media cambi gomme per pilota*.
+- **Dettaglio Soste e Giri Stint**: Colonna dedicata con numero di soste, giri esatti di pit-stop (`G15, G38`) e conteggio giri direttamente nei segmenti della barra grafica.
+- **Pit Stop più veloce della sessione**: Banner di evidenziazione e badge `BEST` sul pit-stop più rapido registrato nella sessione.
 
 ---
 

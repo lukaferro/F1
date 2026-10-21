@@ -22,17 +22,33 @@ import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.comp
 type SessionTab = 'results' | 'stints' | 'weather' | 'pits' | 'overtakes' | 'radio';
 
 // Un segmento della barra della strategia gomme
-interface TyreSegment {
+export interface TyreSegment {
   compound: string;   // classe CSS: soft, medium, hard, intermediate, wet
+  compoundLabel: string;
   short: string;      // iniziale mostrata nel segmento
+  laps: number;       // numero di giri percorsi nello stint
+  lapStart: number;
+  lapEnd: number;
   widthPct: number;   // larghezza in proporzione ai giri della sessione
   tooltip: string;
 }
 
-interface GroupedStint {
+export interface GroupedStint {
   driver_number: number;
   positionLabel: string;
+  stopsCount: number;
+  pitLapsLabel: string;
+  totalLaps: number;
   segments: TyreSegment[];
+}
+
+export interface StintSessionSummary {
+  mostUsedCompound: string;
+  mostUsedPct: number;
+  avgStops: string;
+  longestStintDriver: string;
+  longestStintCompound: string;
+  longestStintLaps: number;
 }
 
 const COMPOUND_LABELS: Record<string, string> = {
@@ -68,6 +84,8 @@ export class GranPremiDetailComponent implements OnInit {
   overtakes: { [session_key: number]: Overtake[] } = {};
   // Dati già elaborati per il template (calcolati una volta al caricamento, non a ogni aggiornamento)
   groupedStints: { [session_key: number]: GroupedStint[] } = {};
+  stintSummaries: { [session_key: number]: StintSessionSummary | null } = {};
+  fastestPitBySession: { [session_key: number]: Pit | null } = {};
   filteredWeather: { [session_key: number]: Weather[] } = {};
 
   // Tab di ogni sessione: i dati vengono scaricati solo quando il tab viene aperto,
@@ -478,8 +496,8 @@ export class GranPremiDetailComponent implements OnInit {
     return filtered;
   }
 
-  // Raggruppa gli stint per pilota con la loro posizione finale
-  private groupStints(stintsData: Stint[], results: Result[]): GroupedStint[] {
+  // Raggruppa gli stint per pilota con la loro posizione finale, giri percorsi e soste
+  groupStints(stintsData: Stint[], results: Result[]): GroupedStint[] {
     const totalLaps = Math.max(1, ...stintsData.map(st => st.lap_end ?? st.lap_start ?? 0));
 
     const byDriver = new Map<number, Stint[]>();
@@ -501,23 +519,100 @@ export class GranPremiDetailComponent implements OnInit {
         const positionLabel = !result ? '-'
           : result.dsq ? 'DSQ' : result.dnf ? 'DNF' : result.dns ? 'DNS' : String(result.position ?? '-');
 
-        const segments = [...stints]
-          .sort((a, b) => a.stint_number - b.stint_number)
-          .map(st => {
-            const lapEnd = st.lap_end ?? st.lap_start;
-            const laps = Math.max(1, lapEnd - st.lap_start + 1);
-            const compound = (st.compound || 'unknown').toLowerCase();
-            const name = COMPOUND_LABELS[compound] ?? st.compound ?? '?';
-            return {
-              compound,
-              short: name.charAt(0).toUpperCase(),
-              widthPct: (laps / totalLaps) * 100,
-              tooltip: `Stint ${st.stint_number} · ${name} · giri ${st.lap_start}–${lapEnd} (${laps}) · gomma usata da ${st.tyre_age_at_start} giri`
-            };
-          });
+        const sortedStints = [...stints].sort((a, b) => a.stint_number - b.stint_number);
+        const segments: TyreSegment[] = sortedStints.map(st => {
+          const lapStart = st.lap_start ?? 1;
+          const lapEnd = st.lap_end ?? lapStart;
+          const laps = Math.max(1, lapEnd - lapStart + 1);
+          const compound = (st.compound || 'unknown').toLowerCase();
+          const name = COMPOUND_LABELS[compound] ?? st.compound ?? '?';
+          return {
+            compound,
+            compoundLabel: name,
+            short: name.charAt(0).toUpperCase(),
+            laps,
+            lapStart,
+            lapEnd,
+            widthPct: (laps / totalLaps) * 100,
+            tooltip: `Stint ${st.stint_number} · ${name} · giri ${lapStart}–${lapEnd} (${laps} giri) · gomma con ${st.tyre_age_at_start ?? 0} giri all'inizio`
+          };
+        });
 
-        return { driver_number: driverNumber, positionLabel, segments };
+        const stopsCount = Math.max(0, segments.length - 1);
+        const changeLaps = segments.slice(0, -1).map(s => `G${s.lapEnd}`);
+        const pitLapsLabel = stopsCount > 0 ? changeLaps.join(', ') : '0 soste';
+        const driverTotalLaps = segments.reduce((sum, s) => sum + s.laps, 0);
+
+        return {
+          driver_number: driverNumber,
+          positionLabel,
+          stopsCount,
+          pitLapsLabel,
+          totalLaps: driverTotalLaps,
+          segments
+        };
       });
+  }
+
+  computeStintSummary(grouped: GroupedStint[]): StintSessionSummary | null {
+    if (!grouped.length) return null;
+
+    const compoundLaps = new Map<string, number>();
+    let totalAllLaps = 0;
+    let totalStops = 0;
+    let longestStintLaps = 0;
+    let longestStintDriver = '-';
+    let longestStintCompound = '-';
+
+    for (const driverRow of grouped) {
+      totalStops += driverRow.stopsCount;
+      for (const seg of driverRow.segments) {
+        totalAllLaps += seg.laps;
+        compoundLaps.set(seg.compoundLabel, (compoundLaps.get(seg.compoundLabel) ?? 0) + seg.laps);
+        if (seg.laps > longestStintLaps) {
+          longestStintLaps = seg.laps;
+          longestStintDriver = this.getDriverName(driverRow.driver_number);
+          longestStintCompound = seg.compoundLabel;
+        }
+      }
+    }
+
+    let mostUsedCompound = '-';
+    let mostUsedLaps = 0;
+    for (const [comp, laps] of compoundLaps.entries()) {
+      if (laps > mostUsedLaps) {
+        mostUsedLaps = laps;
+        mostUsedCompound = comp;
+      }
+    }
+
+    const mostUsedPct = totalAllLaps > 0 ? Math.round((mostUsedLaps / totalAllLaps) * 100) : 0;
+    const avgStops = (totalStops / grouped.length).toFixed(1);
+
+    return {
+      mostUsedCompound,
+      mostUsedPct,
+      avgStops,
+      longestStintDriver,
+      longestStintCompound,
+      longestStintLaps
+    };
+  }
+
+  computeFastestPit(pitsList: Pit[]): Pit | null {
+    const valid = pitsList.filter(p => typeof p.pit_duration === 'number' && p.pit_duration > 0);
+    if (!valid.length) return null;
+    return valid.reduce((min, cur) => (cur.pit_duration < min.pit_duration ? cur : min), valid[0]);
+  }
+
+  isFastestPit(sessionKey: number, pit: Pit): boolean {
+    const fastest = this.fastestPitBySession[sessionKey];
+    if (!fastest) return false;
+    return (
+      fastest.driver_number === pit.driver_number &&
+      fastest.lap_number === pit.lap_number &&
+      fastest.pit_duration === pit.pit_duration
+    );
   }
 
   async loadMeeting(id: number) {
@@ -672,16 +767,21 @@ export class GranPremiDetailComponent implements OnInit {
           // la posizione finale serve per ordinare i piloti
           const [stints] = await Promise.all([orEmpty(this.openF1Service.getStints(sessionKey)), this.loadTab(sessionKey, 'results')]);
           this.stints[sessionKey] = stints;
-          this.groupedStints[sessionKey] = this.groupStints(stints, this.sessionResultsNormalized[sessionKey] ?? []);
+          const grouped = this.groupStints(stints, this.sessionResultsNormalized[sessionKey] ?? []);
+          this.groupedStints[sessionKey] = grouped;
+          this.stintSummaries[sessionKey] = this.computeStintSummary(grouped);
           break;
         }
         case 'weather':
           this.weather[sessionKey] = await orEmpty(this.openF1Service.getWeather(sessionKey));
           this.filteredWeather[sessionKey] = this.filterWeather(this.weather[sessionKey]);
           break;
-        case 'pits':
-          this.pits[sessionKey] = await orEmpty(this.openF1Service.getPits(sessionKey));
+        case 'pits': {
+          const pitsList = await orEmpty(this.openF1Service.getPits(sessionKey));
+          this.pits[sessionKey] = pitsList;
+          this.fastestPitBySession[sessionKey] = this.computeFastestPit(pitsList);
           break;
+        }
         case 'overtakes':
           this.overtakes[sessionKey] = await orEmpty(this.openF1Service.getOvertakes(sessionKey));
           break;
@@ -723,6 +823,4 @@ export class GranPremiDetailComponent implements OnInit {
 
     return [...finished, ...dsqLabeled, ...retiredLabeled];
   }
-
-
 }

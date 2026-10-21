@@ -4,7 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { GranPremiDetailComponent } from './gran-premi-detail.component';
-import { Openf1ServiceService } from '../../services/openf1-service';
+import { Openf1ServiceService, Stint, Result, Pit } from '../../services/openf1-service';
 import { Meeting } from '../../models/meeting';
 
 describe('GranPremiDetailComponent', () => {
@@ -14,7 +14,6 @@ describe('GranPremiDetailComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [GranPremiDetailComponent],
-      // router e HTTP finti: i componenti li usano, ma nei test non devono chiamare l'API vera
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()]
     })
     .compileComponents();
@@ -95,5 +94,42 @@ describe('GranPremiDetailComponent', () => {
     expect(el.textContent).toContain('Bahrain Grand Prix');
     expect(el.textContent).toContain('Gara successiva (Round 3)');
     expect(el.textContent).toContain('Australian Grand Prix');
+  });
+
+  it('should compute grouped tyre stints, stop counts, and session stint summary', () => {
+    component.drivers = [
+      { driver_number: 16, broadcast_name: 'C LECLERC', full_name: 'Charles Leclerc', name_acronym: 'LEC', team_name: 'Ferrari', team_color: 'ED1131', first_name: 'Charles', last_name: 'Leclerc', country_code: 'MON' }
+    ];
+
+    const stints: Stint[] = [
+      { compound: 'MEDIUM', driver_number: 16, lap_start: 1, lap_end: 15, meeting_key: 1201, session_key: 9001, stint_number: 1, tyre_age_at_start: 0 },
+      { compound: 'HARD', driver_number: 16, lap_start: 16, lap_end: 53, meeting_key: 1201, session_key: 9001, stint_number: 2, tyre_age_at_start: 0 }
+    ];
+    const results: Result[] = [
+      { driver_number: 16, broadcast_name: 'C LECLERC', position: 1, grid_position: 4, status: 'Finished', points: 25, team_name: 'Ferrari', team_color: 'ED1131' }
+    ];
+
+    const grouped = component.groupStints(stints, results);
+    expect(grouped.length).toBe(1);
+    expect(grouped[0].stopsCount).toBe(1);
+    expect(grouped[0].pitLapsLabel).toBe('G15');
+    expect(grouped[0].segments[0].laps).toBe(15);
+    expect(grouped[0].segments[1].laps).toBe(38);
+
+    const summary = component.computeStintSummary(grouped)!;
+    expect(summary.mostUsedCompound).toBe('Hard');
+    expect(summary.longestStintLaps).toBe(38);
+    expect(summary.longestStintDriver).toBe('C. Leclerc');
+  });
+
+  it('should identify the fastest pit stop of the session', () => {
+    const pits: Pit[] = [
+      { date: '2025-03-02T15:30:00Z', driver_number: 1, lap_number: 18, meeting_key: 1201, pit_duration: 24.5, session_key: 9001 },
+      { date: '2025-03-02T15:32:00Z', driver_number: 16, lap_number: 19, meeting_key: 1201, pit_duration: 21.8, session_key: 9001 }
+    ];
+
+    const fastest = component.computeFastestPit(pits);
+    expect(fastest?.driver_number).toBe(16);
+    expect(fastest?.pit_duration).toBe(21.8);
   });
 });

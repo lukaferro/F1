@@ -256,6 +256,22 @@
                         @if (!groupedStints[session.session_key]?.length) {
                           <p class="tab-status">Dati sulle gomme non disponibili per questa sessione.</p>
                         }
+                        @if (stintSummaries[session.session_key]; as summary) {
+                          <div class="stint-kpi-grid">
+                            <div class="stint-kpi-card">
+                              <span class="stint-kpi-lbl">Mescola più usata</span>
+                              <span class="stint-kpi-val">{{ summary.mostUsedCompound }} <small>({{ summary.mostUsedPct }}% giri)</small></span>
+                            </div>
+                            <div class="stint-kpi-card">
+                              <span class="stint-kpi-lbl">Stint più lungo</span>
+                              <span class="stint-kpi-val">{{ summary.longestStintDriver }} <small>({{ summary.longestStintCompound }} · {{ summary.longestStintLaps }}g)</small></span>
+                            </div>
+                            <div class="stint-kpi-card">
+                              <span class="stint-kpi-lbl">Media cambi gomme</span>
+                              <span class="stint-kpi-val">{{ summary.avgStops }} <small>soste / pilota</small></span>
+                            </div>
+                          </div>
+                        }
                         @if (groupedStints[session.session_key]?.length) {
                           <div class="tyre-legend">
                             <span class="tyre-legend-item"><span class="tyre-dot soft"></span>Soft</span>
@@ -263,17 +279,18 @@
                             <span class="tyre-legend-item"><span class="tyre-dot hard"></span>Hard</span>
                             <span class="tyre-legend-item"><span class="tyre-dot intermediate"></span>Intermedie</span>
                             <span class="tyre-legend-item"><span class="tyre-dot wet"></span>Da bagnato</span>
-                            <span class="tyre-legend-hint">Passa il mouse su un segmento per i dettagli</span>
+                            <span class="tyre-legend-hint">Ogni blocco indica mescola e giri percorsi nello stint</span>
                           </div>
                         }
                         @if (groupedStints[session.session_key]?.length) {
                           <p-table [value]="groupedStints[session.session_key]" styleClass="compact-table">
                             <ng-template pTemplate="header">
                               <tr>
-                                <th style="width: 8%;">Pos</th>
-                                <th style="width: 24%;">Pilota</th>
-                                <th style="width: 16%;">Team</th>
-                                <th style="width: 52%;">Strategia gomme</th>
+                                <th style="width: 7%;">Pos</th>
+                                <th style="width: 22%;">Pilota</th>
+                                <th style="width: 15%;">Team</th>
+                                <th style="width: 14%;">Soste</th>
+                                <th style="width: 42%;">Strategia gomme &amp; Stint</th>
                               </tr>
                             </ng-template>
                             <ng-template pTemplate="body" let-driverStint>
@@ -287,10 +304,20 @@
                                 </td>
                                 <td>{{ getDriverTeam(driverStint.driver_number) }}</td>
                                 <td>
+                                  <div class="stops-cell">
+                                    <span class="stops-badge">{{ driverStint.stopsCount }} {{ driverStint.stopsCount === 1 ? 'sosta' : 'soste' }}</span>
+                                    @if (driverStint.stopsCount > 0) {
+                                      <span class="stops-laps">{{ driverStint.pitLapsLabel }}</span>
+                                    }
+                                  </div>
+                                </td>
+                                <td>
                                   <div class="tyre-bar">
                                     @for (seg of driverStint.segments; track seg) {
                                       <div class="tyre-segment" [ngClass]="seg.compound"
-                                      [style.width.%]="seg.widthPct" [title]="seg.tooltip">{{ seg.widthPct >= 4 ? seg.short : '' }}</div>
+                                        [style.width.%]="seg.widthPct" [title]="seg.tooltip">
+                                        {{ seg.widthPct >= 14 ? (seg.short + ' · ' + seg.laps + 'g') : (seg.widthPct >= 4 ? seg.short : '') }}
+                                      </div>
                                     }
                                   </div>
                                 </td>
@@ -358,14 +385,24 @@
                         @if (!pits[session.session_key]?.length) {
                           <p class="tab-status">Nessun pit stop in questa sessione.</p>
                         }
+                        @if (fastestPitBySession[session.session_key]; as fastest) {
+                          <div class="fastest-pit-banner">
+                            <i class="pi pi-bolt"></i>
+                            <span>
+                              <strong>Pit Stop più veloce:</strong>
+                              {{ getDriverName(fastest.driver_number) }} ({{ getDriverTeam(fastest.driver_number) }}) —
+                              <strong>{{ fastest.pit_duration.toFixed(3) }}s</strong> al giro {{ fastest.lap_number }}
+                            </span>
+                          </div>
+                        }
                         @if (pits[session.session_key]?.length) {
                           <p-table [value]="pits[session.session_key]" styleClass="compact-table">
                             <ng-template pTemplate="header">
                               <tr>
                                 <th style="width: 32%;">Pilota</th>
-                                <th style="width: 26%;">Team</th>
+                                <th style="width: 24%;">Team</th>
                                 <th style="width: 12%;">Giro</th>
-                                <th style="width: 15%;">Durata</th>
+                                <th style="width: 17%;">Durata</th>
                                 <th style="width: 15%;">Orario</th>
                               </tr>
                             </ng-template>
@@ -379,7 +416,14 @@
                                 </td>
                                 <td>{{ getDriverTeam(pit.driver_number) }}</td>
                                 <td>{{ pit.lap_number }}</td>
-                                <td>{{ pit.pit_duration.toFixed(3) }}s</td>
+                                <td>
+                                  <span [class.fastest-pit-time]="isFastestPit(session.session_key, pit)">
+                                    {{ pit.pit_duration.toFixed(3) }}s
+                                  </span>
+                                  @if (isFastestPit(session.session_key, pit)) {
+                                    <span class="fastest-pit-pill">BEST</span>
+                                  }
+                                </td>
                                 <td>{{ pit.date | date:'HH:mm:ss' }}</td>
                               </tr>
                             </ng-template>

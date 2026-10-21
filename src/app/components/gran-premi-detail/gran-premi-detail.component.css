@@ -1150,3 +1150,95 @@ Stili per i tab di PrimeNG
     justify-content: space-between;
   }
 }
+
+
+/* KPI Riepilogo Strategie Gomme & Fastest Pit Stop */
+.stint-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.85rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.stint-kpi-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #e10600;
+  border-radius: 10px;
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stint-kpi-lbl {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #a1a1aa;
+  font-weight: 700;
+}
+
+.stint-kpi-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.stint-kpi-val small {
+  font-size: 0.82rem;
+  color: #d4d4d8;
+  font-weight: 600;
+}
+
+.stops-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stops-badge {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.stops-laps {
+  font-size: 0.72rem;
+  color: #a1a1aa;
+}
+
+.fastest-pit-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1.15rem;
+  margin: 1rem 0;
+  border-radius: 10px;
+  background: rgba(168, 85, 247, 0.14);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #f3e8ff;
+  font-size: 0.92rem;
+}
+
+.fastest-pit-banner i {
+  color: #c084fc;
+  font-size: 1.1rem;
+}
+
+.fastest-pit-time {
+  color: #c084fc;
+  font-weight: 800;
+}
+
+.fastest-pit-pill {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  background: #9333ea;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
