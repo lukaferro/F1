@@ -1,50 +1,30 @@
 <footer class="footer">
   <div class="footer-container">
-    <div class="footer-section">
-      <div class="footer-logo">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/New_era_F1_logo.png" alt="F1 Logo">
-      </div>
-      <p class="footer-description">
-        Applicazione non ufficiale dedicata alla Formula 1, creata per gli appassionati di questo sport.
-      </p>
-    </div>
-
-    <div class="footer-section">
-      <h3>Link Rapidi</h3>
-      <ul class="footer-links">
-        <li><a routerLink="/">Home</a></li>
-        <li><a routerLink="/granpremi">Gran Premi</a></li>
-        <li><a routerLink="/circuits">Circuiti</a></li>
-        <li><a routerLink="/drivers">Piloti</a></li>
-        <li><a routerLink="/scuderie">Scuderie</a></li>
-        <li><a routerLink="/classifiche">Classifiche</a></li>
-        <li><a routerLink="/news">News</a></li>
-        <li><a href="https://www.formula1.com" target="_blank">Sito Ufficiale F1</a></li>
-      </ul>
-    </div>
-
-    <div class="footer-section">
-      <h3>Risorse</h3>
-      <ul class="footer-links">
-        <li><a href="https://openf1.org" target="_blank">OpenF1 API</a></li>
-        <li><a href="https://github.com/jolpica/jolpica-f1" target="_blank">Jolpica F1 API</a></li>
-        <li><a href="https://it.wikipedia.org/wiki/Formula_1" target="_blank">Wikipedia F1</a></li>
-        <li><a href="https://primeng.org" target="_blank">PrimeNG</a></li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="footer-sponsors">
-    @for (sponsor of sponsorPartners; track sponsor) {
-      <div class="sponsor-item">
-        <a [href]="sponsor.website" target="_blank" rel="noopener" [attr.aria-label]="'Visita ' + sponsor.name">
-          <img [src]="sponsor.logo" [alt]="sponsor.name" loading="lazy" decoding="async">
+    <div class="footer-main">
+      <div class="footer-brand">
+        <a routerLink="/" class="footer-logo" aria-label="Torna alla Home">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/New_era_F1_logo.png" alt="F1 Logo" />
         </a>
+        <span class="footer-tagline">Portate telemetrico e storico dedicato alla Formula 1 (1950–Oggi)</span>
       </div>
-    }
-  </div>
 
-  <div class="footer-bottom">
-    <p>&copy; {{ currentYear }} F1 App - Applicazione non ufficiale. Tutti i marchi appartengono ai rispettivi proprietari.</p>
+      <nav class="footer-nav" aria-label="Link di navigazione footer">
+        @for (item of navLinks; track item.route) {
+          <a [routerLink]="item.route" class="footer-nav-link">{{ item.label }}</a>
+        }
+      </nav>
+    </div>
+
+    <div class="footer-meta">
+      <p class="footer-copy">
+        &copy; {{ currentYear }} F1 Hub — Progetto non ufficiale per appassionati. Tutti i marchi appartengono ai rispettivi proprietari.
+      </p>
+      <div class="footer-sources">
+        <span class="sources-label">Dati & Fonti:</span>
+        @for (src of dataSources; track src.url) {
+          <a [href]="src.url" target="_blank" rel="noopener" class="source-pill">{{ src.label }}</a>
+        }
+      </div>
+    </div>
   </div>
 </footer>

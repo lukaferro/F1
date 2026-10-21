@@ -1,24 +1,29 @@
 .home-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3.25rem;
+}
+
+/* ---------- Hero + KPI Strip ---------- */
+.hero-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .hero {
   position: relative;
-  height: 500px;
-  margin-bottom: 4rem;
-  border-radius: 12px;
+  min-height: 430px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
 }
 
 .hero-video {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 1;
 }
 
@@ -30,11 +35,8 @@
 
 .overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 100%);
+  inset: 0;
+  background: linear-gradient(95deg, rgba(12, 12, 16, 0.92) 0%, rgba(12, 12, 16, 0.72) 55%, rgba(12, 12, 16, 0.35) 100%);
   z-index: 2;
 }
 
@@ -44,8 +46,8 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, #ff0000, #ff0000);
+  height: 3px;
+  background: var(--f1-red);
   z-index: 4;
 }
 
@@ -53,130 +55,324 @@
   position: relative;
   z-index: 3;
   padding: 3rem;
-  color: #ffffff;
-  max-width: 650px;
-  height: 100%;
+  max-width: 680px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  align-items: flex-start;
+  gap: 1.15rem;
 }
 
-h1 {
-  font-size: 3rem;
-  margin-bottom: 2rem;
-  line-height: 1.25;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+.hero-content h1 {
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
 }
 
 .f1-text {
-  color: #ff0000;
-  font-weight: bold;
+  color: var(--f1-red);
   white-space: nowrap;
 }
 
-.hero p {
-  font-size: 1.2rem;
-  margin-bottom: 2rem;
-  opacity: 0.9;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+.hero-content p {
+  font-size: 1.08rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
 }
 
 .hero-buttons {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+/* ---------- Barra KPI Stagionale ---------- */
+.season-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
-.hero-buttons ::ng-deep .p-button {
-  gap: 0.5rem;
-}
-
-.features {
-  margin-bottom: 4rem;
-}
-
-.features h2, .stats-section h2 {
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2rem;
-  position: relative;
-  padding-bottom: 0.5rem;
-}
-
-.features h2::after, .stats-section h2::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 4px;
-  background: #ff0000;
-  border-radius: 2px;
-}
-
-.feature-cards {
+.kpi-item {
   display: flex;
-  gap: 2rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-/* Sezione anteprima Ultime Notizie in Home */
-.home-news-section {
-  margin-bottom: 4rem;
-}
-
-.home-news-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: 0.9rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.kpi-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--f1-red-soft);
+  border: 1px solid var(--f1-red-border);
+  color: var(--f1-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.kpi-data {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-val {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+
+.kpi-lbl {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+/* ---------- Prossimo / Ultimo Gran Premio ---------- */
+.next-race-card {
+  border-left: 4px solid var(--f1-red);
+  padding: 1.6rem 1.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.next-race-badge {
+  width: fit-content;
+}
+
+.next-race-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
   flex-wrap: wrap;
-  margin-bottom: 1.75rem;
 }
 
-.home-news-header h2 {
-  margin: 0;
-  font-size: 2rem;
-  position: relative;
-  padding-bottom: 0.5rem;
+.next-race-info {
+  flex: 1 1 320px;
 }
 
-.home-news-header h2::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 60px;
-  height: 4px;
-  background: #e10600;
+.next-race-location {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.next-race-location .country-flag {
   border-radius: 2px;
+  vertical-align: middle;
 }
 
-.view-all-news-link {
+.next-race-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 0.45rem 0;
+}
+
+.next-race-circuit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+.next-race-circuit i {
+  color: var(--f1-red);
+}
+
+.next-race-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.8rem 1.15rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.countdown-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.countdown-grid {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.countdown-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 48px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+}
+
+.countdown-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.countdown-lbl {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.next-race-btn i {
+  color: var(--f1-red);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.next-race-btn:hover {
+  background: var(--f1-red);
+  border-color: var(--f1-red);
+}
+
+.next-race-btn:hover i {
+  color: #ffffff;
+  transform: translateX(3px);
+}
+
+/* ---------- Griglia 6 Card Sezioni ---------- */
+.feature-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.35rem;
+}
+
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+}
+
+.feature-card-media {
+  position: relative;
+  height: 175px;
+  overflow: hidden;
+  background: #121218;
+}
+
+.feature-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.feature-card:hover .feature-card-media img {
+  transform: scale(1.04);
+}
+
+.feature-card-tag {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.1rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(16, 16, 22, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f4f4f6;
 }
 
+.feature-card-tag i {
+  color: var(--f1-red);
+  font-size: 0.75rem;
+}
+
+.feature-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1;
+}
+
+.feature-card-body h3 {
+  font-size: 1.18rem;
+  font-weight: 700;
+}
+
+.feature-card-body p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.feature-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: color 0.2s ease;
+}
+
+.feature-card-cta i {
+  font-size: 0.78rem;
+  color: var(--f1-red);
+  transition: transform 0.2s ease;
+}
+
+.feature-card:hover .feature-card-cta {
+  color: var(--f1-red-hover);
+}
+
+.feature-card:hover .feature-card-cta i {
+  transform: translateX(4px);
+}
+
+/* ---------- Sezione Ultime Notizie ---------- */
 .view-all-news-link i {
-  color: #e10600;
+  color: var(--f1-red);
   transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .view-all-news-link:hover {
-  background: #e10600;
-  border-color: #e10600;
-  transform: translateY(-1px);
+  background: var(--f1-red);
+  border-color: var(--f1-red);
 }
 
 .view-all-news-link:hover i {
@@ -186,30 +382,25 @@ h1 {
 
 .home-news-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.35rem;
 }
 
 .home-news-card {
   display: flex;
   flex-direction: column;
-  background: linear-gradient(145deg, #1b1b22 0%, #23232c 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  transition: transform 0.25s ease, border-color 0.25s ease;
 }
 
 .home-news-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.26);
 }
 
 .home-news-img-wrap {
   position: relative;
-  height: 185px;
+  height: 180px;
   overflow: hidden;
   background: #121216;
 }
@@ -230,8 +421,8 @@ h1 {
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
-  background: rgba(18, 18, 22, 0.85);
-  border: 1px solid rgba(225, 6, 0, 0.45);
+  background: rgba(18, 18, 22, 0.88);
+  border: 1px solid var(--f1-red-border);
   color: #ff6b6b;
 }
 
@@ -239,313 +430,64 @@ h1 {
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.5rem;
   flex: 1;
 }
 
 .home-news-date {
   font-size: 0.78rem;
-  color: #a1a1aa;
+  color: var(--text-muted);
 }
 
 .home-news-body h3 {
-  margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.08rem;
   line-height: 1.38;
-  color: #ffffff;
   font-weight: 700;
 }
 
 .home-news-body p {
-  margin: 0;
   font-size: 0.88rem;
   line-height: 1.5;
-  color: #b5b5be;
+  color: var(--text-secondary);
 }
 
-.stats-section {
-  margin-bottom: 4rem;
-  padding: 3rem 0;
-  background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-  border-radius: 12px;
-  color: white;
-}
-
-.stats-container {
-  display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: 2rem;
-  padding: 0 2rem;
-}
-
-.stat-card {
-  text-align: center;
-  padding: 1.5rem;
-  min-width: 200px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-.stat-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: #ff0000;
-}
-
-.stat-number {
-  font-size: 3rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-.next-race-section {
-  margin-bottom: 4rem;
-}
-
-.next-race-card {
-  background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 5px solid #e10600;
-  border-radius: 12px;
-  padding: 1.75rem 2rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.next-race-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(225, 6, 0, 0.15);
-  color: #ff4d4d;
-  border: 1px solid rgba(225, 6, 0, 0.3);
-  padding: 0.35rem 0.85rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  width: fit-content;
-}
-
-.next-race-body {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-
-.next-race-info {
-  flex: 1 1 320px;
-}
-
-.next-race-location {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
-  color: #a1a1aa;
-  margin-bottom: 0.4rem;
-}
-
-.next-race-location .country-flag {
-  border-radius: 2px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  vertical-align: middle;
-}
-
-.next-race-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  line-height: 1.25;
-  color: #ffffff;
-}
-
-.next-race-circuit {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
-  color: #d4d4d8;
-}
-
-.next-race-circuit i {
-  color: #e10600;
-}
-
-.next-race-countdown {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(0, 0, 0, 0.35);
-  padding: 0.85rem 1.25rem;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.countdown-title {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #a1a1aa;
-  font-weight: 600;
-}
-
-.countdown-grid {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.countdown-unit {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 48px;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 0.4rem 0.6rem;
-  border-radius: 6px;
-}
-
-.countdown-val {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #ffffff;
-  font-family: monospace;
-}
-
-.countdown-lbl {
-  font-size: 0.65rem;
-  color: #a1a1aa;
-  text-transform: uppercase;
-}
-
-.next-race-action {
-  display: flex;
-  align-items: center;
-}
-
-.next-race-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.65rem;
-  padding: 0.8rem 1.4rem;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.07);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  text-decoration: none;
-  font-size: 0.92rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: none;
-  text-shadow: none;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-
-.next-race-btn i {
-  font-size: 0.85rem;
-  color: #ff3b30;
-  transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.next-race-btn:hover {
-  background: #e10600;
-  border-color: #e10600;
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: none;
-  text-shadow: none;
-}
-
-.next-race-btn:hover i {
-  color: #ffffff;
-  transform: translateX(3px);
-}
-
-.next-race-btn:active {
-  transform: translateY(0) scale(0.98);
-}
-
-.feature-cards ::ng-deep .p-card {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.feature-cards ::ng-deep .p-card-header img {
-  width: 100% !important;
-  height: 190px;
-  object-fit: cover;
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-}
-
-.feature-cards ::ng-deep .p-card-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.feature-cards ::ng-deep .p-card-footer {
-  margin-top: auto;
-  padding-top: 1rem;
-}
-
-@media (max-width: 900px) {
-  .next-race-body {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1.5rem;
+@media (max-width: 1024px) {
+  .season-kpi-strip {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .next-race-countdown {
-    width: 100%;
-  }
-
-  .next-race-action {
-    width: 100%;
-    justify-content: flex-end;
+  .feature-cards,
+  .home-news-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
   .hero {
-    height: 400px;
+    min-height: 360px;
   }
 
   .hero-content {
-    padding: 2rem;
+    padding: 1.75rem;
   }
 
-  h1 {
-    font-size: 2rem;
+  .hero-content h1 {
+    font-size: 1.95rem;
   }
 
-  .stats-container {
+  .season-kpi-strip,
+  .feature-cards,
+  .home-news-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .next-race-body {
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
+    gap: 1.25rem;
   }
 
-  .stat-card {
+  .next-race-countdown {
     width: 100%;
-    max-width: 300px;
   }
 }

@@ -2,17 +2,25 @@ import { Component, ElementRef, ViewChild, AfterViewInit, OnInit, OnDestroy, inj
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
 import { NewsService, F1NewsArticle } from '../../services/news.service';
 import { Meeting } from '../../models/meeting';
 import { smallFlagUrl } from '../../utils/country-flags';
+import { SectionHeaderComponent } from '../section-header/section-header.component';
+
+export interface HomeFeatureCard {
+  title: string;
+  tag: string;
+  description: string;
+  route: string;
+  icon: string;
+  image: string;
+}
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, DatePipe, RouterLink, ButtonModule, CardModule],
+  imports: [CommonModule, DatePipe, RouterLink, SectionHeaderComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -34,7 +42,58 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
     seconds: 0
   };
   latestNews: F1NewsArticle[] = [];
-  private timerInterval?: any;
+  private timerInterval?: ReturnType<typeof setInterval>;
+
+  readonly featureCards: HomeFeatureCard[] = [
+    {
+      title: 'Gran Premi',
+      tag: 'Calendario & Sessioni',
+      description: 'Calendario stagionale, risultati di ogni sessione, strategie gomme, stint e pit-stop dal 1950 a oggi.',
+      route: '/granpremi',
+      icon: 'pi pi-flag-fill',
+      image: 'https://www.datocms-assets.com/53444/1718265294-formula-one-vs-indycar-racing.jpg?auto=format&w=1000'
+    },
+    {
+      title: 'Circuiti',
+      tag: 'Tracciati Mondiali',
+      description: 'Mappe dettagliate, lunghezza, numero di curve, record ufficiali sul giro e storia di ogni autodromo.',
+      route: '/circuits',
+      icon: 'pi pi-compass',
+      image: 'https://media.istockphoto.com/id/810900482/photo/empty-racing-track-with-sunlight.jpg?s=612x612&w=0&k=20&c=8ndE0gqBB_-zyzYLVtx-oOWRcR4a4HaInGs8IVhC0GA='
+    },
+    {
+      title: 'Piloti & Confronto H2H',
+      tag: 'Protagonisti & Sfide',
+      description: 'Schede carriera dei piloti attuali e storici più il comparatore Testa a Testa su titoli, vittorie e pole.',
+      route: '/drivers',
+      icon: 'pi pi-users',
+      image: 'https://img.freepik.com/foto-premium/ritratto-del-pilota-di-f1-che-indossa-il-casco-pilota-di-formula-uno-in-piedi-sulla-pista-dopo-la-competizione_46383-9870.jpg'
+    },
+    {
+      title: 'Scuderie',
+      tag: 'Costruttori dal 1958',
+      description: 'Tutti i team ufficiali con colori, loghi, sedi, Power Unit, line-up piloti e Palmarès Mondiale Costruttori.',
+      route: '/scuderie',
+      icon: 'pi pi-building',
+      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Carlos_Sainz_Chinese_GP_2024.jpg/1280px-Carlos_Sainz_Chinese_GP_2024.jpg'
+    },
+    {
+      title: 'Classifiche & Albo d\'Oro',
+      tag: 'Campionato & Storia',
+      description: 'Classifiche piloti e costruttori di ogni stagione e Albo d\'Oro completo di tutti i Campioni del Mondo.',
+      route: '/classifiche',
+      icon: 'pi pi-trophy',
+      image: 'assets/classifiche.jpg'
+    },
+    {
+      title: 'News dal Paddock',
+      tag: 'Feed RSS in Tempo Reale',
+      description: 'Ultime notizie, aggiornamenti tecnici e approfondimenti in tempo reale dalle principali testate italiane.',
+      route: '/news',
+      icon: 'pi pi-megaphone',
+      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Max_Verstappen_2024_Chinese_GP.jpg/1280px-Max_Verstappen_2024_Chinese_GP.jpg'
+    }
+  ];
 
   private readonly openF1 = inject(Openf1ServiceService);
   private readonly newsService = inject(NewsService);
@@ -60,7 +119,6 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
     video.muted = true;
     video.defaultMuted = true;
     video.volume = 0;
-    // play() non restituisce sempre una Promise (browser datati, ambiente dei test)
     video.play()?.catch(() => {});
   }
 
@@ -89,7 +147,6 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
       });
       this.countriesCount = countries.size || (meetingsToUse.length ? '—' : 'N/D');
 
-      // Calcolo del prossimo Gran Premio (o ultimo disputato)
       if (meetingsToUse.length > 0) {
         const now = Date.now();
         const sorted = [...meetingsToUse].sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime());
@@ -106,7 +163,6 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
         }
       }
 
-      // Prova a ricavare piloti e team dal primo meeting disponibile
       const referenceMeeting = meetingsToUse[0];
       if (referenceMeeting) {
         const drivers: Driver[] = await this.openF1.getDrivers(referenceMeeting.meeting_key, 'meeting');
@@ -154,7 +210,6 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
     };
   }
 
-  /** Mostra il pulsante "Dettagli Gran Premio" solo se il weekend di gara è già iniziato o concluso */
   get canViewNextMeetingDetails(): boolean {
     if (!this.nextMeeting) return false;
     return new Date(this.nextMeeting.date_start).getTime() <= Date.now();

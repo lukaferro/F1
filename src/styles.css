@@ -3,14 +3,53 @@
 :root {
   --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
+  /* Palette Principale F1 */
+  --f1-red: #e10600;
+  --f1-red-hover: #ff1e1e;
+  --f1-red-soft: rgba(225, 6, 0, 0.14);
+  --f1-red-border: rgba(225, 6, 0, 0.38);
+  --f1-gold: #f5c518;
+  --f1-gold-soft: rgba(245, 197, 24, 0.14);
+
+  /* Superfici & Sfondi */
+  --bg-page: #111116;
+  --bg-surface: #18181f;
+  --bg-surface-elevated: #20202a;
+  --bg-card: linear-gradient(145deg, #191921 0%, #21212b 100%);
+  --bg-glass: rgba(255, 255, 255, 0.04);
+
+  /* Bordi */
+  --border-subtle: rgba(255, 255, 255, 0.09);
+  --border-default: rgba(255, 255, 255, 0.14);
+  --border-hover: rgba(255, 255, 255, 0.26);
+
+  /* Tipografia & Testi */
+  --text-primary: #ffffff;
+  --text-secondary: #b5b5be;
+  --text-muted: #8e8e99;
+
+  /* Raggi & Spaziature */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --container-max-width: 1200px;
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-body {
+html, body {
+  height: 100%;
   margin: 0;
+  padding: 0;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+body {
+  min-height: 100vh;
   font-family: var(--font-family);
   font-optical-sizing: auto;
   font-weight: 400;
@@ -27,58 +66,103 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-family);
-  font-weight: 600;
-  line-height: 1.3;
-  margin: 0 0 1rem 0;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+p {
+  margin: 0;
 }
 
 h1 { font-size: 2.25rem; }
-h2 { font-size: 1.875rem; }
-h3 { font-size: 1.5rem; }
-h4 { font-size: 1.25rem; }
-h5 { font-size: 1.125rem; }
-h6 { font-size: 1rem; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.35rem; }
+h4 { font-size: 1.15rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.9rem; }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  min-height: 100vh;
-}
-
-h1, h2, h3, h4, h5, h6, p {
-  margin: 0;
-}
-
-html, body {
-  height: 100%;
-  margin: 0;
-}
 app-root, body > app-root {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-/* area contenuti deve crescere */
 .app-content {
   flex: 1 1 auto;
 }
 
-/* footer */
-.app-footer {
-  background: #0b0b0b;
-  color: #ddd;
-  padding: 12px 16px;
-  text-align: center;
-  border-top: 1px solid rgba(255,255,255,0.03);
+/* ---------- Classi Utilità Design System F1 ---------- */
+
+.f1-page-container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.f1-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--f1-red-soft);
+  color: #ff6b6b;
+  border: 1px solid var(--f1-red-border);
+}
+
+.f1-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid var(--border-default);
+  background: var(--bg-glass);
+  color: var(--text-primary);
+  box-shadow: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.f1-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+.f1-btn-primary {
+  background: var(--f1-red);
+  border-color: var(--f1-red);
+  color: #ffffff;
+}
+
+.f1-btn-primary:hover {
+  background: var(--f1-red-hover);
+  border-color: var(--f1-red-hover);
+  color: #ffffff;
+}
+
+.f1-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: transform 0.22s ease, border-color 0.22s ease;
+}
+
+.f1-card:hover {
+  border-color: var(--border-hover);
 }
 
 /* make p-select label visible on dark sidebar */
@@ -87,14 +171,13 @@ app-root, body > app-root {
   color: #fff;
 }
 
-
 /* Skeleton: segnaposto animato con la forma del contenuto, mostrato mentre i dati si caricano */
 .skeleton {
   display: block;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.12) 37%, rgba(255, 255, 255, 0.05) 63%);
   background-size: 400% 100%;
   animation: skeleton-shimmer 1.4s ease infinite;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .skeleton-line {
@@ -111,27 +194,26 @@ app-root, body > app-root {
   .skeleton { animation: none; }
 }
 
-/* Filtri a tendina (p-select): stile unico per Gran Premi, Piloti e Classifiche.
-   Il pannello usa panelStyleClass="gp-dropdown-panel".
-   "body" davanti: deve prevalere sugli stili di base che PrimeNG inserisce dopo questo file. */
+/* Filtri a tendina (p-select): stile unico per tutte le pagine */
 .gp-dropdown {
   width: 100%;
 }
 
 body .p-select.gp-dropdown {
   width: 100%;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #202020 0%, #2e2e2e 100%);
-  border: 1px solid #3c3c3c;
-  padding: 0.6rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  padding: 0.55rem 0.95rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 body .p-select.gp-dropdown:not(.p-disabled):hover {
-  border-color: #ff0000;
-  box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.2);
+  border-color: var(--f1-red);
+  box-shadow: none;
 }
 
 body .gp-dropdown .p-select-label {
@@ -145,13 +227,12 @@ body .gp-dropdown .p-select-dropdown {
 }
 
 body .gp-dropdown-panel {
-  background: radial-gradient(circle at top, #343434 0%, #242424 70%);
-  border: 1px solid #444;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
-  border-radius: 20px;
+  background: #1c1c24;
+  border: 1px solid var(--border-default);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  padding: 1rem 0.75rem;
-  backdrop-filter: blur(8px);
+  padding: 0.75rem 0.5rem;
 }
 
 body .gp-dropdown-panel .p-select-list,
@@ -161,60 +242,51 @@ body .gp-dropdown-panel .p-select-header {
 }
 
 body .gp-dropdown-panel .p-select-header {
-  padding: 0 1.25rem 0.85rem;
+  padding: 0 0.85rem 0.65rem;
 }
 
 body .gp-dropdown-panel .p-select-filter {
-  background-color: #333;
+  background-color: #272732;
   color: #fff;
-  border-radius: 10px;
-  padding: 0.6rem 0.85rem;
-  border: 1px solid #444;
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border-default);
 }
 
 body .gp-dropdown-panel .p-select-list-container {
-  padding: 0.35rem 0.25rem 0.75rem;
+  padding: 0.25rem;
 }
 
 body .gp-dropdown-panel .p-select-option {
   color: #fff;
-  padding: 0.95rem 1.6rem;
-  margin: 0.4rem 1rem;
-  border-radius: 14px;
-  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 0.7rem 1rem;
+  margin: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: 500;
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 body .gp-dropdown-panel .p-select-option:hover {
-  background: linear-gradient(135deg, rgba(255, 0, 0, 0.25) 0%, rgba(255, 0, 0, 0.4) 100%);
-  transform: translateX(8px);
-  box-shadow: 0 6px 18px rgba(255, 0, 0, 0.25);
+  background: rgba(225, 6, 0, 0.22);
+  box-shadow: none;
 }
 
 body .gp-dropdown-panel .p-select-option.p-select-option-selected {
-  background: linear-gradient(135deg, rgba(255, 0, 0, 0.7) 0%, rgba(255, 60, 60, 0.85) 100%);
-  box-shadow: 0 10px 28px rgba(255, 0, 0, 0.35);
+  background: var(--f1-red);
+  color: #ffffff;
+  box-shadow: none;
 }
 
-/* Solo le voci: sul pannello intero il flex stringeva la lista al centro
-   e la barra di scorrimento finiva a metà pannello invece che sul bordo */
-body .gp-dropdown-panel .p-select-option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.015em;
-}
-
-/* Freccia del filtro: ruota quando il menu è aperto */
 .gp-dropdown .p-select-dropdown svg,
 .gp-dropdown .p-select-dropdown .p-icon {
   transition: transform 0.25s ease;
-  /* negli SVG la rotazione parte dall'angolo in alto a sinistra: la riportiamo al centro */
   transform-origin: center;
   transform-box: fill-box;
 }
 
-/* Il pannello aperto resta sopra gli altri filtri che lo seguono nella pagina */
 body .p-select.gp-dropdown .p-overlay {
   z-index: 1100;
 }
@@ -226,8 +298,7 @@ body .p-select.gp-dropdown .p-overlay {
   transform: rotate(180deg);
 }
 
-/* ---------- Animazioni Leggere e Micro-interazioni ----------
-   Brevi (150-250 ms), senza cali di opacità a zero, disattivate con "riduci movimento". */
+/* ---------- Animazioni Leggere e Micro-interazioni ---------- */
 
 @keyframes card-settle {
   from { transform: translateY(6px); }
@@ -244,26 +315,23 @@ body .p-select.gp-dropdown .p-overlay {
   to { opacity: 1; }
 }
 
-/* Card segnaposto per il caricamento */
 .skeleton-card {
   animation: none !important;
   cursor: default !important;
   pointer-events: none;
 }
 
-/* Card: arrivo morbido (solo leggera traslazione di 6px, senza schermo nero) */
 .driver-card:not(.skeleton-card),
 .gp-card:not(.skeleton-card),
 .circuit-card:not(.skeleton-card) {
   animation: card-settle 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Hover e tocco tattile fluido sulle card */
 .gp-card,
 .driver-card,
 .circuit-card {
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-              box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+              border-color 0.25s ease;
 }
 
 .gp-card:active,
@@ -273,7 +341,6 @@ body .p-select.gp-dropdown .p-overlay {
   transition-duration: 0.1s;
 }
 
-/* Micro-interazione bandierine sulle card */
 .country-flag {
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -282,37 +349,34 @@ body .p-select.gp-dropdown .p-overlay {
   transform: scale(1.08);
 }
 
-/* Pulsanti PrimeNG e link: feedback moderno e tocco elastico */
 .p-button,
 .wiki-link {
+  box-shadow: none !important;
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
-              box-shadow 0.2s ease,
               background-color 0.2s ease,
               border-color 0.2s ease !important;
 }
 
 .p-button:not(:disabled):hover,
 .wiki-link:hover {
-  transform: translateY(-2px);
-  box-shadow: none;
+  transform: translateY(-1px);
+  box-shadow: none !important;
 }
 
 .p-button:not(:disabled):active,
 .wiki-link:active {
-  transform: translateY(0) scale(0.97);
+  transform: translateY(0) scale(0.98);
   transition-duration: 0.08s;
 }
 
-/* Pulsante reset filtro: rotazione sfiziosa su passaggio mouse */
 .reset-filter {
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.2s ease;
 }
 .reset-filter:hover {
   transform: rotate(90deg) scale(1.15);
-  color: #ff3b30;
+  color: var(--f1-red);
 }
 
-/* Chip informative: tocco interattivo */
 .chip {
   transition: background-color 0.2s ease, transform 0.2s ease;
 }
@@ -321,14 +385,12 @@ body .p-select.gp-dropdown .p-overlay {
   transform: translateY(-1px);
 }
 
-/* podio: salgono terzo, secondo e primo */
 .podium-item {
   animation: podium-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .podium-item.second { animation-delay: 0.1s; }
 .podium-item.first { animation-delay: 0.2s; }
 
-/* righe delle tabelle in dissolvenza (in sequenza nelle Classifiche) */
 .standings-table tbody tr,
 .career-table tbody tr,
 .p-datatable-tbody > tr {
@@ -336,13 +398,11 @@ body .p-select.gp-dropdown .p-overlay {
   animation-delay: calc(min(var(--i, 0), 20) * 20ms);
 }
 
-/* i blocchi skeleton spariscono e il contenuto vero sfuma al loro posto */
 .tab-status,
 .standings-status {
   animation: fade-in 0.3s ease both;
 }
 
-/* tab: la sottolineatura rossa si allarga dal centro */
 .tab-button {
   position: relative;
 }
@@ -353,7 +413,7 @@ body .p-select.gp-dropdown .p-overlay {
   right: 0;
   bottom: -3px;
   height: 3px;
-  background: #ff0000;
+  background: var(--f1-red);
   transform: scaleX(0);
   transition: transform 0.25s ease;
 }

@@ -26,7 +26,7 @@ body {
 
 main {
   flex: 1;
-  padding-bottom: 3.5rem;
+  padding-bottom: 2.5rem;
 }
 
 nav,
@@ -41,14 +41,15 @@ nav {
   position: sticky;
   top: 0;
   z-index: 1000;
-  height: 70px;
-  background: linear-gradient(to bottom, #2a2a2a 0%, #1e1e1e 100%);
+  height: 64px;
+  background: rgba(20, 20, 26, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
-  box-shadow: 0 4px 8px rgba(255, 0, 0, 0.3);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background-color 0.2s ease;
   will-change: transform;
 }
 
@@ -57,20 +58,8 @@ nav.nav-hidden {
 }
 
 nav.nav-scrolled {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(255, 0, 0, 0.4);
-}
-
-nav::after {
-  content: "";
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  width: 100%;
-  height: 12px;
-  background: radial-gradient(ellipse at center,
-      rgba(255, 0, 0, 0.6) 0%,
-      rgba(255, 0, 0, 0) 80%);
-  z-index: 1;
+  background: rgba(16, 16, 22, 0.97);
+  border-bottom-color: rgba(225, 6, 0, 0.35);
 }
 
 nav ul {
@@ -92,11 +81,11 @@ nav .nav-right {
   margin-left: auto;
   display: flex;
   align-items: center;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 nav ul li img {
-  height: 1.5rem;
+  height: 1.4rem;
   cursor: pointer;
   display: block;
 }
@@ -108,21 +97,22 @@ nav ul li img {
 }
 
 nav a.nav-link {
-  color: #ffffff;
+  color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
+  font-size: 0.95rem;
   padding: 0.35rem 0.2rem;
   position: relative;
   transition: color 0.2s ease;
 }
 
 nav a.nav-link:hover {
-  color: #ff0000;
+  color: var(--text-primary);
   cursor: pointer;
 }
 
 nav a.nav-link.active {
-  color: #ff0000;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -133,16 +123,15 @@ nav a.nav-link.active::after {
   left: 0;
   width: 100%;
   height: 3px;
-  background: #ff0000;
+  background: var(--f1-red);
   border-radius: 2px;
-  box-shadow: 0 0 8px rgba(255, 0, 0, 0.7);
 }
 
 @media (max-width: 640px) {
   nav {
     padding: 0 1rem;
     height: auto;
-    min-height: 60px;
+    min-height: 58px;
   }
 
   nav ul {
@@ -153,60 +142,36 @@ nav a.nav-link.active::after {
   }
 
   nav a.nav-link {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
   }
-}
-
-footer {
-  position: relative;
-  width: 100%;
-  text-align: center;
-  padding: 1rem;
-  background: linear-gradient(to bottom, #1e1e1e, #2a2a2a);
-  color: #ffffff;
-  box-shadow: 0 -4px 8px rgba(255, 0, 0, 0.3);
-}
-
-footer::before {
-  content: "";
-  position: absolute;
-  top: -4px;
-  left: 0;
-  width: 100%;
-  height: 12px;
-  background: radial-gradient(ellipse at center,
-      rgba(255, 0, 0, 0.6) 0%,
-      rgba(255, 0, 0, 0) 80%);
-  z-index: 1;
 }
 
 /* Pulsante flottante Torna in cima */
 .back-to-top {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 48px;
-  height: 48px;
+  bottom: 1.75rem;
+  right: 1.75rem;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: #1e1e1e;
-  color: #ffffff;
-  border: 2px solid #ff0000;
-  box-shadow: 0 4px 14px rgba(255, 0, 0, 0.35);
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-hover);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   cursor: pointer;
   z-index: 999;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease;
   animation: backToTopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .back-to-top:hover {
-  background: #ff0000;
+  background: var(--f1-red);
+  border-color: var(--f1-red);
   color: #ffffff;
-  transform: translateY(-3px) scale(1.08);
-  box-shadow: 0 8px 22px rgba(255, 0, 0, 0.6);
+  transform: translateY(-2px);
 }
 
 .back-to-top:active {
@@ -228,8 +193,8 @@ footer::before {
   .back-to-top {
     bottom: 1.25rem;
     right: 1.25rem;
-    width: 42px;
-    height: 42px;
-    font-size: 1.1rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.05rem;
   }
-}
+}

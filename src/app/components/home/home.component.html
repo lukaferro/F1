@@ -1,25 +1,73 @@
-<div class="home-container">
-  <section class="hero">
-    <div class="hero-video">
-      <video #heroVideo autoplay loop muted playsinline preload="auto" [muted]="true">
-        <source src="assets/F1.mp4" type="video/mp4">
-        Il tuo browser non supporta i video HTML5.
-      </video>
-      <div class="overlay"></div>
+<div class="home-container f1-page-container">
+  <!-- Hero Section con barra KPI stagionale integrata -->
+  <section class="hero-wrapper">
+    <div class="hero">
+      <div class="hero-video">
+        <video #heroVideo autoplay loop muted playsinline preload="auto" [muted]="true">
+          <source src="assets/F1.mp4" type="video/mp4">
+          Il tuo browser non supporta i video HTML5.
+        </video>
+        <div class="overlay"></div>
+      </div>
+
+      <div class="hero-content">
+        <span class="f1-badge">
+          <i class="pi pi-bolt"></i>
+          <span>Stagione Mondiale {{ seasonYear }} • Archivio 1950–Oggi</span>
+        </span>
+        <h1>Il tuo Hub telemetrico e storico sulla <span class="f1-text">Formula 1</span></h1>
+        <p>Esplora Gran Premi, strategie gomme, circuiti, piloti, scuderie, classifiche iridate e ultime notizie in tempo reale.</p>
+        <div class="hero-buttons">
+          <a routerLink="/granpremi" class="f1-btn f1-btn-primary">
+            <i class="pi pi-flag-fill"></i>
+            <span>Esplora Gran Premi</span>
+          </a>
+          <a routerLink="/classifiche" class="f1-btn">
+            <i class="pi pi-trophy"></i>
+            <span>Classifiche & Albo d'Oro</span>
+          </a>
+        </div>
+      </div>
     </div>
-    <div class="hero-content">
-      <h1>Benvenuto nel mondo della <span class="f1-text">Formula 1</span></h1>
-      <p>Scopri tutti i Gran Premi, i circuiti e le informazioni sulla stagione di Formula 1</p>
-      <div class="hero-buttons">
-        <p-button label="Esplora Gran Premi" icon="pi pi-flag-fill" routerLink="/granpremi" styleClass="p-button-raised"></p-button>
+
+    <!-- Barra KPI Stagionale Compatta -->
+    <div class="season-kpi-strip">
+      <div class="kpi-item">
+        <div class="kpi-icon"><i class="pi pi-flag-fill"></i></div>
+        <div class="kpi-data">
+          <span class="kpi-val">{{ grandPrixCount }}</span>
+          <span class="kpi-lbl">Gran Premi {{ seasonYear }}</span>
+        </div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-icon"><i class="pi pi-users"></i></div>
+        <div class="kpi-data">
+          <span class="kpi-val">{{ driversCount }}</span>
+          <span class="kpi-lbl">Piloti in Griglia</span>
+        </div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-icon"><i class="pi pi-building"></i></div>
+        <div class="kpi-data">
+          <span class="kpi-val">{{ teamsCount }}</span>
+          <span class="kpi-lbl">Scuderie {{ seasonYear }}</span>
+        </div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-icon"><i class="pi pi-globe"></i></div>
+        <div class="kpi-data">
+          <span class="kpi-val">{{ countriesCount }}</span>
+          <span class="kpi-lbl">Paesi Ospitanti</span>
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- Prossimo / Ultimo Gran Premio -->
   @if (nextMeeting) {
     <section class="next-race-section">
-      <div class="next-race-card">
-        <div class="next-race-badge">
+      <div class="next-race-card f1-card">
+        <div class="next-race-badge f1-badge">
           <i class="pi" [class.pi-calendar]="isUpcoming" [class.pi-check-circle]="!isUpcoming"></i>
           <span>{{ isUpcoming ? 'Prossimo Gran Premio' : 'Ultimo Gran Premio disputato' }}</span>
         </div>
@@ -65,7 +113,7 @@
 
           @if (canViewNextMeetingDetails) {
             <div class="next-race-action">
-              <a [routerLink]="['/granpremi', nextMeeting.meeting_key]" class="next-race-btn">
+              <a [routerLink]="['/granpremi', nextMeeting.meeting_key]" class="f1-btn next-race-btn">
                 <span>Dettagli Gran Premio</span>
                 <i class="pi pi-arrow-right"></i>
               </a>
@@ -76,64 +124,55 @@
     </section>
   }
 
+  <!-- Esplora l'Universo Formula 1 (6 Card Uniformi) -->
   <section class="features">
-    <h2>Scopri la Formula 1</h2>
+    <app-section-header
+      badge="Navigazione Rapida"
+      icon="pi pi-compass"
+      title="Scopri la Formula 1"
+      subtitle="Accedi rapidamente a tutte le sezioni dell'applicazione: gare, tracciati, piloti, scuderie, classifiche e news.">
+    </app-section-header>
+
     <div class="feature-cards">
-      <p-card header="Gran Premi" subheader="Calendario completo" [style]="{ width: '360px' }">
-        <ng-template pTemplate="header">
-          <img alt="Gran Premi" src="https://www.datocms-assets.com/53444/1718265294-formula-one-vs-indycar-racing.jpg?auto=format&w=1200" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
-        </ng-template>
-        <p>Esplora tutti i Gran Premi della stagione, con date, circuiti e informazioni dettagliate.</p>
-        <ng-template pTemplate="footer">
-          <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/granpremi"></p-button>
-        </ng-template>
-      </p-card>
-
-      <p-card header="Circuiti" subheader="Tracciati iconici" [style]="{ width: '360px' }">
-        <ng-template pTemplate="header">
-          <img alt="Circuiti" src="https://media.istockphoto.com/id/810900482/photo/empty-racing-track-with-sunlight.jpg?s=612x612&w=0&k=20&c=8ndE0gqBB_-zyzYLVtx-oOWRcR4a4HaInGs8IVhC0GA=" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
-        </ng-template>
-        <p>Scopri i circuiti più iconici del mondo dove si svolgono le gare di Formula 1.</p>
-        <ng-template pTemplate="footer">
-          <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/circuits"></p-button>
-        </ng-template>
-      </p-card>
-
-      <p-card header="Piloti" subheader="I protagonisti" [style]="{ width: '360px' }">
-        <ng-template pTemplate="header">
-          <img alt="Piloti" src="https://img.freepik.com/foto-premium/ritratto-del-pilota-di-f1-che-indossa-il-casco-pilota-di-formula-uno-in-piedi-sulla-pista-dopo-la-competizione_46383-9870.jpg" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
-        </ng-template>
-        <p>Tutti i piloti che partecipano al campionato mondiale di Formula 1 con biografie e statistiche.</p>
-        <ng-template pTemplate="footer">
-          <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/drivers"></p-button>
-        </ng-template>
-      </p-card>
-
-      <p-card header="Classifiche" subheader="Campionato Mondiale" [style]="{ width: '360px' }">
-        <ng-template pTemplate="header">
-          <img alt="Classifiche" src="assets/classifiche.jpg" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
-        </ng-template>
-        <p>Classifiche mondiali piloti e costruttori aggiornate, con l'archivio storico completo dal 1950.</p>
-        <ng-template pTemplate="footer">
-          <p-button label="Visualizza" icon="pi pi-external-link" routerLink="/classifiche"></p-button>
-        </ng-template>
-      </p-card>
+      @for (card of featureCards; track card.route) {
+        <a [routerLink]="card.route" class="feature-card f1-card">
+          <div class="feature-card-media">
+            <img [src]="card.image" [alt]="card.title" loading="lazy" decoding="async" />
+            <span class="feature-card-tag">
+              <i [class]="card.icon"></i>
+              <span>{{ card.tag }}</span>
+            </span>
+          </div>
+          <div class="feature-card-body">
+            <h3>{{ card.title }}</h3>
+            <p>{{ card.description }}</p>
+            <span class="feature-card-cta">
+              <span>Esplora sezione</span>
+              <i class="pi pi-arrow-right"></i>
+            </span>
+          </div>
+        </a>
+      }
     </div>
   </section>
 
+  <!-- Ultime Notizie dal Paddock -->
   @if (latestNews.length > 0) {
     <section class="home-news-section">
-      <div class="home-news-header">
-        <h2>Ultime Notizie F1</h2>
-        <a routerLink="/news" class="view-all-news-link">
+      <app-section-header
+        badge="Dal Paddock"
+        icon="pi pi-megaphone"
+        title="Ultime Notizie F1"
+        subtitle="Gli ultimi aggiornamenti in tempo reale dalle principali redazioni motorsport italiane.">
+        <a routerLink="/news" class="f1-btn view-all-news-link">
           <span>Tutte le News</span>
           <i class="pi pi-arrow-right"></i>
         </a>
-      </div>
+      </app-section-header>
 
       <div class="home-news-grid">
         @for (article of latestNews; track article.id) {
-          <a routerLink="/news" class="home-news-card">
+          <a routerLink="/news" class="home-news-card f1-card">
             <div class="home-news-img-wrap">
               <img [src]="article.imageUrl" [alt]="article.title" loading="lazy" decoding="async" />
               <span class="home-news-cat">{{ article.category }}</span>
@@ -148,41 +187,4 @@
       </div>
     </section>
   }
-
-  <section class="stats-section">
-    <h2>Statistiche F1</h2>
-    <div class="stats-container">
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="pi pi-flag-fill"></i>
-        </div>
-        <div class="stat-number">{{ grandPrixCount }}</div>
-        <div class="stat-title">Gran Premi {{ seasonYear }}</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="pi pi-users"></i>
-        </div>
-        <div class="stat-number">{{ driversCount }}</div>
-        <div class="stat-title">Piloti {{ seasonYear }}</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="pi pi-building"></i>
-        </div>
-        <div class="stat-number">{{ teamsCount }}</div>
-        <div class="stat-title">Team {{ seasonYear }}</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="pi pi-map"></i>
-        </div>
-        <div class="stat-number">{{ countriesCount }}</div>
-        <div class="stat-title">Paesi ospitanti</div>
-      </div>
-    </div>
-  </section>
 </div>

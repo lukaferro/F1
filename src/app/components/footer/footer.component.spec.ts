@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { FooterComponent } from './footer.component';
 
@@ -12,17 +10,19 @@ describe('FooterComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FooterComponent],
-      // router e HTTP finti: i componenti li usano, ma nei test non devono chiamare l'API vera
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()]
-    })
-    .compileComponents();
+      providers: [provideRouter([])]
+    }).compileComponents();
 
     fixture = TestBed.createComponent(FooterComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it('should create a compact footer without sponsors', () => {
     expect(component).toBeTruthy();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.footer-sponsors')).toBeNull();
+    expect(el.querySelectorAll('.footer-nav-link').length).toBe(component.navLinks.length);
+    expect(el.querySelectorAll('.source-pill').length).toBe(component.dataSources.length);
   });
 });

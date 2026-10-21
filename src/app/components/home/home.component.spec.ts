@@ -109,16 +109,18 @@ describe('HomeComponent', () => {
     expect(badge.nativeElement.textContent).toContain('Ultimo Gran Premio disputato');
   });
 
-  it('should render all 4 feature cards including Classifiche', () => {
+  it('should render all 6 feature cards across all app sections', () => {
     fixture.detectChanges();
-    const cards = fixture.debugElement.queryAll(By.css('.feature-cards p-card'));
-    expect(cards.length).toBe(4);
+    const cards = fixture.debugElement.queryAll(By.css('.feature-cards .feature-card'));
+    expect(cards.length).toBe(6);
 
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Gran Premi');
     expect(text).toContain('Circuiti');
     expect(text).toContain('Piloti');
+    expect(text).toContain('Scuderie');
     expect(text).toContain('Classifiche');
+    expect(text).toContain('News');
   });
 
   it('should render the top 3 latest F1 news cards in Home', async () => {
