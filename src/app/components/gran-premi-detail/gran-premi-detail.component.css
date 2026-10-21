@@ -1055,3 +1055,98 @@ Stili per i tab di PrimeNG
 .not-found p {
   color: #cccccc;
 }
+
+
+/* Navigazione sequenziale tra round */
+.round-nav {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.round-nav-spacer {
+  flex: 1;
+}
+
+.round-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  text-decoration: none;
+  max-width: 48%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.round-nav-btn.next {
+  margin-left: auto;
+  text-align: right;
+}
+
+.round-nav-btn i {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #ff3b30;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.round-nav-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.round-nav-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #a1a1aa;
+  font-weight: 600;
+}
+
+.round-nav-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.round-nav-btn:hover {
+  background: linear-gradient(135deg, #27272a 0%, #321818 100%);
+  border-color: rgba(225, 6, 0, 0.55);
+  transform: translateY(-2px);
+}
+
+.round-nav-btn.prev:hover i {
+  transform: translateX(-3px);
+}
+
+.round-nav-btn.next:hover i {
+  transform: translateX(3px);
+}
+
+@media (max-width: 768px) {
+  .round-nav {
+    flex-direction: column;
+  }
+
+  .round-nav-btn {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .round-nav-btn.next {
+    justify-content: space-between;
+  }
+}

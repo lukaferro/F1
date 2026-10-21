@@ -139,8 +139,13 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
     };
   }
 
+  /** Mostra il pulsante "Dettagli Gran Premio" solo se il weekend di gara è già iniziato o concluso */
+  get canViewNextMeetingDetails(): boolean {
+    if (!this.nextMeeting) return false;
+    return new Date(this.nextMeeting.date_start).getTime() <= Date.now();
+  }
+
   getFlag(countryCode?: string): string {
     return smallFlagUrl(countryCode);
   }
 }
-

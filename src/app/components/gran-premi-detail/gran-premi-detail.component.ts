@@ -51,6 +51,7 @@ export class GranPremiDetailComponent implements OnInit {
   private readonly openF1Service = inject(Openf1ServiceService);
 
   meeting: Meeting | null = null;
+  seasonMeetings: Meeting[] = [];
   loading = true;
   error?: string;
 
@@ -150,6 +151,31 @@ export class GranPremiDetailComponent implements OnInit {
         this.loadMeeting(Number(id));
       }
     });
+  }
+
+  get currentMeetingIndex(): number {
+    if (!this.meeting) return -1;
+    return this.seasonMeetings.findIndex(m => m.meeting_key === this.meeting!.meeting_key);
+  }
+
+  get prevMeeting(): Meeting | null {
+    const idx = this.currentMeetingIndex;
+    return idx > 0 ? this.seasonMeetings[idx - 1] : null;
+  }
+
+  get nextMeeting(): Meeting | null {
+    const idx = this.currentMeetingIndex;
+    return idx >= 0 && idx < this.seasonMeetings.length - 1 ? this.seasonMeetings[idx + 1] : null;
+  }
+
+  get prevRoundNumber(): number | null {
+    const idx = this.currentMeetingIndex;
+    return idx > 0 ? idx : null;
+  }
+
+  get nextRoundNumber(): number | null {
+    const idx = this.currentMeetingIndex;
+    return idx >= 0 && idx < this.seasonMeetings.length - 1 ? idx + 2 : null;
   }
 
   getCircuitImage(meeting: Meeting): string | undefined {
@@ -497,6 +523,10 @@ export class GranPremiDetailComponent implements OnInit {
   async loadMeeting(id: number) {
     this.loading = true;
     this.error = undefined;
+    this.expandedSessionKey = null;
+    this.activeTab = {};
+    this.tabRequests.clear();
+    this.loadingTabs.clear();
 
     try {
       const meetings = await this.openF1Service.getMeetings();
@@ -507,9 +537,15 @@ export class GranPremiDetailComponent implements OnInit {
       this.meeting = list.find((m: Meeting) => m.meeting_key === id) || null;
 
       if (!this.meeting) {
+        this.seasonMeetings = [];
         this.error = 'Gran Premio non trovato';
         return;
       }
+
+      const now = new Date();
+      this.seasonMeetings = list
+        .filter((m: Meeting) => m.year === this.meeting!.year && (new Date(m.date_start) <= now || m.meeting_key === id))
+        .sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime());
 
       this.currentSponsor = titleSponsor(this.meeting.meeting_official_name);
 

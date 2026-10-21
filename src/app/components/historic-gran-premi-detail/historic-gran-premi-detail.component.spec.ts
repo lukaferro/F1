@@ -3,7 +3,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
 import { HistoricGranPremiDetailComponent } from './historic-gran-premi-detail.component';
-import { JolpicaService, HistoricRaceDetail, HistoricQualifyingResult } from '../../services/jolpica.service';
+import { JolpicaService, HistoricRaceDetail, HistoricQualifyingResult, HistoricRaceSummary } from '../../services/jolpica.service';
 import { WikipediaService } from '../../services/wikipedia.service';
 
 const fakeRace = (extra: Partial<HistoricRaceDetail> = {}): HistoricRaceDetail => ({
@@ -95,21 +95,61 @@ const fakeQualifying: HistoricQualifyingResult[] = [
   }
 ];
 
+const fakeSeasonRaces: HistoricRaceSummary[] = [
+  {
+    season: 1988,
+    round: 1,
+    raceName: 'Brazilian Grand Prix',
+    circuitId: 'jacarepagua',
+    circuitName: 'Autódromo Internacional Nelson Piquet',
+    locality: 'Rio de Janeiro',
+    country: 'Brazil',
+    date: '1988-04-03'
+  },
+  {
+    season: 1988,
+    round: 2,
+    raceName: 'San Marino Grand Prix',
+    circuitId: 'imola',
+    circuitName: 'Autodromo Enzo e Dino Ferrari',
+    locality: 'Imola',
+    country: 'Italy',
+    date: '1988-05-01'
+  },
+  {
+    season: 1988,
+    round: 3,
+    raceName: 'Monaco Grand Prix',
+    circuitId: 'monaco',
+    circuitName: 'Circuit de Monaco',
+    locality: 'Monte-Carlo',
+    country: 'Monaco',
+    date: '1988-05-15'
+  }
+];
+
 describe('HistoricGranPremiDetailComponent', () => {
   let fixture: ComponentFixture<HistoricGranPremiDetailComponent>;
   let component: HistoricGranPremiDetailComponent;
   let jolpicaMock: {
     getRaceResults: ReturnType<typeof vi.fn>;
     getRaceQualifying: ReturnType<typeof vi.fn>;
+    getSeasonRaces?: ReturnType<typeof vi.fn>;
   };
   let wikiMock: {
     getImages: ReturnType<typeof vi.fn>;
   };
 
-  const setup = async (raceData: HistoricRaceDetail | null = fakeRace(), qualiData: HistoricQualifyingResult[] = fakeQualifying) => {
+  const setup = async (
+    raceData: HistoricRaceDetail | null = fakeRace(),
+    qualiData: HistoricQualifyingResult[] = fakeQualifying,
+    roundParam = '1',
+    seasonRacesData: HistoricRaceSummary[] = fakeSeasonRaces
+  ) => {
     jolpicaMock = {
       getRaceResults: vi.fn().mockResolvedValue(raceData),
-      getRaceQualifying: vi.fn().mockResolvedValue(qualiData)
+      getRaceQualifying: vi.fn().mockResolvedValue(qualiData),
+      getSeasonRaces: vi.fn().mockResolvedValue(seasonRacesData)
     };
     wikiMock = {
       getImages: vi.fn().mockResolvedValue(new Map([['Alain_Prost', 'https://example.com/prost.jpg']]))
@@ -125,7 +165,7 @@ describe('HistoricGranPremiDetailComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: {
-              subscribe: (fn: (params: unknown) => void) => fn(convertToParamMap({ season: '1988', round: '1' }))
+              subscribe: (fn: (params: unknown) => void) => fn(convertToParamMap({ season: '1988', round: roundParam }))
             }
           }
         }
@@ -156,6 +196,22 @@ describe('HistoricGranPremiDetailComponent', () => {
     // Foto caricata per Prost
     const img = el.querySelector<HTMLImageElement>('.podium-visual img');
     expect(img?.src).toContain('https://example.com/prost.jpg');
+  });
+
+  it('renders sequential round navigation buttons (prev/next)', async () => {
+    await setup(fakeRace({ round: 2, raceName: 'San Marino Grand Prix' }), fakeQualifying, '2');
+    const el: HTMLElement = fixture.nativeElement;
+
+    const prevBtn = el.querySelector<HTMLAnchorElement>('.round-nav-btn.prev');
+    const nextBtn = el.querySelector<HTMLAnchorElement>('.round-nav-btn.next');
+
+    expect(prevBtn).toBeTruthy();
+    expect(prevBtn?.textContent).toContain('Gara precedente (Round 1)');
+    expect(prevBtn?.textContent).toContain('Brazilian Grand Prix');
+
+    expect(nextBtn).toBeTruthy();
+    expect(nextBtn?.textContent).toContain('Gara successiva (Round 3)');
+    expect(nextBtn?.textContent).toContain('Monaco Grand Prix');
   });
 
   it('links drivers to historic profile or current profile', async () => {

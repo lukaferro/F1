@@ -39,7 +39,7 @@
             </div>
           </div>
 
-          @if (isUpcoming) {
+          @if (isUpcoming && !canViewNextMeetingDetails) {
             <div class="next-race-countdown">
               <div class="countdown-title">Inizio weekend tra:</div>
               <div class="countdown-grid">
@@ -63,15 +63,14 @@
             </div>
           }
 
-          <div class="next-race-action">
-            <p-button
-              label="Dettagli Gran Premio"
-              icon="pi pi-arrow-right"
-              iconPos="right"
-              [routerLink]="['/granpremi', nextMeeting.meeting_key]"
-              styleClass="p-button-danger">
-            </p-button>
-          </div>
+          @if (canViewNextMeetingDetails) {
+            <div class="next-race-action">
+              <a [routerLink]="['/granpremi', nextMeeting.meeting_key]" class="next-race-btn">
+                <span>Dettagli Gran Premio</span>
+                <i class="pi pi-arrow-right"></i>
+              </a>
+            </div>
+          }
         </div>
       </div>
     </section>
@@ -112,7 +111,7 @@
 
       <p-card header="Classifiche" subheader="Campionato Mondiale" [style]="{ width: '360px' }">
         <ng-template pTemplate="header">
-          <img alt="Classifiche" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/2019_Formula_One_Italian_Grand_Prix_Podium_%2848719266736%29.jpg/640px-2019_Formula_One_Italian_Grand_Prix_Podium_%2848719266736%29.jpg" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
+          <img alt="Classifiche" src="assets/classifiche.jpg" [style]="{ width: '300px'}" loading="lazy" decoding="async" />
         </ng-template>
         <p>Classifiche mondiali piloti e costruttori aggiornate, con l'archivio storico completo dal 1950.</p>
         <ng-template pTemplate="footer">

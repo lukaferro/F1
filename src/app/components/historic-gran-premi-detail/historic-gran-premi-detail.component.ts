@@ -1,7 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { JolpicaService, HistoricRaceDetail, HistoricRaceResult, HistoricQualifyingResult } from '../../services/jolpica.service';
+import {
+  JolpicaService,
+  HistoricRaceDetail,
+  HistoricRaceResult,
+  HistoricQualifyingResult,
+  HistoricRaceSummary
+} from '../../services/jolpica.service';
 import { WikipediaService } from '../../services/wikipedia.service';
 import { countryNameToCode, flagUrl } from '../../utils/country-flags';
 import { constructorColor, constructorLogo, ConstructorLogo } from '../../utils/constructor-branding';
@@ -23,6 +29,7 @@ export class HistoricGranPremiDetailComponent implements OnInit {
   round = 0;
   raceDetail: HistoricRaceDetail | null = null;
   qualifyingResults: HistoricQualifyingResult[] = [];
+  seasonRaces: HistoricRaceSummary[] = [];
   driverPhotos = new Map<string, string>();
   loading = true;
   error = false;
@@ -48,20 +55,27 @@ export class HistoricGranPremiDetailComponent implements OnInit {
     this.driverPhotos.clear();
 
     try {
-      const [race, quali] = await Promise.all([
+      const [race, quali, races] = await Promise.all([
         this.jolpica.getRaceResults(season, round),
-        this.jolpica.getRaceQualifying(season, round).catch(() => [])
+        this.jolpica.getRaceQualifying(season, round).catch(() => []),
+        (this.jolpica.getSeasonRaces?.(season) ?? Promise.resolve([])).catch(() => [])
       ]);
 
       if (!race) {
         this.notFound = true;
         this.raceDetail = null;
         this.qualifyingResults = [];
+        this.seasonRaces = [];
         return;
       }
 
       this.raceDetail = race;
       this.qualifyingResults = quali;
+      this.seasonRaces = races;
+
+      if (quali.length === 0 && this.selectedTab === 'qualifying') {
+        this.selectedTab = 'results';
+      }
 
       // Carica foto Wikipedia dei primi 3 classificati (podio)
       const top3 = race.results.slice(0, 3);
@@ -87,6 +101,29 @@ export class HistoricGranPremiDetailComponent implements OnInit {
     if (this.season && this.round) {
       this.loadRace(this.season, this.round);
     }
+  }
+
+  get prevRace(): HistoricRaceSummary | null {
+    return this.seasonRaces.find(r => r.round === this.round - 1) ?? null;
+  }
+
+  get nextRace(): HistoricRaceSummary | null {
+    return this.seasonRaces.find(r => r.round === this.round + 1) ?? null;
+  }
+
+  get prevRound(): number | null {
+    if (this.seasonRaces.length > 0) {
+      return this.prevRace?.round ?? null;
+    }
+    return this.round > 1 ? this.round - 1 : null;
+  }
+
+  get nextRound(): number | null {
+    return this.nextRace?.round ?? null;
+  }
+
+  get totalRounds(): number {
+    return this.seasonRaces.length;
   }
 
   // Ordine del podio visivo a schermo: secondo (sinistra), primo (centro, più alto), terzo (destra)

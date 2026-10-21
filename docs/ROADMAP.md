@@ -4,7 +4,7 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-## 1. Home & Prossimo Gran Premio (In corso) 🏁
+## 1. Home & Prossimo Gran Premio (Completato) ✅
 - **Card "Classifiche" in Home**: Aggiunta della quarta card nella griglia "Scopri la Formula 1" (Gran Premi, Circuiti, Piloti, Classifiche) con anteprima e link diretto a `/classifiche`.
 - **Widget Prossimo Gran Premio (Next Race / Last Race)**:
   - Rilevamento automatico del prossimo Gran Premio in calendario (o dell'ultimo disputato se stagione conclusa).
@@ -13,8 +13,8 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-## 2. Navigazione rapida Gran Premi storici (Da fare) 🔄
-- **Navigazione sequenziale tra round**: Nei dettagli dei Gran Premi storici (`/granpremi/storico/:season/:round`), pulsanti "← Gara precedente (Round X-1)" e "Gara successiva (Round X+1) →".
+## 2. Navigazione rapida Gran Premi storici (Completato) ✅
+- **Navigazione sequenziale tra round**: Nei dettagli dei Gran Premi storici (`/granpremi/storico/:season/:round`), pulsanti "← Gara precedente (Round X-1)" e "Gara successiva (Round X+1) →" con il nome del Gran Premio.
 - Permette di sfogliare un'intera stagione storica gara per gara senza dover tornare alla lista dei Gran Premi.
 
 ---

@@ -16,6 +16,32 @@
           </div>
         </div>
       </div>
+
+      @if (prevMeeting || nextMeeting) {
+        <nav class="round-nav" aria-label="Navigazione gare della stagione">
+          @if (prevMeeting) {
+            <a [routerLink]="['/granpremi', prevMeeting.meeting_key]" class="round-nav-btn prev">
+              <i class="pi pi-arrow-left"></i>
+              <div class="round-nav-info">
+                <span class="round-nav-label">Gara precedente (Round {{ prevRoundNumber }})</span>
+                <span class="round-nav-title">{{ prevMeeting.meeting_name }}</span>
+              </div>
+            </a>
+          } @else {
+            <div class="round-nav-spacer"></div>
+          }
+
+          @if (nextMeeting) {
+            <a [routerLink]="['/granpremi', nextMeeting.meeting_key]" class="round-nav-btn next">
+              <div class="round-nav-info">
+                <span class="round-nav-label">Gara successiva (Round {{ nextRoundNumber }})</span>
+                <span class="round-nav-title">{{ nextMeeting.meeting_name }}</span>
+              </div>
+              <i class="pi pi-arrow-right"></i>
+            </a>
+          }
+        </nav>
+      }
     </div>
     <div class="detail-content">
       <div class="detail-main">
@@ -463,4 +489,3 @@
     </div>
   </div>
 }
-

@@ -297,27 +297,49 @@ h1 {
   align-items: center;
 }
 
-.next-race-action ::ng-deep .p-button {
+.next-race-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.8rem 1.4rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+  text-shadow: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.next-race-btn i {
+  font-size: 0.85rem;
+  color: #ff3b30;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.next-race-btn:hover {
   background: #e10600;
   border-color: #e10600;
-  box-shadow: none !important;
-  text-shadow: none !important;
-  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.next-race-action ::ng-deep .p-button:not(:disabled):hover {
+  color: #ffffff;
   transform: translateY(-2px);
-  background: #cc0500;
-  border-color: #cc0500;
-  box-shadow: none !important;
-  text-shadow: none !important;
-  filter: none !important;
+  box-shadow: none;
+  text-shadow: none;
 }
 
-.next-race-action ::ng-deep .p-button:not(:disabled):focus,
-.next-race-action ::ng-deep .p-button:not(:disabled):active {
-  box-shadow: none !important;
-  outline: none !important;
+.next-race-btn:hover i {
+  color: #ffffff;
+  transform: translateX(3px);
+}
+
+.next-race-btn:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .feature-cards ::ng-deep .p-card {

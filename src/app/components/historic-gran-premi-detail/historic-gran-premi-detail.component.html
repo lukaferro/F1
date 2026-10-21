@@ -27,7 +27,9 @@
   } @else {
     <header class="gp-hero">
       <div class="hero-top">
-        <span class="badge badge-round">Round {{ raceDetail.round }}</span>
+        <span class="badge badge-round">
+          Round {{ raceDetail.round }}@if (totalRounds > 0) { / {{ totalRounds }} }
+        </span>
         <span class="badge badge-season">{{ raceDetail.season }}</span>
         <span class="badge badge-date">{{ raceDetail.date | date:'longDate' }}</span>
         @if (raceDetail.url) {
@@ -48,6 +50,36 @@
         <span class="circuit-name">{{ raceDetail.circuitName }}</span>
       </div>
     </header>
+
+    @if (prevRound || nextRound) {
+      <nav class="round-nav" aria-label="Navigazione gare della stagione">
+        @if (prevRound) {
+          <a [routerLink]="['/granpremi/storico', season, prevRound]" class="round-nav-btn prev">
+            <i class="pi pi-arrow-left"></i>
+            <div class="round-nav-info">
+              <span class="round-nav-label">Gara precedente (Round {{ prevRound }})</span>
+              @if (prevRace) {
+                <span class="round-nav-title">{{ prevRace.raceName }}</span>
+              }
+            </div>
+          </a>
+        } @else {
+          <div class="round-nav-spacer"></div>
+        }
+
+        @if (nextRound) {
+          <a [routerLink]="['/granpremi/storico', season, nextRound]" class="round-nav-btn next">
+            <div class="round-nav-info">
+              <span class="round-nav-label">Gara successiva (Round {{ nextRound }})</span>
+              @if (nextRace) {
+                <span class="round-nav-title">{{ nextRace.raceName }}</span>
+              }
+            </div>
+            <i class="pi pi-arrow-right"></i>
+          </a>
+        }
+      </nav>
+    }
 
     @if (qualifyingResults.length > 0) {
       <div class="gp-tabs" role="tablist">
