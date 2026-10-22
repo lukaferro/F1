@@ -86,10 +86,10 @@
             </span>
             <div class="article-actions" (click)="$event.stopPropagation()">
               <button type="button" class="read-more-btn" (click)="openArticleModal(hero)">
-                <span>Approfondisci</span>
-                <i class="pi pi-eye"></i>
+                <span>Leggi articolo completo</span>
+                <i class="pi pi-book"></i>
               </button>
-              <a [href]="hero.link" target="_blank" rel="noopener" class="external-source-btn">
+              <a [href]="hero.link" target="_blank" rel="noopener" class="external-source-btn" title="Apri fonte esterna">
                 <span>Fonte</span>
                 <i class="pi pi-external-link"></i>
               </a>
@@ -124,7 +124,7 @@
                   </span>
                   <div class="card-links">
                     <button type="button" class="card-read-btn" (click)="openArticleModal(item)">
-                      Leggi <i class="pi pi-angle-right"></i>
+                      Leggi tutto <i class="pi pi-book"></i>
                     </button>
                     <a [href]="item.link" target="_blank" rel="noopener" class="card-ext-link" title="Apri articolo originale">
                       <i class="pi pi-external-link"></i>
@@ -147,40 +147,63 @@
 
   <!-- Modale di lettura rapida articolo -->
   @if (selectedArticle; as active) {
-    <div class="news-modal-backdrop" (click)="closeArticleModal()" role="dialog" aria-modal="true" [attr.aria-label]="active.title">
-      <div class="news-modal" (click)="$event.stopPropagation()">
+    <div
+      class="news-modal-backdrop"
+      (click)="closeArticleModal()"
+      (wheel)="$event.preventDefault()"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="active.title">
+      <div class="news-modal" (click)="$event.stopPropagation()" (wheel)="$event.stopPropagation()">
         <button type="button" class="modal-close-btn" (click)="closeArticleModal()" aria-label="Chiudi">
           <i class="pi pi-times"></i>
         </button>
 
-        <div class="modal-image-wrap">
-          <img [src]="active.imageUrl" [alt]="active.title" (error)="onImageError($event)" class="modal-image" />
-        </div>
-
-        <div class="modal-content">
-          <div class="article-meta">
-            <span class="cat-badge" [attr.data-cat]="active.category">{{ active.category }}</span>
-            <span class="meta-dot">•</span>
-            <span class="meta-source">{{ active.source }}</span>
-            @if (active.author) {
-              <span class="meta-dot">•</span>
-              <span class="meta-author">di {{ active.author }}</span>
-            }
-            <span class="meta-dot">•</span>
-            <span class="meta-date">{{ active.publishedAt | date:'d MMMM yyyy, HH:mm' }}</span>
+        <div class="news-modal-scroll">
+          <div class="modal-image-wrap">
+            <img [src]="active.imageUrl" [alt]="active.title" (error)="onImageError($event)" class="modal-image" />
           </div>
 
-          <h2>{{ active.title }}</h2>
-          <p class="modal-lead">{{ active.summary }}</p>
-          @if (active.content && active.content !== active.summary) {
-            <p class="modal-body-text">{{ active.content }}</p>
-          }
+          <div class="modal-content">
+            <div class="article-meta">
+              <span class="cat-badge" [attr.data-cat]="active.category">{{ active.category }}</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-source">{{ active.source }}</span>
+              @if (active.author) {
+                <span class="meta-dot">•</span>
+                <span class="meta-author">di {{ active.author }}</span>
+              }
+              <span class="meta-dot">•</span>
+              <span class="meta-date">{{ active.publishedAt | date:'d MMMM yyyy, HH:mm' }}</span>
+            </div>
 
-          <div class="modal-actions">
-            <a [href]="active.link" target="_blank" rel="noopener" class="modal-full-article-btn">
-              <span>Leggi l'articolo integrale su {{ active.source }}</span>
-              <i class="pi pi-external-link"></i>
-            </a>
+            <h2>{{ active.title }}</h2>
+            <p class="modal-lead">{{ active.summary }}</p>
+
+            @if (articleLoading) {
+              <div class="modal-article-loading" aria-busy="true">
+                <i class="pi pi-spin pi-spinner"></i>
+                <span>Caricamento articolo integrale in corso...</span>
+              </div>
+            } @else if (active.paragraphs && active.paragraphs.length > 0) {
+              <div class="modal-article-body">
+                @for (para of active.paragraphs; track $index) {
+                  <p class="modal-body-text">{{ para }}</p>
+                }
+              </div>
+            } @else if (active.content && active.content !== active.summary) {
+              <p class="modal-body-text">{{ active.content }}</p>
+            }
+
+            <div class="modal-actions">
+              <span class="reading-time">
+                <i class="pi pi-clock"></i> Tempo di lettura stimato: {{ active.readingMinutes }} min
+              </span>
+              <a [href]="active.link" target="_blank" rel="noopener" class="modal-source-link-btn">
+                <span>Vedi fonte originale su {{ active.source }}</span>
+                <i class="pi pi-external-link"></i>
+              </a>
+            </div>
           </div>
         </div>
       </div>

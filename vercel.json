@@ -16,6 +16,18 @@
       "destination": "https://www.gazzetta.it/dynamic-feed/rss/section/Formula-1.xml"
     },
     {
+      "source": "/api/article/motorsport/:path*",
+      "destination": "https://it.motorsport.com/:path*"
+    },
+    {
+      "source": "/api/article/formulapassion/:path*",
+      "destination": "https://www.formulapassion.it/:path*"
+    },
+    {
+      "source": "/api/article/gazzetta/:path*",
+      "destination": "https://www.gazzetta.it/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

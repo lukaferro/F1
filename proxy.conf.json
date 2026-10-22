@@ -22,5 +22,29 @@
     "pathRewrite": {
       "^/api/rss/gazzetta": "/dynamic-feed/rss/section/Formula-1.xml"
     }
+  },
+  "/api/article/motorsport": {
+    "target": "https://it.motorsport.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/article/motorsport": ""
+    }
+  },
+  "/api/article/formulapassion": {
+    "target": "https://www.formulapassion.it",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/article/formulapassion": ""
+    }
+  },
+  "/api/article/gazzetta": {
+    "target": "https://www.gazzetta.it",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/article/gazzetta": ""
+    }
   }
 }

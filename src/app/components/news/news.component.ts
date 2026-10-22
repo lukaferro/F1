@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
 import { NewsService, F1NewsArticle } from '../../services/news.service';
 import { NewsStateService, NewsCategory } from '../../services/news-state.service';
@@ -15,6 +16,7 @@ import { NewsStateService, NewsCategory } from '../../services/news-state.servic
 export class NewsComponent implements OnInit {
   private readonly newsService = inject(NewsService);
   private readonly stateService = inject(NewsStateService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
 
   readonly categories: NewsCategory[] = [
     'Tutte',
@@ -27,6 +29,7 @@ export class NewsComponent implements OnInit {
   articles: F1NewsArticle[] = [];
   filteredArticles: F1NewsArticle[] = [];
   selectedArticle: F1NewsArticle | null = null;
+  articleLoading = false;
 
   selectedCategory: NewsCategory = 'Tutte';
   searchQuery = '';
@@ -36,6 +39,14 @@ export class NewsComponent implements OnInit {
     this.selectedCategory = this.stateService.selectedCategory;
     this.searchQuery = this.stateService.searchQuery;
     await this.loadNews();
+
+    const targetArticleId = this.route?.snapshot?.queryParamMap?.get('article');
+    if (targetArticleId) {
+      const match = this.articles.find(a => a.id === targetArticleId);
+      if (match) {
+        await this.openArticleModal(match);
+      }
+    }
   }
 
   async loadNews(forceRefresh = false): Promise<void> {
@@ -99,12 +110,25 @@ export class NewsComponent implements OnInit {
     return this.articles.filter(a => a.category === category).length;
   }
 
-  openArticleModal(article: F1NewsArticle): void {
+  async openArticleModal(article: F1NewsArticle): Promise<void> {
     this.selectedArticle = article;
+    if (!article.fullContentLoaded) {
+      this.articleLoading = true;
+      try {
+        await this.newsService.fetchFullArticle(article);
+      } finally {
+        if (this.selectedArticle?.id === article.id) {
+          this.articleLoading = false;
+        }
+      }
+    } else {
+      this.articleLoading = false;
+    }
   }
 
   closeArticleModal(): void {
     this.selectedArticle = null;
+    this.articleLoading = false;
   }
 
   onImageError(event: Event): void {

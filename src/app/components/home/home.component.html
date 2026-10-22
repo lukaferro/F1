@@ -172,7 +172,7 @@
 
       <div class="home-news-grid">
         @for (article of latestNews; track article.id) {
-          <a routerLink="/news" class="home-news-card f1-card">
+          <a routerLink="/news" [queryParams]="{ article: article.id }" class="home-news-card f1-card">
             <div class="home-news-img-wrap">
               <img [src]="article.imageUrl" [alt]="article.title" loading="lazy" decoding="async" />
               <span class="home-news-cat">{{ article.category }}</span>

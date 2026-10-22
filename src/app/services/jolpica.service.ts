@@ -125,6 +125,16 @@ export interface HistoricQualifyingResult {
   q3?: string;
 }
 
+export interface SeasonRoundPoints {
+  round: number;
+  raceName: string;
+  locality: string;
+  country: string;
+  date: string;
+  driverPoints: Record<string, number>;
+  constructorPoints: Record<string, number>;
+}
+
 // Forme delle risposte Jolpica (solo i campi usati)
 interface JolpicaConstructor { constructorId: string; name: string; nationality: string; }
 interface JolpicaDriver {
@@ -182,6 +192,7 @@ interface JolpicaRaceRow {
     Location: { locality: string; country: string; lat?: string; long?: string };
   };
   Results?: JolpicaResultRow[];
+  SprintResults?: JolpicaResultRow[];
   QualifyingResults?: JolpicaQualifyingRow[];
 }
 
@@ -479,6 +490,77 @@ export class JolpicaService {
         q2: q.Q2,
         q3: q.Q3
       }));
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 404) return [];
+      throw err;
+    }
+  }
+
+  /**
+   * Punti guadagnati gara per gara (inclusa eventuale Sprint dal 2021) per tutti i piloti e costruttori
+   * della stagione selezionata, ordinati per round crescente.
+   */
+  async getSeasonPointsByRound(season: number): Promise<SeasonRoundPoints[]> {
+    const FIRST_SPRINT_SEASON = 2021;
+    try {
+      const [racePages, sprintPages] = await Promise.all([
+        this.getAllPages<RaceResponse>(offset => `${BASE_URL}/${season}/results/?limit=${PAGE_SIZE}&offset=${offset}`),
+        season >= FIRST_SPRINT_SEASON
+          ? this.getAllPages<RaceResponse>(offset => `${BASE_URL}/${season}/sprint/?limit=${PAGE_SIZE}&offset=${offset}`).catch(() => [] as RaceResponse[])
+          : Promise.resolve([] as RaceResponse[])
+      ]);
+
+      const byRound = new Map<number, SeasonRoundPoints>();
+
+      const ensureRound = (r: JolpicaRaceRow): SeasonRoundPoints => {
+        const roundNum = Number(r.round);
+        let entry = byRound.get(roundNum);
+        if (!entry) {
+          entry = {
+            round: roundNum,
+            raceName: r.raceName,
+            locality: r.Circuit.Location.locality,
+            country: r.Circuit.Location.country,
+            date: r.date,
+            driverPoints: {},
+            constructorPoints: {}
+          };
+          byRound.set(roundNum, entry);
+        }
+        return entry;
+      };
+
+      for (const page of racePages) {
+        for (const race of page.MRData.RaceTable.Races || []) {
+          const entry = ensureRound(race);
+          for (const row of race.Results || []) {
+            const pts = Number(row.points) || 0;
+            if (pts > 0) {
+              const dId = row.Driver.driverId;
+              const cId = row.Constructor.constructorId;
+              entry.driverPoints[dId] = (entry.driverPoints[dId] ?? 0) + pts;
+              entry.constructorPoints[cId] = (entry.constructorPoints[cId] ?? 0) + pts;
+            }
+          }
+        }
+      }
+
+      for (const page of sprintPages) {
+        for (const race of page.MRData.RaceTable.Races || []) {
+          const entry = ensureRound(race);
+          for (const row of race.SprintResults || []) {
+            const pts = Number(row.points) || 0;
+            if (pts > 0) {
+              const dId = row.Driver.driverId;
+              const cId = row.Constructor.constructorId;
+              entry.driverPoints[dId] = (entry.driverPoints[dId] ?? 0) + pts;
+              entry.constructorPoints[cId] = (entry.constructorPoints[cId] ?? 0) + pts;
+            }
+          }
+        }
+      }
+
+      return Array.from(byRound.values()).sort((a, b) => a.round - b.round);
     } catch (err) {
       if (err instanceof HttpErrorResponse && err.status === 404) return [];
       throw err;

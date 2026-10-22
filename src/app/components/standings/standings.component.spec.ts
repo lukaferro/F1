@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { StandingsComponent } from './standings.component';
-import { ConstructorStanding, DriverStanding, JolpicaService } from '../../services/jolpica.service';
+import { ConstructorStanding, DriverStanding, JolpicaService, SeasonRoundPoints } from '../../services/jolpica.service';
 import { StandingsStateService, StandingsTab } from '../../services/standings-state.service';
 import { Openf1ServiceService } from '../../services/openf1-service';
 import { ApiStatus } from '../../services/http-cache';
@@ -19,6 +19,7 @@ interface Setup {
   latest?: number;
   drivers?: (season: number) => Promise<DriverStanding[]>;
   constructors?: (season: number) => Promise<ConstructorStanding[]>;
+  rounds?: (season: number) => Promise<SeasonRoundPoints[]>;
   failInit?: boolean;
   grid?: object[];
   status?: ApiStatus;
@@ -36,7 +37,8 @@ describe('StandingsComponent', () => {
       getSeasons: () => setup.failInit ? Promise.reject(new Error('down')) : Promise.resolve([2026, 2025, 2024, 1988, 1955]),
       getLatestSeasonWithStandings: () => setup.failInit ? Promise.reject(new Error('down')) : Promise.resolve(latest),
       getDriverStandings: setup.drivers ?? (() => Promise.resolve([])),
-      getConstructorStandings: setup.constructors ?? (() => Promise.resolve([]))
+      getConstructorStandings: setup.constructors ?? (() => Promise.resolve([])),
+      getSeasonPointsByRound: setup.rounds ?? (() => Promise.resolve([]))
     };
     await TestBed.configureTestingModule({
       imports: [StandingsComponent, NoopAnimationsModule],
@@ -278,5 +280,46 @@ describe('StandingsComponent', () => {
     expect(component.tab).toBe('drivers');
     expect(component.selectedSeason).toBe(1988);
     expect(component.driverStandings[0]?.fullName).toBe('Ayrton Senna');
+  });
+
+  it('builds and renders the points progression chart when round data is available', async () => {
+    const sampleRounds: SeasonRoundPoints[] = [
+      {
+        round: 1,
+        raceName: 'Bahrain Grand Prix',
+        locality: 'Sakhir',
+        country: 'Bahrain',
+        date: '2026-03-08',
+        driverPoints: { d1: 25, d2: 18 },
+        constructorPoints: { ferrari: 43 }
+      },
+      {
+        round: 2,
+        raceName: 'Saudi Arabian Grand Prix',
+        locality: 'Jeddah',
+        country: 'Saudi Arabia',
+        date: '2026-03-15',
+        driverPoints: { d1: 18, d2: 25 },
+        constructorPoints: { ferrari: 43 }
+      }
+    ];
+
+    await create({
+      drivers: () => Promise.resolve([
+        driver(1, 'Charles Leclerc', { driverId: 'd1', code: 'LEC' }),
+        driver(2, 'Lewis Hamilton', { driverId: 'd2', code: 'HAM' })
+      ]),
+      rounds: () => Promise.resolve(sampleRounds)
+    });
+
+    const chart = component.progressionChart;
+    expect(chart).not.toBeNull();
+    expect(chart?.series.length).toBe(2);
+    expect(chart?.series[0].totalPoints).toBe(43);
+    expect(chart?.series[1].dashed).toBe(true); // secondo pilota stesso team
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.progression-svg')).not.toBeNull();
+    expect(el.querySelectorAll('.legend-pill').length).toBe(2);
   });
 });

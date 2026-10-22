@@ -78,6 +78,158 @@
           }
         </div>
 
+        <!-- Grafico Andamento del Campionato (Piloti) -->
+        <div class="progression-card f1-card">
+          <div class="progression-header">
+            <div class="progression-title-group">
+              <span class="f1-badge">
+                <i class="pi pi-chart-line"></i>
+                <span>Analisi Stagione {{ selectedSeason }}</span>
+              </span>
+              <h2 class="progression-title">Andamento del Campionato Piloti</h2>
+              <p class="progression-subtitle">Progressione cumulativa dei punti gara dopo gara (Round 1 → Finale). Clicca sui piloti per filtrare le linee o passa sui round per i dettagli.</p>
+            </div>
+            <div class="progression-controls" role="group" aria-label="Numero piloti nel grafico">
+              @for (lim of [5, 8, 10]; track lim) {
+                <button
+                  type="button"
+                  class="limit-chip"
+                  [class.active]="chartTopLimit === lim"
+                  (click)="setChartTopLimit($any(lim))">
+                  Top {{ lim }}
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (chartLoading) {
+            <div class="progression-loading" aria-busy="true">
+              <i class="pi pi-spin pi-spinner"></i>
+              <span>Elaborazione andamento punti gara per gara...</span>
+            </div>
+          } @else if (progressionChart; as chart) {
+            <div class="progression-legend">
+              @for (cand of progressionCandidates; track cand.id) {
+                <button
+                  type="button"
+                  class="legend-pill"
+                  [class.muted]="isSeriesHidden(cand.id)"
+                  [class.highlighted]="hoveredSeriesId === cand.id"
+                  (click)="toggleSeries(cand.id)"
+                  (mouseenter)="hoveredSeriesId = cand.id"
+                  (mouseleave)="hoveredSeriesId = null">
+                  <span
+                    class="legend-line"
+                    [class.dashed]="cand.dashed"
+                    [style.--line-color]="cand.color"></span>
+                  <span class="legend-name">{{ cand.label }}</span>
+                  <span class="legend-pts">{{ cand.points }} pt</span>
+                </button>
+              }
+            </div>
+
+            <div class="progression-svg-wrap">
+              <svg
+                class="progression-svg"
+                [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height"
+                role="img"
+                [attr.aria-label]="'Grafico evoluzione punti piloti stagione ' + selectedSeason">
+                <!-- Griglia orizzontale e tacche asse Y -->
+                @for (yt of chart.yTicks; track yt.value) {
+                  <line
+                    class="chart-grid-line"
+                    [attr.x1]="chart.plotLeft"
+                    [attr.y1]="yt.y"
+                    [attr.x2]="chart.plotRight"
+                    [attr.y2]="yt.y" />
+                  <text
+                    class="chart-axis-text y-label"
+                    [attr.x]="chart.plotLeft - 10"
+                    [attr.y]="yt.y + 4">{{ yt.label }}</text>
+                }
+
+                <!-- Linea verticale del Round selezionato -->
+                @if (chart.rounds[activeRoundIndex]; as activeTick) {
+                  <line
+                    class="chart-active-guide"
+                    [attr.x1]="activeTick.x"
+                    [attr.y1]="chart.plotTop"
+                    [attr.x2]="activeTick.x"
+                    [attr.y2]="chart.plotBottom" />
+                }
+
+                <!-- Etichette Round sull'asse X -->
+                @for (rt of chart.rounds; track rt.round) {
+                  @if (rt.showAxisLabel || rt.index === activeRoundIndex) {
+                    <text
+                      class="chart-axis-text x-label"
+                      [class.active]="rt.index === activeRoundIndex"
+                      [attr.x]="rt.x"
+                      [attr.y]="chart.height - 10">{{ rt.label }}</text>
+                  }
+                }
+
+                <!-- Linee di progressione per ogni pilota -->
+                @for (s of chart.series; track s.id) {
+                  <path
+                    class="chart-series-path"
+                    [class.dimmed]="hoveredSeriesId !== null && hoveredSeriesId !== s.id"
+                    [class.emphasized]="hoveredSeriesId === s.id"
+                    [attr.d]="s.pathD"
+                    [attr.stroke]="s.color"
+                    [attr.stroke-dasharray]="s.dashed ? '7 5' : null" />
+                  @for (n of s.nodes; track n.round) {
+                    <circle
+                      class="chart-series-dot"
+                      [class.active]="n.roundIndex === activeRoundIndex"
+                      [class.dimmed]="hoveredSeriesId !== null && hoveredSeriesId !== s.id"
+                      [attr.cx]="n.x"
+                      [attr.cy]="n.y"
+                      [attr.r]="n.roundIndex === activeRoundIndex ? 5 : 3"
+                      [attr.fill]="s.color" />
+                  }
+                }
+
+                <!-- Colonne interattive per selezione/hover del Round -->
+                @for (rt of chart.rounds; track rt.round) {
+                  <rect
+                    class="chart-hit-col"
+                    [attr.x]="rt.hitLeft"
+                    [attr.y]="chart.plotTop"
+                    [attr.width]="rt.hitWidth"
+                    [attr.height]="chart.plotBottom - chart.plotTop"
+                    (mouseenter)="selectRoundIndex(rt.index)"
+                    (click)="selectRoundIndex(rt.index)" />
+                }
+              </svg>
+            </div>
+
+            @if (activeRoundInfo; as rInfo) {
+              <div class="round-inspector">
+                <div class="inspector-meta">
+                  <span class="inspector-round-badge">Round {{ rInfo.round }} / {{ seasonRounds.length }}</span>
+                  <strong class="inspector-race-name">{{ rInfo.raceName }}</strong>
+                  <span class="inspector-location">{{ rInfo.locality }}, {{ rInfo.country }} • {{ rInfo.date }}</span>
+                </div>
+                <div class="inspector-scores">
+                  @for (s of chart.series; track s.id) {
+                    @if (s.nodes[activeRoundIndex]; as node) {
+                      <div class="inspector-score-chip" [style.--chip-color]="s.color">
+                        <span class="chip-dot"></span>
+                        <span class="chip-name">{{ s.shortLabel }}</span>
+                        <strong class="chip-cum">{{ node.cumulative }} pt</strong>
+                        @if (node.gained > 0) {
+                          <span class="chip-gain">+{{ node.gained }}</span>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              </div>
+            }
+          }
+        </div>
+
         @if (driverStandings.length > 3) {
           <table class="standings-table">
             <colgroup>
@@ -135,6 +287,153 @@
               <span class="podium-points">{{ c.points }} pt</span>
               <span class="podium-wins">{{ c.wins }} {{ c.wins === 1 ? 'vittoria' : 'vittorie' }}</span>
             </div>
+          }
+        </div>
+
+        <!-- Grafico Andamento del Campionato (Costruttori) -->
+        <div class="progression-card f1-card">
+          <div class="progression-header">
+            <div class="progression-title-group">
+              <span class="f1-badge">
+                <i class="pi pi-chart-line"></i>
+                <span>Analisi Stagione {{ selectedSeason }}</span>
+              </span>
+              <h2 class="progression-title">Andamento del Campionato Costruttori</h2>
+              <p class="progression-subtitle">Progressione cumulativa dei punti costruttori gara dopo gara (Round 1 → Finale). Clicca sulle scuderie per filtrare o esplora i singoli round.</p>
+            </div>
+            <div class="progression-controls" role="group" aria-label="Numero costruttori nel grafico">
+              @for (lim of [5, 8, 10]; track lim) {
+                <button
+                  type="button"
+                  class="limit-chip"
+                  [class.active]="chartTopLimit === lim"
+                  (click)="setChartTopLimit($any(lim))">
+                  Top {{ lim }}
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (chartLoading) {
+            <div class="progression-loading" aria-busy="true">
+              <i class="pi pi-spin pi-spinner"></i>
+              <span>Elaborazione andamento punti costruttori gara per gara...</span>
+            </div>
+          } @else if (progressionChart; as chart) {
+            <div class="progression-legend">
+              @for (cand of progressionCandidates; track cand.id) {
+                <button
+                  type="button"
+                  class="legend-pill"
+                  [class.muted]="isSeriesHidden(cand.id)"
+                  [class.highlighted]="hoveredSeriesId === cand.id"
+                  (click)="toggleSeries(cand.id)"
+                  (mouseenter)="hoveredSeriesId = cand.id"
+                  (mouseleave)="hoveredSeriesId = null">
+                  <span
+                    class="legend-line"
+                    [class.dashed]="cand.dashed"
+                    [style.--line-color]="cand.color"></span>
+                  <span class="legend-name">{{ cand.label }}</span>
+                  <span class="legend-pts">{{ cand.points }} pt</span>
+                </button>
+              }
+            </div>
+
+            <div class="progression-svg-wrap">
+              <svg
+                class="progression-svg"
+                [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height"
+                role="img"
+                [attr.aria-label]="'Grafico evoluzione punti costruttori stagione ' + selectedSeason">
+                @for (yt of chart.yTicks; track yt.value) {
+                  <line
+                    class="chart-grid-line"
+                    [attr.x1]="chart.plotLeft"
+                    [attr.y1]="yt.y"
+                    [attr.x2]="chart.plotRight"
+                    [attr.y2]="yt.y" />
+                  <text
+                    class="chart-axis-text y-label"
+                    [attr.x]="chart.plotLeft - 10"
+                    [attr.y]="yt.y + 4">{{ yt.label }}</text>
+                }
+
+                @if (chart.rounds[activeRoundIndex]; as activeTick) {
+                  <line
+                    class="chart-active-guide"
+                    [attr.x1]="activeTick.x"
+                    [attr.y1]="chart.plotTop"
+                    [attr.x2]="activeTick.x"
+                    [attr.y2]="chart.plotBottom" />
+                }
+
+                @for (rt of chart.rounds; track rt.round) {
+                  @if (rt.showAxisLabel || rt.index === activeRoundIndex) {
+                    <text
+                      class="chart-axis-text x-label"
+                      [class.active]="rt.index === activeRoundIndex"
+                      [attr.x]="rt.x"
+                      [attr.y]="chart.height - 10">{{ rt.label }}</text>
+                  }
+                }
+
+                @for (s of chart.series; track s.id) {
+                  <path
+                    class="chart-series-path"
+                    [class.dimmed]="hoveredSeriesId !== null && hoveredSeriesId !== s.id"
+                    [class.emphasized]="hoveredSeriesId === s.id"
+                    [attr.d]="s.pathD"
+                    [attr.stroke]="s.color"
+                    [attr.stroke-dasharray]="s.dashed ? '7 5' : null" />
+                  @for (n of s.nodes; track n.round) {
+                    <circle
+                      class="chart-series-dot"
+                      [class.active]="n.roundIndex === activeRoundIndex"
+                      [class.dimmed]="hoveredSeriesId !== null && hoveredSeriesId !== s.id"
+                      [attr.cx]="n.x"
+                      [attr.cy]="n.y"
+                      [attr.r]="n.roundIndex === activeRoundIndex ? 5 : 3"
+                      [attr.fill]="s.color" />
+                  }
+                }
+
+                @for (rt of chart.rounds; track rt.round) {
+                  <rect
+                    class="chart-hit-col"
+                    [attr.x]="rt.hitLeft"
+                    [attr.y]="chart.plotTop"
+                    [attr.width]="rt.hitWidth"
+                    [attr.height]="chart.plotBottom - chart.plotTop"
+                    (mouseenter)="selectRoundIndex(rt.index)"
+                    (click)="selectRoundIndex(rt.index)" />
+                }
+              </svg>
+            </div>
+
+            @if (activeRoundInfo; as rInfo) {
+              <div class="round-inspector">
+                <div class="inspector-meta">
+                  <span class="inspector-round-badge">Round {{ rInfo.round }} / {{ seasonRounds.length }}</span>
+                  <strong class="inspector-race-name">{{ rInfo.raceName }}</strong>
+                  <span class="inspector-location">{{ rInfo.locality }}, {{ rInfo.country }} • {{ rInfo.date }}</span>
+                </div>
+                <div class="inspector-scores">
+                  @for (s of chart.series; track s.id) {
+                    @if (s.nodes[activeRoundIndex]; as node) {
+                      <div class="inspector-score-chip" [style.--chip-color]="s.color">
+                        <span class="chip-dot"></span>
+                        <span class="chip-name">{{ s.shortLabel }}</span>
+                        <strong class="chip-cum">{{ node.cumulative }} pt</strong>
+                        @if (node.gained > 0) {
+                          <span class="chip-gain">+{{ node.gained }}</span>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              </div>
+            }
           }
         </div>
 

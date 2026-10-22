@@ -75,7 +75,7 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
       description: 'Tutti i team ufficiali con colori, loghi, sedi, Power Unit, line-up piloti e Palmarès Mondiale Costruttori.',
       route: '/scuderie',
       icon: 'pi pi-building',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Carlos_Sainz_Chinese_GP_2024.jpg/1280px-Carlos_Sainz_Chinese_GP_2024.jpg'
+      image: 'assets/scuderie.jpg'
     },
     {
       title: 'Classifiche & Albo d\'Oro',
@@ -91,7 +91,7 @@ export class HomeComponent implements AfterViewInit, OnInit, OnDestroy {
       description: 'Ultime notizie, aggiornamenti tecnici e approfondimenti in tempo reale dalle principali testate italiane.',
       route: '/news',
       icon: 'pi pi-megaphone',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Max_Verstappen_2024_Chinese_GP.jpg/1280px-Max_Verstappen_2024_Chinese_GP.jpg'
+      image: 'assets/news.jpg'
     }
   ];
 

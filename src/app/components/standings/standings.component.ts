@@ -3,12 +3,17 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SelectModule } from 'primeng/select';
-import { ConstructorStanding, DriverStanding, JolpicaService } from '../../services/jolpica.service';
+import { ConstructorStanding, DriverStanding, JolpicaService, SeasonRoundPoints } from '../../services/jolpica.service';
 import { Driver, Openf1ServiceService } from '../../services/openf1-service';
 import { WikipediaService } from '../../services/wikipedia.service';
 import { StandingsStateService, StandingsTab } from '../../services/standings-state.service';
 import { currentSeasonPhotoUrl } from '../../utils/f1-media';
 import { constructorColor, ConstructorLogo, constructorLogo } from '../../utils/constructor-branding';
+import {
+  buildPointsProgressionChart,
+  PointsProgressionChart,
+  ProgressionContenderInput
+} from '../../utils/points-progression-chart';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { HallOfFameComponent } from '../hall-of-fame/hall-of-fame.component';
 
@@ -63,6 +68,15 @@ export class StandingsComponent implements OnInit, OnDestroy {
   driverRows: DriverStanding[] = [];
   constructorRows: ConstructorStanding[] = [];
   private constructorsLoadedFor: number | null = null;
+
+  // Dati e stato del grafico "Andamento del Campionato (Evoluzione Punti)"
+  seasonRounds: SeasonRoundPoints[] = [];
+  chartLoading = false;
+  chartTopLimit: 5 | 8 | 10 = 5;
+  hoveredSeriesId: string | null = null;
+  selectedRoundIndex: number | null = null;
+  readonly hiddenSeriesIds = new Set<string>();
+  private roundsLoadedFor: number | null = null;
 
   loading = true;
   slowLoading = false;
@@ -123,6 +137,14 @@ export class StandingsComponent implements OnInit, OnDestroy {
     this.constructorsLoadedFor = null;
     this.driversError = false;
     this.constructorsError = false;
+    this.seasonRounds = [];
+    this.roundsLoadedFor = null;
+    this.hiddenSeriesIds.clear();
+    this.hoveredSeriesId = null;
+    this.selectedRoundIndex = null;
+
+    // Carica in background i risultati round-by-round per il grafico evoluzione punti
+    void this.fetchSeasonRounds(year);
 
     // Piloti e (se il tab è aperto) costruttori sono indipendenti: un errore non blocca l'altro
     await this.withLoading(year, () => Promise.all([
@@ -134,6 +156,8 @@ export class StandingsComponent implements OnInit, OnDestroy {
   async setTab(tab: StandingsTab): Promise<void> {
     this.tab = tab;
     this.stateService.tab = tab;
+    this.hiddenSeriesIds.clear();
+    this.hoveredSeriesId = null;
     const year = this.selectedSeason;
     if (tab !== 'constructors' || year === null || this.constructorsLoadedFor === year) return;
     await this.withLoading(year, () => this.fetchConstructors(year));
@@ -211,6 +235,108 @@ export class StandingsComponent implements OnInit, OnDestroy {
     } catch (err) {
       if (this.selectedSeason === year && !isNotFound(err)) this.constructorsError = true;
     }
+  }
+
+  private async fetchSeasonRounds(year: number): Promise<void> {
+    if (this.roundsLoadedFor === year) return;
+    this.chartLoading = true;
+    try {
+      const rounds = await this.jolpica.getSeasonPointsByRound(year);
+      if (this.selectedSeason !== year) return;
+      this.seasonRounds = rounds;
+      this.roundsLoadedFor = year;
+      this.selectedRoundIndex = rounds.length > 0 ? rounds.length - 1 : null;
+    } catch {
+      if (this.selectedSeason === year) {
+        this.seasonRounds = [];
+      }
+    } finally {
+      if (this.selectedSeason === year) {
+        this.chartLoading = false;
+      }
+    }
+  }
+
+  setChartTopLimit(limit: 5 | 8 | 10): void {
+    this.chartTopLimit = limit;
+    this.hiddenSeriesIds.clear();
+  }
+
+  toggleSeries(id: string): void {
+    if (this.hiddenSeriesIds.has(id)) {
+      this.hiddenSeriesIds.delete(id);
+    } else {
+      const allCandidates = this.progressionCandidates;
+      const visibleCount = allCandidates.filter(c => !this.hiddenSeriesIds.has(c.id)).length;
+      if (visibleCount > 1) {
+        this.hiddenSeriesIds.add(id);
+      }
+    }
+  }
+
+  isSeriesHidden(id: string): boolean {
+    return this.hiddenSeriesIds.has(id);
+  }
+
+  get progressionCandidates(): (ProgressionContenderInput & { dashed: boolean; points: number })[] {
+    const teamCounts = new Map<string, number>();
+    if (this.tab === 'constructors') {
+      return this.constructorStandings.slice(0, this.chartTopLimit).map(c => {
+        const count = (teamCounts.get(c.constructorId) ?? 0) + 1;
+        teamCounts.set(c.constructorId, count);
+        return {
+          id: c.constructorId,
+          label: c.name,
+          shortLabel: c.name,
+          color: '#' + this.colorFor(c.constructorId),
+          teamKey: c.constructorId,
+          dashed: count > 1,
+          points: c.points
+        };
+      });
+    }
+
+    return this.driverStandings.slice(0, this.chartTopLimit).map(s => {
+      const key = s.constructorId || s.driverId;
+      const count = (teamCounts.get(key) ?? 0) + 1;
+      teamCounts.set(key, count);
+      const lastName = s.fullName.trim().split(/\s+/).slice(-1)[0] || s.fullName;
+      return {
+        id: s.driverId,
+        label: s.fullName,
+        shortLabel: s.code || lastName,
+        color: '#' + this.driverColor(s),
+        teamKey: key,
+        dashed: count > 1,
+        points: s.points
+      };
+    });
+  }
+
+  get progressionChart(): PointsProgressionChart | null {
+    if (this.tab === 'hall-of-fame' || !this.seasonRounds.length) return null;
+    const active = this.progressionCandidates.filter(c => !this.hiddenSeriesIds.has(c.id));
+    return buildPointsProgressionChart(
+      this.seasonRounds,
+      active,
+      this.tab === 'constructors' ? 'constructors' : 'drivers'
+    );
+  }
+
+  get activeRoundIndex(): number {
+    if (!this.seasonRounds.length) return 0;
+    if (this.selectedRoundIndex !== null && this.selectedRoundIndex >= 0 && this.selectedRoundIndex < this.seasonRounds.length) {
+      return this.selectedRoundIndex;
+    }
+    return this.seasonRounds.length - 1;
+  }
+
+  get activeRoundInfo(): SeasonRoundPoints | null {
+    return this.seasonRounds[this.activeRoundIndex] ?? null;
+  }
+
+  selectRoundIndex(idx: number): void {
+    this.selectedRoundIndex = idx;
   }
 
   private async loadCurrentGrid(): Promise<void> {

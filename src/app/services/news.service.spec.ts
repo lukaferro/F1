@@ -63,4 +63,34 @@ describe('NewsService', () => {
     const htmlFallback = '<!DOCTYPE html><html><body>SPA index</body></html>';
     expect(service.parseRssXml(htmlFallback, 'Motorsport.com Italia')).toEqual([]);
   });
+
+  it('should resolve proxy URLs for Motorsport, FormulaPassion, and Gazzetta articles', () => {
+    expect(service.resolveArticleProxyUrl('https://it.motorsport.com/f1/news/ferrari-austin/12345/?utm_source=RSS'))
+      .toBe('/api/article/motorsport/f1/news/ferrari-austin/12345/');
+    expect(service.resolveArticleProxyUrl('https://www.formulapassion.it/f1/f1-news/leclerc-analisi'))
+      .toBe('/api/article/formulapassion/f1/f1-news/leclerc-analisi');
+    expect(service.resolveArticleProxyUrl('https://www.gazzetta.it/motori/ferrari/articolo.shtml'))
+      .toBe('/api/article/gazzetta/motori/ferrari/articolo.shtml');
+  });
+
+  it('should extract full article paragraphs from JSON-LD articleBody and HTML paragraphs', () => {
+    const sampleHtml = `<!DOCTYPE html>
+      <html>
+        <head>
+          <script type="application/ld+json">
+            {
+              "@context": "https://schema.org",
+              "@type": "NewsArticle",
+              "articleBody": "La Scuderia Ferrari scenderà in pista ad Austin con un nuovo pacchetto aerodinamico studiato in galleria del vento.\\nIl fondo modificato punta a migliorare il carico nei curvoni veloci del primo settore del Circuito delle Americhe.\\nLeggi anche:\\nAltro articolo"
+            }
+          </script>
+        </head>
+        <body></body>
+      </html>`;
+
+    const paragraphs = service.extractArticleParagraphs(sampleHtml);
+    expect(paragraphs.length).toBe(2);
+    expect(paragraphs[0]).toContain('nuovo pacchetto aerodinamico');
+    expect(paragraphs[1]).toContain('Circuito delle Americhe');
+  });
 });

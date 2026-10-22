@@ -325,3 +325,304 @@ a.podium-name:hover,
   border-radius: 4px;
   background: #ffffff;
 }
+
+/* ---------- Grafico Andamento del Campionato (Evoluzione Punti) ---------- */
+.progression-card {
+  margin-bottom: 2rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #17171d 0%, #1e1e26 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.progression-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.progression-title-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.progression-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.progression-subtitle {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #a1a1aa;
+}
+
+.progression-controls {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.32);
+  padding: 0.25rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 0.25rem;
+}
+
+.limit-chip {
+  padding: 0.4rem 0.85rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #a1a1aa;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.limit-chip:hover {
+  color: #ffffff;
+}
+
+.limit-chip.active {
+  background: #e10600;
+  color: #ffffff;
+}
+
+.progression-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 2.5rem 1rem;
+  color: #b5b5be;
+  font-size: 0.92rem;
+}
+
+.progression-loading i {
+  color: #e10600;
+  font-size: 1.25rem;
+}
+
+.progression-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.legend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.38rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f4f4f5;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.legend-pill:hover,
+.legend-pill.highlighted {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.legend-pill.muted {
+  opacity: 0.38;
+  text-decoration: line-through;
+}
+
+.legend-line {
+  width: 18px;
+  height: 0;
+  border-top: 3px solid var(--line-color, #e10600);
+  display: inline-block;
+}
+
+.legend-line.dashed {
+  border-top-style: dashed;
+}
+
+.legend-name {
+  font-weight: 600;
+}
+
+.legend-pts {
+  font-size: 0.76rem;
+  color: #a1a1aa;
+  font-weight: 700;
+}
+
+.progression-svg-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.progression-svg {
+  width: 100%;
+  height: auto;
+  min-width: 580px;
+  display: block;
+  user-select: none;
+}
+
+.chart-grid-line {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.chart-active-guide {
+  stroke: rgba(225, 6, 0, 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+
+.chart-axis-text {
+  fill: #8e8e99;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.chart-axis-text.y-label {
+  text-anchor: end;
+}
+
+.chart-axis-text.x-label {
+  text-anchor: middle;
+}
+
+.chart-axis-text.x-label.active {
+  fill: #ffffff;
+  font-weight: 800;
+}
+
+.chart-series-path {
+  fill: none;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 0.2s ease, stroke-width 0.2s ease;
+}
+
+.chart-series-path.emphasized {
+  stroke-width: 4;
+}
+
+.chart-series-path.dimmed,
+.chart-series-dot.dimmed {
+  opacity: 0.18;
+}
+
+.chart-series-dot {
+  stroke: #17171d;
+  stroke-width: 1.5;
+  transition: opacity 0.2s ease, r 0.15s ease;
+}
+
+.chart-series-dot.active {
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.chart-hit-col {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.chart-hit-col:hover {
+  fill: rgba(255, 255, 255, 0.025);
+}
+
+/* Barra ispettore Round attivo */
+.round-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.inspector-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  font-size: 0.88rem;
+}
+
+.inspector-round-badge {
+  padding: 0.2rem 0.55rem;
+  border-radius: 5px;
+  background: rgba(225, 6, 0, 0.18);
+  border: 1px solid rgba(225, 6, 0, 0.35);
+  color: #ff6b6b;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.inspector-race-name {
+  color: #ffffff;
+  font-size: 0.96rem;
+}
+
+.inspector-location {
+  color: #a1a1aa;
+  font-size: 0.82rem;
+}
+
+.inspector-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.inspector-score-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid var(--chip-color, #e10600);
+  font-size: 0.8rem;
+}
+
+.chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--chip-color, #e10600);
+}
+
+.chip-name {
+  color: #d4d4d8;
+  font-weight: 600;
+}
+
+.chip-cum {
+  color: #ffffff;
+}
+
+.chip-gain {
+  padding: 0.08rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(52, 211, 153, 0.16);
+  color: #34d399;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+

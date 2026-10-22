@@ -45,8 +45,8 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 - **Pagina dedicata `/news`**:
   - Feed RSS XML reali in lingua italiana (*La Gazzetta dello Sport*, *Motorsport.com Italia*, *FormulaPassion*) con parser nativo e caching.
   - Notizia in **Primo Piano (Hero Article)** e griglia notizie con filtro per categoria (*Tutte*, *Gare & Paddock*, *Scuderie*, *Piloti*, *Tecnica*) e barra di ricerca testuale.
-  - Modale di lettura rapida dell'articolo con link diretto alla fonte originale.
-- **Anteprima in Home**: Sezione *"Ultime Notizie F1"* con le 3 notizie più recenti e collegamento rapido a `/news`.
+  - **Lettore Articolo Integrale in-app**: estrazione automatica dell'intero testo dell'articolo (`JSON-LD articleBody` e paragrafi HTML tramite proxy) per leggere l'articolo completo direttamente sul sito senza dover uscire, con apertura diretta anche dalle card in Home.
+- **Anteprima in Home**: Sezione *"Ultime Notizie F1"* con le 3 notizie più recenti e apertura diretta dell'articolo integrale.
 
 ---
 
@@ -87,8 +87,11 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-### 10. Andamento del Campionato (Grafico Evoluzione Punti) 📈
-- Grafico interattivo in `/classifiche` che mostra la progressione dei punti gara dopo gara (Round 1 → Finale) per i primi piloti e costruttori della stagione selezionata.
+### 10. Andamento del Campionato (Grafico Evoluzione Punti) 📈 (Completato) ✅
+- **Grafico interattivo in `/classifiche`** (sia nel tab *Piloti* sia nel tab *Costruttori*):
+  - Progressione cumulativa dei punti gara dopo gara (Round 1 → Finale), inclusi i punti delle Sprint Race dal 2021 in poi.
+  - Selettore rapido **Top 5 / Top 8 / Top 10** e legenda interattiva per attivare/disattivare o mettere in risalto singoli piloti e scuderie (con linea tratteggiata automatica per il secondo pilota dello stesso team).
+  - **Ispettore Round interattivo**: passando il cursore o cliccando su qualsiasi round del grafico viene mostrato il riepilogo del Gran Premio (nome, circuito, data) con il totale cumulativo e il bonus punti (`+pt`) ottenuto in quel weekend da ciascun contendente.
 
 ---
 
