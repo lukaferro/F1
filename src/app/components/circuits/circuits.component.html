@@ -1,199 +1,608 @@
 <div class="circuits-container">
   <div class="header">
     <h1>Circuiti Formula 1</h1>
-    <p class="subtitle">I circuiti più iconici e leggendari della Formula 1</p>
+    <p class="subtitle">Esplora i 24 circuiti ufficiali del Campionato Mondiale tra schede tecniche, mappa geografica e calendario stagionale</p>
+
+    <!-- Selettore Modalità di Visualizzazione -->
+    <nav class="view-mode-selector" aria-label="Modalità di visualizzazione circuiti">
+      <button
+        type="button"
+        class="view-mode-btn"
+        [class.active]="viewMode === 'cards'"
+        (click)="setViewMode('cards')"
+        aria-pressed="{{ viewMode === 'cards' }}">
+        <i class="pi pi-th-large"></i>
+        <span>Schede Circuiti ({{ circuits.length }})</span>
+      </button>
+
+      <button
+        type="button"
+        class="view-mode-btn"
+        [class.active]="viewMode === 'map'"
+        (click)="setViewMode('map')"
+        aria-pressed="{{ viewMode === 'map' }}">
+        <i class="pi pi-globe"></i>
+        <span>Mappa Geografica</span>
+      </button>
+
+      <button
+        type="button"
+        class="view-mode-btn"
+        [class.active]="viewMode === 'calendar'"
+        (click)="setViewMode('calendar')"
+        aria-pressed="{{ viewMode === 'calendar' }}">
+        <i class="pi pi-calendar"></i>
+        <span>Calendario & Macro-Aree</span>
+      </button>
+    </nav>
   </div>
 
-  <section class="circuits-toolbar" aria-label="Ricerca e filtri circuiti">
-    <div class="search-box">
-      <i class="pi pi-search search-icon"></i>
-      <input
-        type="text"
-        class="circuit-search-input"
-        placeholder="Cerca per nome circuito, città o nazione..."
-        [(ngModel)]="searchQuery"
-        (ngModelChange)="onSearchChange()"
-        aria-label="Cerca circuito" />
-      @if (searchQuery) {
-        <button class="clear-search-btn" (click)="searchQuery = ''; onSearchChange()" aria-label="Cancella ricerca">
-          <i class="pi pi-times"></i>
-        </button>
-      }
-    </div>
-
-    <div class="filters-row">
-      <div class="filter-item">
-        <div class="filter-label-row">
-          <label class="filter-label">Continente</label>
-          @if (selectedContinent) {
-            <button class="reset-filter" (click)="onContinentChange(null)" aria-label="Rimuovi filtro continente">
-              <i class="pi pi-times"></i>
-            </button>
-          }
-        </div>
-        <p-select
-          [options]="continents"
-          [(ngModel)]="selectedContinent"
-          optionLabel="name"
-          optionValue="value"
-          placeholder="Tutti i continenti"
-          (ngModelChange)="onContinentChange($event)"
-          class="gp-dropdown"
-          panelStyleClass="gp-dropdown-panel">
-        </p-select>
+  <!-- ==================== VISTA 1: SCHEDE CIRCUITI ==================== -->
+  @if (viewMode === 'cards') {
+    <section class="circuits-toolbar" aria-label="Ricerca e filtri circuiti">
+      <div class="search-box">
+        <i class="pi pi-search search-icon"></i>
+        <input
+          type="text"
+          class="circuit-search-input"
+          placeholder="Cerca per nome circuito, città o nazione..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange()"
+          aria-label="Cerca circuito" />
+        @if (searchQuery) {
+          <button class="clear-search-btn" (click)="searchQuery = ''; onSearchChange()" aria-label="Cancella ricerca">
+            <i class="pi pi-times"></i>
+          </button>
+        }
       </div>
 
-      <div class="filter-item">
-        <div class="filter-label-row">
-          <label class="filter-label">Paese</label>
-          @if (selectedCountry) {
-            <button class="reset-filter" (click)="onCountryChange(null)" aria-label="Rimuovi filtro paese">
-              <i class="pi pi-times"></i>
-            </button>
-          }
+      <div class="filters-row">
+        <div class="filter-item">
+          <div class="filter-label-row">
+            <label class="filter-label">Continente</label>
+            @if (selectedContinent) {
+              <button class="reset-filter" (click)="onContinentChange(null)" aria-label="Rimuovi filtro continente">
+                <i class="pi pi-times"></i>
+              </button>
+            }
+          </div>
+          <p-select
+            [options]="continents"
+            [(ngModel)]="selectedContinent"
+            optionLabel="name"
+            optionValue="value"
+            placeholder="Tutti i continenti"
+            (ngModelChange)="onContinentChange($event)"
+            class="gp-dropdown"
+            panelStyleClass="gp-dropdown-panel">
+          </p-select>
         </div>
-        <p-select
-          [options]="countries"
-          [(ngModel)]="selectedCountry"
-          optionLabel="name"
-          optionValue="value"
-          placeholder="Tutti i paesi"
-          filterBy="name"
-          (ngModelChange)="onCountryChange($event)"
-          class="gp-dropdown"
-          panelStyleClass="gp-dropdown-panel">
-        </p-select>
+
+        <div class="filter-item">
+          <div class="filter-label-row">
+            <label class="filter-label">Paese</label>
+            @if (selectedCountry) {
+              <button class="reset-filter" (click)="onCountryChange(null)" aria-label="Rimuovi filtro paese">
+                <i class="pi pi-times"></i>
+              </button>
+            }
+          </div>
+          <p-select
+            [options]="countries"
+            [(ngModel)]="selectedCountry"
+            optionLabel="name"
+            optionValue="value"
+            placeholder="Tutti i paesi"
+            filterBy="name"
+            (ngModelChange)="onCountryChange($event)"
+            class="gp-dropdown"
+            panelStyleClass="gp-dropdown-panel">
+          </p-select>
+        </div>
+
+        <div class="filter-item">
+          <div class="filter-label-row">
+            <label class="filter-label">Ordina per</label>
+          </div>
+          <p-select
+            [options]="sortOptions"
+            [(ngModel)]="selectedSort"
+            optionLabel="name"
+            optionValue="value"
+            (ngModelChange)="onSortChange($event)"
+            class="gp-dropdown"
+            panelStyleClass="gp-dropdown-panel">
+          </p-select>
+        </div>
       </div>
 
-      <div class="filter-item">
-        <div class="filter-label-row">
-          <label class="filter-label">Ordina per</label>
-        </div>
-        <p-select
-          [options]="sortOptions"
-          [(ngModel)]="selectedSort"
-          optionLabel="name"
-          optionValue="value"
-          (ngModelChange)="onSortChange($event)"
-          class="gp-dropdown"
-          panelStyleClass="gp-dropdown-panel">
-        </p-select>
+      <div class="toolbar-Status">
+        <span class="results-count">
+          <strong>{{ filteredCircuits.length }}</strong> {{ filteredCircuits.length === 1 ? 'circuito trovato' : 'circuiti trovati' }}
+        </span>
+        @if (hasActiveFilters) {
+          <button class="reset-all-btn" (click)="resetFilters()">
+            <i class="pi pi-refresh"></i> Resetta filtri
+          </button>
+        }
       </div>
-    </div>
+    </section>
 
-    <div class="toolbar-Status">
-      <span class="results-count">
-        <strong>{{ filteredCircuits.length }}</strong> {{ filteredCircuits.length === 1 ? 'circuito trovato' : 'circuiti trovati' }}
-      </span>
-      @if (hasActiveFilters) {
-        <button class="reset-all-btn" (click)="resetFilters()">
-          <i class="pi pi-refresh"></i> Resetta filtri
-        </button>
-      }
-    </div>
-  </section>
+    @if (filteredCircuits.length > 0) {
+      <div class="circuits-grid">
+        @for (circuit of filteredCircuits; track circuit.id) {
+          <p-card class="circuit-card" [style.--i]="$index">
+            <ng-template pTemplate="header">
+              <div class="circuit-image-container">
+                <img
+                  [src]="circuit.image_url"
+                  [alt]="circuit.name"
+                  class="circuit-image"
+                  loading="lazy"
+                />
+                <div class="circuit-badge">
+                  <span class="round-chip" *ngIf="circuit.round_number">R{{ circuit.round_number < 10 ? '0' + circuit.round_number : circuit.round_number }}</span>
+                  <img [src]="getFlag(circuit.country_code)" [alt]="circuit.country" class="country-flag" />
+                  <span>{{ circuit.country }}</span>
+                </div>
+              </div>
+            </ng-template>
 
-  @if (filteredCircuits.length > 0) {
-    <div class="circuits-grid">
-      @for (circuit of filteredCircuits; track circuit.id) {
-        <p-card class="circuit-card" [style.--i]="$index">
-          <ng-template pTemplate="header">
-            <div class="circuit-image-container">
-              <img 
-                [src]="circuit.image_url" 
-                [alt]="circuit.name"
-                class="circuit-image"
-                loading="lazy"
-                decoding="async">
-              <div class="circuit-overlay">
-                <span class="circuit-country">
-                  @if (getFlag(circuit.country_code); as flag) {
-                    <img [src]="flag" [alt]="circuit.country" class="country-flag" width="20" height="15" loading="lazy" />
+            <div class="circuit-content">
+              <div class="circuit-header">
+                <h2>{{ circuit.name }}</h2>
+                <p class="circuit-location">
+                  <i class="pi pi-map-marker"></i>
+                  {{ circuit.location }}, {{ circuit.country }}
+                  @if (circuit.macro_region) {
+                    <span class="macro-tag" [style.color]="getMacroRegionColor(circuit.macro_region)">
+                      • {{ getMacroRegionLabel(circuit.macro_region) }}
+                    </span>
                   }
-                  {{ circuit.country }}
-                </span>
-                @if (circuit.continent) {
-                  <span class="circuit-continent">{{ circuit.continent }}</span>
+                </p>
+              </div>
+
+              <div class="circuit-stats">
+                <div class="stat-item">
+                  <i class="pi pi-arrows-h"></i>
+                  <div>
+                    <span class="stat-label">Lunghezza</span>
+                    <span class="stat-value">{{ circuit.length_km }} km</span>
+                  </div>
+                </div>
+
+                <div class="stat-item">
+                  <i class="pi pi-replay"></i>
+                  <div>
+                    <span class="stat-label">Curve</span>
+                    <span class="stat-value">{{ circuit.turns }}</span>
+                  </div>
+                </div>
+
+                <div class="stat-item">
+                  <i class="pi pi-calendar"></i>
+                  <div>
+                    <span class="stat-label">Primo GP</span>
+                    <span class="stat-value">{{ circuit.first_grand_prix }}</span>
+                  </div>
+                </div>
+              </div>
+
+              @if (circuit.lap_record) {
+                <div class="lap-record">
+                  <div class="record-header">
+                    <i class="pi pi-stopwatch"></i>
+                    <span class="record-title">Giro Record</span>
+                  </div>
+                  <div class="record-details">
+                    <span class="record-time">{{ circuit.lap_record.time }}</span>
+                    <span class="record-holder">{{ circuit.lap_record.driver }} ({{ circuit.lap_record.year }})</span>
+                  </div>
+                </div>
+              }
+
+              <p class="circuit-description">{{ circuit.description }}</p>
+
+              @if (isExpanded(circuit.id)) {
+                <div class="expanded-content">
+                  <div class="history-section">
+                    <h4><i class="pi pi-book"></i> Storia</h4>
+                    <p>{{ circuit.history }}</p>
+                  </div>
+
+                  <div class="memorable-section">
+                    <h4><i class="pi pi-star-fill"></i> Momento Memorabile</h4>
+                    <p>{{ circuit.memorable_moment }}</p>
+                  </div>
+                </div>
+              }
+
+              <div class="card-actions">
+                <button
+                  pButton
+                  type="button"
+                  [label]="isExpanded(circuit.id) ? 'Mostra Meno' : 'Approfondisci'"
+                  [icon]="isExpanded(circuit.id) ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+                  class="p-button-outlined p-button-sm expand-btn"
+                  (click)="toggleExpand(circuit.id)">
+                </button>
+                <button
+                  pButton
+                  type="button"
+                  label="Mappa 🌍"
+                  class="p-button-outlined p-button-sm map-focus-btn"
+                  (click)="focusCircuitOnMap(circuit)"
+                  aria-label="Mostra sulla mappa">
+                </button>
+                <button
+                  pButton
+                  type="button"
+                  label="Edizioni GP"
+                  icon="pi pi-flag"
+                  class="p-button-sm gp-link-btn"
+                  (click)="viewCircuitRaces(circuit)"
+                  aria-label="Vedi gare su questo circuito">
+                </button>
+              </div>
+            </div>
+          </p-card>
+        }
+      </div>
+    } @else {
+      <div class="empty-circuits">
+        <i class="pi pi-filter-slash empty-icon"></i>
+        <h3>Nessun circuito trovato</h3>
+        <p>Non ci sono tracciati corrispondenti ai criteri di ricerca impostati.</p>
+        <button class="reset-all-btn" (click)="resetFilters()">
+          <i class="pi pi-refresh"></i> Mostra tutti i circuiti
+        </button>
+      </div>
+    }
+  }
+
+  <!-- ==================== VISTA 2: MAPPA GEOGRAFICA ==================== -->
+  @if (viewMode === 'map') {
+    <section class="map-section" aria-label="Mappa geografica interattiva dei circuiti">
+      <!-- Toolbar Macro-Regioni & Controlli Mappa -->
+      <div class="map-controls-bar">
+        <div class="macro-regions-pills" role="tablist" aria-label="Seleziona macro-regione">
+          @for (reg of macroRegions; track reg.id) {
+            <button
+              type="button"
+              class="macro-pill"
+              [class.active]="selectedMacroRegion === reg.id"
+              (click)="onSelectMacroRegion(reg.id)"
+              role="tab"
+              [attr.aria-selected]="selectedMacroRegion === reg.id">
+              <i [class]="reg.icon"></i>
+              <span>{{ reg.shortLabel }}</span>
+              <span class="pill-badge" *ngIf="reg.id !== 'world'">
+                {{ reg.id === 'europe' ? '9' : reg.id === 'americas' ? '6' : reg.id === 'middle_east' ? '4' : '5' }}
+              </span>
+            </button>
+          }
+        </div>
+
+        <div class="map-action-toggles">
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.active]="showFlightPath"
+            (click)="toggleFlightPath()"
+            title="Mostra / nascondi rotta stagionale dei 24 GP">
+            <i class="pi pi-send"></i>
+            <span>Rotta 24 GP</span>
+          </button>
+
+          <button
+            type="button"
+            class="toggle-btn"
+            (click)="onSelectMacroRegion('world')"
+            title="Reimposta visuale globale">
+            <i class="pi pi-refresh"></i>
+            <span>Reset Zoom</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas SVG Mappa Mondiale -->
+      <div class="map-viewport-wrapper">
+        <svg
+          class="f1-world-map-svg"
+          [attr.viewBox]="mapViewBox"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label="Mappa mondiale con i 24 circuiti di Formula 1">
+          <defs>
+            <!-- Gradiente Oceano Globale -->
+            <linearGradient id="oceanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0e14" />
+              <stop offset="50%" stop-color="#111622" />
+              <stop offset="100%" stop-color="#090c10" />
+            </linearGradient>
+
+            <!-- Filtro Glow per Pin Selezionato -->
+            <filter id="pinGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- Sfondo Oceano -->
+          <rect x="-200" y="-100" width="1400" height="700" fill="url(#oceanGrad)" />
+
+          <!-- Linee Reticolo Geografico -->
+          <g class="graticule-grid" opacity="0.12">
+            @for (line of gridLines; track line.label) {
+              <path [attr.d]="line.d" stroke="#ffffff" stroke-width="0.8" stroke-dasharray="3,3" />
+            }
+          </g>
+
+          <!-- Continenti Vettoriali -->
+          <g class="continents-group">
+            @for (c of continentPaths; track c.id) {
+              <path
+                [attr.d]="c.d"
+                class="continent-polygon"
+                fill="rgba(255, 255, 255, 0.07)"
+                stroke="rgba(255, 255, 255, 0.22)"
+                stroke-width="1"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+            }
+          </g>
+
+          <!-- Rotta Voli Tra i 24 GP -->
+          @if (showFlightPath && flightPathD) {
+            <path
+              [attr.d]="flightPathD"
+              class="flight-route-path"
+              fill="none"
+              stroke="#e10600"
+              stroke-width="1.6"
+              stroke-dasharray="6,4"
+              opacity="0.75"
+            />
+          }
+
+          <!-- Pin Circuiti -->
+          <g class="circuit-pins-group">
+            @for (circuit of seasonCalendar; track circuit.id) {
+              @let coords = getSvgCoords(circuit);
+              @let isSelected = selectedCircuitOnMap?.id === circuit.id;
+              @let isHovered = hoveredCircuitOnMap?.id === circuit.id;
+              @let pinColor = getMacroRegionColor(circuit.macro_region);
+
+              <g
+                class="circuit-pin-marker"
+                [class.selected]="isSelected"
+                [class.faded]="!isCircuitHighlightedOnMap(circuit)"
+                [attr.transform]="'translate(' + coords.x + ',' + coords.y + ')'"
+                (click)="selectCircuitOnMap(circuit)"
+                (mouseenter)="hoveredCircuitOnMap = circuit"
+                (mouseleave)="hoveredCircuitOnMap = null"
+                tabindex="0"
+                (keydown.enter)="selectCircuitOnMap(circuit)"
+                [attr.aria-label]="circuit.name + ', ' + circuit.country">
+
+                <!-- Area di interazione invisibile più grande per touch/mouse -->
+                <circle r="14" fill="transparent" class="hit-area" />
+
+                <!-- Alone pulsante se selezionato o attivo -->
+                @if (isSelected) {
+                  <circle r="12" [attr.fill]="pinColor" opacity="0.35" class="pulse-ring" />
                 }
+
+                <!-- Anello esterno marker -->
+                <circle
+                  r="6"
+                  [attr.fill]="pinColor"
+                  stroke="#ffffff"
+                  stroke-width="1.5"
+                  [attr.filter]="isSelected ? 'url(#pinGlow)' : null"
+                />
+
+                <!-- Punto centrale -->
+                <circle r="2.2" fill="#0b0e14" />
+
+                <!-- Badge con numero Round -->
+                @if (circuit.round_number) {
+                  <text
+                    y="-9"
+                    text-anchor="middle"
+                    class="pin-round-text"
+                    [attr.fill]="pinColor">
+                    {{ circuit.round_number }}
+                  </text>
+                }
+              </g>
+            }
+          </g>
+        </svg>
+
+        <!-- Scheda / Ispettore Circuito Selezionato sulla Mappa -->
+        @if (selectedCircuitOnMap) {
+          <aside class="map-inspector-card" aria-label="Dettagli circuito selezionato">
+            <button class="close-inspector-btn" (click)="closeMapInspector()" aria-label="Chiudi ispettore">
+              <i class="pi pi-times"></i>
+            </button>
+
+            <div class="inspector-header">
+              <div class="inspector-badges">
+                <span class="round-badge-pill" *ngIf="selectedCircuitOnMap.round_number">
+                  Round {{ selectedCircuitOnMap.round_number < 10 ? '0' + selectedCircuitOnMap.round_number : selectedCircuitOnMap.round_number }}
+                </span>
+                <span class="macro-badge-pill" [style.background]="getMacroRegionColor(selectedCircuitOnMap.macro_region) + '22'" [style.color]="getMacroRegionColor(selectedCircuitOnMap.macro_region)">
+                  {{ getMacroRegionLabel(selectedCircuitOnMap.macro_region) }}
+                </span>
+              </div>
+              <h3 class="inspector-title">{{ selectedCircuitOnMap.name }}</h3>
+              <p class="inspector-location">
+                <img [src]="getFlag(selectedCircuitOnMap.country_code)" [alt]="selectedCircuitOnMap.country" class="country-flag-mini" />
+                <span>{{ selectedCircuitOnMap.location }}, {{ selectedCircuitOnMap.country }}</span>
+              </p>
+            </div>
+
+            <div class="inspector-track-preview">
+              <img
+                [src]="selectedCircuitOnMap.image_url"
+                [alt]="selectedCircuitOnMap.name"
+                class="inspector-track-img"
+              />
+            </div>
+
+            <div class="inspector-metrics-grid">
+              <div class="inspector-metric">
+                <span class="metric-lbl">Lunghezza</span>
+                <span class="metric-val">{{ selectedCircuitOnMap.length_km }} km</span>
+              </div>
+              <div class="inspector-metric">
+                <span class="metric-lbl">Curve</span>
+                <span class="metric-val">{{ selectedCircuitOnMap.turns }}</span>
+              </div>
+              <div class="inspector-metric">
+                <span class="metric-lbl">Debutto F1</span>
+                <span class="metric-val">{{ selectedCircuitOnMap.first_grand_prix }}</span>
               </div>
             </div>
-          </ng-template>
 
-          <div class="circuit-content">
-            <h2 class="circuit-name">{{ circuit.name }}</h2>
-            <p class="circuit-location">
-              <i class="pi pi-map-marker"></i>
-              {{ circuit.location }}, {{ circuit.country }}
-            </p>
-
-            <div class="circuit-stats">
-              <div class="stat">
-                <span class="stat-label">Lunghezza</span>
-                <span class="stat-value">{{ circuit.length_km }} km</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Curve</span>
-                <span class="stat-value">{{ circuit.turns }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Primo GP</span>
-                <span class="stat-value">{{ circuit.first_grand_prix }}</span>
-              </div>
-            </div>
-
-            @if (circuit.lap_record) {
-              <div class="lap-record">
+            @if (selectedCircuitOnMap.lap_record) {
+              <div class="inspector-lap-record">
                 <i class="pi pi-stopwatch"></i>
-                <span>Record: {{ circuit.lap_record.time }} - {{ circuit.lap_record.driver }} ({{ circuit.lap_record.year }})</span>
+                <div class="record-data">
+                  <span class="lap-time">{{ selectedCircuitOnMap.lap_record.time }}</span>
+                  <span class="lap-driver">{{ selectedCircuitOnMap.lap_record.driver }} ({{ selectedCircuitOnMap.lap_record.year }})</span>
+                </div>
               </div>
             }
 
-            <p class="circuit-description">{{ circuit.description }}</p>
+            <p class="inspector-snippet">{{ selectedCircuitOnMap.description }}</p>
 
-            <div class="circuit-links">
-              <button type="button" class="gp-races-link" (click)="viewCircuitRaces(circuit)">
-                <i class="pi pi-flag-fill"></i>
+            <div class="inspector-actions">
+              <button
+                type="button"
+                class="inspector-btn primary"
+                (click)="viewCircuitRaces(selectedCircuitOnMap)">
+                <i class="pi pi-flag"></i>
                 <span>Edizioni GP</span>
               </button>
-              <a [href]="circuit.wikipedia_url" target="_blank" rel="noopener noreferrer" class="wiki-link">
-                <i class="pi pi-external-link"></i>
-                <span>Wikipedia</span>
-              </a>
+              <button
+                type="button"
+                class="inspector-btn secondary"
+                (click)="searchQuery = selectedCircuitOnMap.name; setViewMode('cards'); applyFilters()">
+                <i class="pi pi-id-card"></i>
+                <span>Scheda Completa</span>
+              </button>
             </div>
+          </aside>
+        }
+      </div>
+    </section>
+  }
 
-            <div class="expandable-section" [class.expanded]="isExpanded(circuit.id)">
-              <div class="expandable-content">
-                <div class="history-section">
-                  <h3><i class="pi pi-book"></i> Storia</h3>
-                  <p>{{ circuit.history }}</p>
+  <!-- ==================== VISTA 3: CALENDARIO & MACRO-AREE ==================== -->
+  @if (viewMode === 'calendar') {
+    <section class="calendar-section" aria-label="Calendario e Macro-Aree del Campionato">
+      <!-- Banner di Sintesi Stagionale -->
+      <div class="season-summary-banner">
+        <div class="summary-kpi">
+          <span class="kpi-number">24</span>
+          <span class="kpi-label">Gran Premi</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-kpi">
+          <span class="kpi-number">4</span>
+          <span class="kpi-label">Macro-Aree Geografiche</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-kpi">
+          <span class="kpi-number">131.2</span>
+          <span class="kpi-label">Km Totali di Asfalto</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-kpi">
+          <span class="kpi-number">390</span>
+          <span class="kpi-label">Curve da Affrontare</span>
+        </div>
+      </div>
+
+      <!-- Macro-Fasi Continentali -->
+      <div class="regional-phases-grid">
+        @for (leg of regionalLegs; track leg.region.id) {
+          <article class="regional-phase-card">
+            <header class="phase-card-header" [style.border-top-color]="leg.region.color">
+              <div class="phase-title-block">
+                <div class="phase-icon-wrap" [style.background]="leg.region.color + '1a'" [style.color]="leg.region.color">
+                  <i [class]="leg.region.icon"></i>
                 </div>
-
-                <div class="memorable-section">
-                  <h3><i class="pi pi-star-fill"></i> Momento Memorabile</h3>
-                  <p>{{ circuit.memorable_moment }}</p>
+                <div>
+                  <h3 class="phase-name">{{ leg.region.label }}</h3>
+                  <p class="phase-desc">{{ leg.region.description }}</p>
                 </div>
               </div>
-            </div>
+              <div class="phase-kpis">
+                <span class="phase-stat-chip">
+                  <i class="pi pi-flag"></i> {{ leg.circuits.length }} GP
+                </span>
+                <span class="phase-stat-chip">
+                  <i class="pi pi-arrows-h"></i> {{ leg.totalLengthKm }} km
+                </span>
+                <span class="phase-stat-chip">
+                  <i class="pi pi-replay"></i> media {{ leg.avgTurns }} curve
+                </span>
+              </div>
+            </header>
 
-            <p-button 
-              [label]="isExpanded(circuit.id) ? 'Mostra meno' : 'Scopri di più'"
-              [icon]="isExpanded(circuit.id) ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
-              (onClick)="toggleExpand(circuit.id)"
-              styleClass="p-button-outlined expand-button"
-              severity="secondary">
-            </p-button>
-          </div>
-        </p-card>
-      }
-    </div>
-  } @else {
-    <div class="empty-circuits">
-      <i class="pi pi-search empty-icon"></i>
-      <h3>Nessun circuito trovato</h3>
-      <p>Prova a modificare i termini di ricerca o i filtri selezionati.</p>
-      <button class="reset-all-btn" (click)="resetFilters()">
-        <i class="pi pi-refresh"></i> Mostra tutti i circuiti
-      </button>
-    </div>
+            <!-- Griglia dei Gran Premi della Fase -->
+            <div class="phase-circuits-list">
+              @for (c of leg.circuits; track c.id) {
+                <div class="phase-round-row">
+                  <div class="round-id-badge" [style.color]="leg.region.color">
+                    R{{ c.round_number && c.round_number < 10 ? '0' + c.round_number : c.round_number }}
+                  </div>
+
+                  <div class="round-track-info">
+                    <div class="track-title-row">
+                      <img [src]="getFlag(c.country_code)" [alt]="c.country" class="country-flag-mini" />
+                      <span class="track-name">{{ c.name }}</span>
+                    </div>
+                    <span class="track-locality">{{ c.location }}, {{ c.country }}</span>
+                  </div>
+
+                  <div class="round-spec-chips">
+                    <span class="spec-pill">{{ c.length_km }} km</span>
+                    <span class="spec-pill">{{ c.turns }} curve</span>
+                  </div>
+
+                  <div class="round-row-actions">
+                    <button
+                      type="button"
+                      class="round-action-btn"
+                      (click)="focusCircuitOnMap(c)"
+                      title="Mostra sulla mappa">
+                      <i class="pi pi-globe"></i>
+                      <span>Mappa</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="round-action-btn gp"
+                      (click)="viewCircuitRaces(c)"
+                      title="Vedi edizioni Gran Premio">
+                      <i class="pi pi-flag"></i>
+                      <span>GP</span>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
   }
 </div>

@@ -5,6 +5,10 @@ export interface Circuit {
   country: string;
   country_code: string;
   continent?: string;
+  macro_region?: 'europe' | 'americas' | 'middle_east' | 'asia_pacific';
+  round_number?: number;
+  latitude?: number;
+  longitude?: number;
   gp_circuit_filter?: string;
   length_km: number;
   turns: number;

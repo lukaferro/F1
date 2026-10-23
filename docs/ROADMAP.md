@@ -115,8 +115,19 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-### 13. Calendario Mondiale & Vista Geografica Circuiti 🌍
-- Vista visuale/geografica dei circuiti e timeline stagionale con raggruppamento per fasi continentali (*Tour Europeo*, *Americhe*, *Medio Oriente & Asia*).
+### 13. Calendario Mondiale & Vista Geografica Circuiti 🌍 (Completato) ✅
+- **Selettore Tripla Vista in `/circuits`**:
+  - `🏎️ Schede Circuiti`: Griglia completa espansa a tutti i 24 circuiti ufficiali del campionato con ricerca testuale, filtri per continente/paese, ordinamento e link rapidi alle edizioni del GP.
+  - `🌍 Mappa Geografica Interattiva`:
+    - Planisfero vettoriale SVG in proiezione equirettangolare scura con reticolo geografico (Equatore, Tropici, Greenwich) e continenti sagomati.
+    - 24 pin geografici geolocalizzati con coordinate reali, alone pulsante colorato per macro-regione e badge numerato del Round.
+    - Chip di selezione e zoom automatico per macro-regione (*Tutto il Mondo*, *Tour Europeo*, *Le Americhe*, *Medio Oriente & Golfo*, *Asia & Pacifico*).
+    - Rotta di volo stagionale intercontinentale tratteggiata e animata con toggle di attivazione.
+    - **Ispettore Circuito su Mappa**: drawer laterale interattivo con anteprima grafica del layout, dati tecnici (lunghezza, curve, debutto), record della pista con pilota/tempo/anno e pulsanti di navigazione rapida.
+  - `🗓️ Calendario & Macro-Aree`:
+    - Banner KPI di sintesi: 24 Gran Premi, 4 macro-aree continentali, 131.2 km totali di asfalto da corsa e 390 curve.
+    - Raggruppamento per macro-fasi geografiche (*Tour Europeo*, *Le Americhe*, *Medio Oriente & Golfo*, *Asia & Pacifico*) con statistiche aggregate (km totali e media curve per fase).
+    - Lista cronologica dei Gran Premi con badge round, località, caratteristiche tecniche e pulsanti rapidi *"Mappa 🌍"* e *"Edizioni GP 🏁"*.
 
 ---
 

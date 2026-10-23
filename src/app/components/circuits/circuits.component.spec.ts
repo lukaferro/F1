@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
@@ -54,7 +55,7 @@ describe('CircuitsComponent', () => {
     expect(component.filteredCircuits[0].id).toBe('jeddah');
 
     component.onSortChange('first-gp-desc');
-    expect(component.filteredCircuits[0].id).toBe('jeddah');
+    expect(component.filteredCircuits[0].id).toBe('las-vegas');
   });
 
   it('navigates to /granpremi with circuit filter preselected when clicking Edizioni GP', () => {
@@ -69,5 +70,56 @@ describe('CircuitsComponent', () => {
     expect(state.selectedCountry).toBeNull();
     expect(state.selectedCircuit).toBe('Monza');
     expect(navSpy).toHaveBeenCalledWith(['/granpremi']);
+  });
+
+  it('switches between cards, map and calendar view modes', () => {
+    expect(component.viewMode).toBe('cards');
+
+    component.setViewMode('map');
+    expect(component.viewMode).toBe('map');
+    expect(component.selectedCircuitOnMap).toBeTruthy();
+
+    component.setViewMode('calendar');
+    expect(component.viewMode).toBe('calendar');
+  });
+
+  it('updates macro region and map viewBox when selecting a region', () => {
+    component.onSelectMacroRegion('europe');
+    expect(component.selectedMacroRegion).toBe('europe');
+    expect(component.mapViewBox).toBe('440 60 220 160');
+
+    component.onSelectMacroRegion('world');
+    expect(component.selectedMacroRegion).toBe('world');
+    expect(component.mapViewBox).toBe('0 0 1000 500');
+  });
+
+  it('focuses a specific circuit on the map and zooms to its macro region', () => {
+    const interlagos = component.circuits.find(c => c.id === 'interlagos')!;
+    component.focusCircuitOnMap(interlagos);
+
+    expect(component.viewMode).toBe('map');
+    expect(component.selectedCircuitOnMap?.id).toBe('interlagos');
+    expect(component.selectedMacroRegion).toBe('americas');
+    expect(component.mapViewBox).toBe('120 70 360 330');
+  });
+
+  it('computes 4 regional legs for the calendar with total km and average turns', () => {
+    expect(component.regionalLegs.length).toBe(4);
+    const europeLeg = component.regionalLegs.find(l => l.region.id === 'europe')!;
+    expect(europeLeg).toBeTruthy();
+    expect(europeLeg.circuits.length).toBe(9);
+    expect(europeLeg.totalLengthKm).toBeGreaterThan(40);
+    expect(europeLeg.avgTurns).toBeGreaterThan(10);
+  });
+
+  it('toggles flight path visibility and generates flight route d path', () => {
+    expect(component.showFlightPath).toBe(true);
+    expect(component.flightPathD).toContain('M');
+
+    component.toggleFlightPath();
+    expect(component.showFlightPath).toBe(false);
+
+    component.toggleFlightPath();
+    expect(component.showFlightPath).toBe(true);
   });
 });

@@ -11,6 +11,16 @@ import { Circuit } from '../../models/circuit';
 import { CircuitsService } from '../../services/circuits.service';
 import { GranPremiStateService } from '../../services/gran-premi-state.service';
 import { smallFlagUrl } from '../../utils/country-flags';
+import {
+  geoToSvg,
+  generateFlightPath,
+  MACRO_REGIONS,
+  CONTINENT_PATHS,
+  GRID_LINES,
+  MacroRegionId,
+  MacroRegionInfo,
+  GeoPoint
+} from '../../utils/world-map-data';
 
 export type CircuitSortOption =
   | 'default'
@@ -20,6 +30,15 @@ export type CircuitSortOption =
   | 'turns-asc'
   | 'first-gp-asc'
   | 'first-gp-desc';
+
+export type CircuitsViewMode = 'cards' | 'map' | 'calendar';
+
+export interface RegionalLegGroup {
+  region: MacroRegionInfo;
+  circuits: Circuit[];
+  totalLengthKm: number;
+  avgTurns: number;
+}
 
 const normalizeText = (value: string) =>
   (value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -40,6 +59,10 @@ export class CircuitsComponent implements OnInit {
   filteredCircuits: Circuit[] = [];
   expandedCircuits: Set<string> = new Set();
 
+  // Modalità di visualizzazione
+  viewMode: CircuitsViewMode = 'cards';
+
+  // Toolbar filtri schede
   searchQuery = '';
   selectedContinent: string | null = null;
   selectedCountry: string | null = null;
@@ -58,10 +81,28 @@ export class CircuitsComponent implements OnInit {
     { name: 'Primo GP: dal più recente', value: 'first-gp-desc' }
   ];
 
+  // Vista Mappa Geografica
+  readonly macroRegions = MACRO_REGIONS;
+  readonly continentPaths = CONTINENT_PATHS;
+  readonly gridLines = GRID_LINES;
+
+  selectedMacroRegion: MacroRegionId = 'world';
+  selectedCircuitOnMap: Circuit | null = null;
+  hoveredCircuitOnMap: Circuit | null = null;
+  mapViewBox = '0 0 1000 500';
+  showFlightPath = true;
+  flightPathD = '';
+
+  // Vista Timeline / Calendario
+  seasonCalendar: Circuit[] = [];
+  regionalLegs: RegionalLegGroup[] = [];
+
   ngOnInit(): void {
     this.circuits = this.circuitsService.getCircuits();
+    this.seasonCalendar = this.circuitsService.getSeasonCalendar();
     this.populateFilterOptions();
     this.applyFilters();
+    this.initMapAndCalendar();
   }
 
   private populateFilterOptions(): void {
@@ -76,6 +117,93 @@ export class CircuitsComponent implements OnInit {
     this.continents = Array.from(continentSet).sort().map(name => ({ name, value: name }));
     this.countries = Array.from(countrySet).sort().map(name => ({ name, value: name }));
   }
+
+  private initMapAndCalendar(): void {
+    // Genera la rotta di volo ufficiale tra i 24 GP
+    this.flightPathD = generateFlightPath(this.seasonCalendar);
+
+    // Raggruppa le tappe del campionato nelle 4 macro-fasi geografiche
+    const regionOrder: MacroRegionId[] = ['europe', 'americas', 'middle_east', 'asia_pacific'];
+    this.regionalLegs = regionOrder.map(regId => {
+      const info = MACRO_REGIONS.find(m => m.id === regId)!;
+      const circuits = this.seasonCalendar.filter(c => c.macro_region === regId);
+      const totalKm = circuits.reduce((acc, c) => acc + (c.length_km || 0), 0);
+      const avgTurns = circuits.length > 0
+        ? Math.round((circuits.reduce((acc, c) => acc + (c.turns || 0), 0) / circuits.length) * 10) / 10
+        : 0;
+
+      return {
+        region: info,
+        circuits,
+        totalLengthKm: Math.round(totalKm * 100) / 100,
+        avgTurns
+      };
+    });
+  }
+
+  setViewMode(mode: CircuitsViewMode): void {
+    this.viewMode = mode;
+    if (mode === 'map' && !this.selectedCircuitOnMap && this.seasonCalendar.length > 0) {
+      // Seleziona il primo circuito come default per mostrare l'ispettore
+      this.selectedCircuitOnMap = this.seasonCalendar[0];
+    }
+  }
+
+  // --- Mappa Geografica Interattiva ---
+
+  onSelectMacroRegion(regionId: MacroRegionId): void {
+    this.selectedMacroRegion = regionId;
+    const regionInfo = MACRO_REGIONS.find(r => r.id === regionId);
+    if (regionInfo) {
+      this.mapViewBox = regionInfo.viewBox;
+    }
+  }
+
+  getSvgCoords(circuit: Circuit): GeoPoint {
+    if (typeof circuit.latitude === 'number' && typeof circuit.longitude === 'number') {
+      return geoToSvg(circuit.latitude, circuit.longitude);
+    }
+    return { x: 500, y: 250 };
+  }
+
+  selectCircuitOnMap(circuit: Circuit): void {
+    this.selectedCircuitOnMap = circuit;
+  }
+
+  closeMapInspector(): void {
+    this.selectedCircuitOnMap = null;
+  }
+
+  toggleFlightPath(): void {
+    this.showFlightPath = !this.showFlightPath;
+  }
+
+  focusCircuitOnMap(circuit: Circuit): void {
+    this.viewMode = 'map';
+    this.selectedCircuitOnMap = circuit;
+    if (circuit.macro_region) {
+      this.onSelectMacroRegion(circuit.macro_region);
+    }
+  }
+
+  isCircuitHighlightedOnMap(circuit: Circuit): boolean {
+    if (this.selectedCircuitOnMap?.id === circuit.id) return true;
+    if (this.hoveredCircuitOnMap?.id === circuit.id) return true;
+    if (this.selectedMacroRegion === 'world') return true;
+    return circuit.macro_region === this.selectedMacroRegion;
+  }
+
+  getMacroRegionColor(regionId?: string): string {
+    const reg = MACRO_REGIONS.find(r => r.id === regionId);
+    return reg ? reg.color : '#e10600';
+  }
+
+  getMacroRegionLabel(regionId?: string): string {
+    const reg = MACRO_REGIONS.find(r => r.id === regionId);
+    return reg ? reg.shortLabel : 'Mondiale';
+  }
+
+  // --- Filtri e Ricerca Schede ---
 
   onSearchChange(): void {
     this.applyFilters();
