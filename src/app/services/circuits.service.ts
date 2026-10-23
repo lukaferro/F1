@@ -647,7 +647,7 @@ export class CircuitsService {
       history: 'Inserito nel calendario mondiale FIA dal 2026 come sede del Gran Premio di Spagna, segna il ritorno della F1 nella capitale spagnola dopo oltre quarant\'anni.',
       memorable_moment: 'L\'attesissimo debutto inaugurale nel campionato mondiale 2026 davanti al caloroso pubblico iberico.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Madrid',
-      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackcatalunyadetailed.webp',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackmadringdetailed.webp',
       latitude: 40.4653,
       longitude: -3.6153
     },
