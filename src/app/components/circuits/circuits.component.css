@@ -255,7 +255,8 @@
   width: 100%;
   height: 220px;
   overflow: hidden;
-  background: #11141c;
+  /* sfondo bianco uniforme: le mappe F1 hanno sfondo trasparente e tracciato scuro */
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -645,6 +646,19 @@
   stroke: rgba(255, 255, 255, 0.35);
 }
 
+.realistic-land {
+  fill: #202636 !important;
+  stroke: #424e66 !important;
+}
+
+.realistic-land:hover {
+  fill: #262e40 !important;
+}
+
+.country-borders-path {
+  pointer-events: none;
+}
+
 .flight-route-path {
   animation: dashCycle 35s linear infinite;
 }
@@ -843,7 +857,7 @@
 .inspector-track-preview {
   width: 100%;
   height: 140px;
-  background: #10131a;
+  background: #ffffff;
   border-radius: 10px;
   overflow: hidden;
   display: flex;

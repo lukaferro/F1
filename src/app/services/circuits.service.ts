@@ -28,7 +28,8 @@ export class CircuitsService {
       history: 'Nel 2004 è stato il primo circuito del Medio Oriente a ospitare un Gran Premio di Formula 1. Dal 2014 la gara si disputa in notturna sotto i riflettori.',
       memorable_moment: 'Il leggendario duello ruota a ruota "Duel in the Desert" del 2014 tra Lewis Hamilton e Nico Rosberg.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Sakhir',
-      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026tracksakhirdetailed.webp',
+      // la mappa 2026 di Sakhir è quella dei test pre-stagionali (settori grigi): usiamo quella del GP 2025
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2025/track/2025tracksakhirdetailed.webp',
       latitude: 26.0325,
       longitude: 50.5106
     },

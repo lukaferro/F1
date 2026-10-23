@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 
 import { CardModule } from 'primeng/card';
@@ -56,10 +57,15 @@ export class CircuitsComponent implements OnInit {
   private readonly circuitsService = inject(CircuitsService);
   private readonly granPremiState = inject(GranPremiStateService);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient, { optional: true });
 
   circuits: Circuit[] = [];
   filteredCircuits: Circuit[] = [];
   expandedCircuits: Set<string> = new Set();
+
+  // Dati vettoriali geografici realistici (Natural Earth)
+  worldLandPath = '';
+  worldBordersPath = '';
 
   // Modalità di visualizzazione
   viewMode: CircuitsViewMode = 'cards';
@@ -105,6 +111,20 @@ export class CircuitsComponent implements OnInit {
     this.populateFilterOptions();
     this.applyFilters();
     this.initMapAndCalendar();
+    this.loadWorldGeoData();
+  }
+
+  private loadWorldGeoData(): void {
+    if (!this.http) return;
+    this.http.get<{ land: string; borders: string }>('/data/world-geo.json').subscribe({
+      next: data => {
+        if (data?.land) this.worldLandPath = data.land;
+        if (data?.borders) this.worldBordersPath = data.borders;
+      },
+      error: () => {
+        // Fallback silenzioso se l'asset non è raggiungibile (usa CONTINENT_PATHS)
+      }
+    });
   }
 
   private populateFilterOptions(): void {
@@ -156,16 +176,9 @@ export class CircuitsComponent implements OnInit {
   }
 
   get sortedCalendarForMap(): Circuit[] {
-    const list = [...this.seasonCalendar];
-    const topId = this.hoveredCircuitOnMap?.id || this.selectedCircuitOnMap?.id;
-    if (topId) {
-      list.sort((a, b) => {
-        if (a.id === topId) return 1;
-        if (b.id === topId) return -1;
-        return 0;
-      });
-    }
-    return list;
+    // Restituisce l'elenco stabile senza riordinare al passaggio del mouse
+    // per evitare sfarfallii e scatti ("layout thrashing") nei pin SVG
+    return this.seasonCalendar;
   }
 
   // --- Mappa Geografica Interattiva ---

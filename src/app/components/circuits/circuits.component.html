@@ -341,20 +341,49 @@
             }
           </g>
 
-          <!-- Continenti Vettoriali -->
-          <g class="continents-group">
-            @for (c of continentPaths; track c.id) {
+          <!-- Continenti Vettoriali e Confini Nazionali -->
+          @if (worldLandPath) {
+            <g class="continents-group realistic-geo">
+              <!-- Terre Emerse Realistiche (Natural Earth) -->
               <path
-                [attr.d]="c.d"
-                class="continent-polygon"
-                fill="rgba(255, 255, 255, 0.07)"
-                stroke="rgba(255, 255, 255, 0.22)"
-                stroke-width="1"
+                [attr.d]="worldLandPath"
+                class="continent-polygon realistic-land"
+                fill="#242938"
+                stroke="#475266"
+                stroke-width="0.8"
                 stroke-linejoin="round"
                 stroke-linecap="round"
+                vector-effect="non-scaling-stroke"
               />
-            }
-          </g>
+              <!-- Confini degli Stati -->
+              @if (worldBordersPath) {
+                <path
+                  [attr.d]="worldBordersPath"
+                  class="country-borders-path"
+                  fill="none"
+                  stroke="#333c4d"
+                  stroke-width="0.5"
+                  stroke-linejoin="round"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                />
+              }
+            </g>
+          } @else {
+            <g class="continents-group">
+              @for (c of continentPaths; track c.id) {
+                <path
+                  [attr.d]="c.d"
+                  class="continent-polygon"
+                  fill="rgba(255, 255, 255, 0.07)"
+                  stroke="rgba(255, 255, 255, 0.22)"
+                  stroke-width="1"
+                  stroke-linejoin="round"
+                  stroke-linecap="round"
+                />
+              }
+            </g>
+          }
 
           <!-- Rotta Voli Tra i 24 GP -->
           @if (showFlightPath && flightPathD) {
@@ -410,8 +439,8 @@
                   />
                 }
 
-                <!-- Area di interazione invisibile più grande per touch/mouse -->
-                <circle r="16" fill="transparent" class="hit-area" />
+                <!-- Area di interazione invisibile proporzionata al livello di zoom per evitare sovrapposizioni -->
+                <circle [attr.r]="isGlobalView ? 10 : 4.2" fill="transparent" class="hit-area" />
 
                 <!-- Alone pulsante se selezionato o attivo -->
                 @if (isSelected) {

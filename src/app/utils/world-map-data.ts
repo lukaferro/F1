@@ -88,25 +88,29 @@ export function geoToSvg(lat: number, lng: number, width = 1000, height = 500): 
 
 /**
  * Offset calibrati per la vista globale (0 0 1000 500) per evitare
- * che circuiti geograficamente vicini (es. Monza, Imola, Monaco, Spa, Zandvoort)
+ * che circuiti geograficamente vicini (es. Silverstone, Zandvoort, Spa, Monza, Monaco, Imola, Spielberg, Budapest, Bahrain, Lusail)
  * si accavallino rendendo difficile l'interazione.
  * Nella vista regionale (zoom) questi offset non vengono applicati (valori reali 1:1).
  */
 export const GLOBAL_VIEW_OFFSETS: Record<string, { dx: number; dy: number }> = {
-  // Monaco verso sud-ovest (Mar Ligure)
-  monaco: { dx: -7, dy: 8 },
-  // Monza verso nord-ovest (Alpi / Prealpi)
-  monza: { dx: -6, dy: -8 },
-  // Imola verso sud-est (Romagna / Adriatico)
-  imola: { dx: 8, dy: 6 },
-  // Spa verso sud-est (Ardenne)
-  spa: { dx: 6, dy: 6 },
-  // Zandvoort verso nord-ovest (costa Mare del Nord)
-  zandvoort: { dx: -6, dy: -7 },
-  // Lusail (Qatar) verso est
-  lusail: { dx: 6, dy: 5 },
-  // Bahrain verso ovest
-  bahrain: { dx: -6, dy: -5 }
+  // Europa: sventaglio radiale con distanze minime di sicurezza
+  silverstone: { dx: -12, dy: -8 },
+  zandvoort: { dx: -6, dy: -12 },
+  spa: { dx: 4, dy: -7 },
+  barcelona: { dx: -10, dy: 8 },
+  monaco: { dx: -10, dy: 9 },
+  monza: { dx: 6, dy: -7 },
+  imola: { dx: 10, dy: 12 },
+  'red-bull-ring': { dx: 5, dy: -10 },
+  spielberg: { dx: 5, dy: -10 },
+  hungaroring: { dx: 12, dy: 2 },
+  budapest: { dx: 12, dy: 2 },
+
+  // Medio Oriente
+  bahrain: { dx: -8, dy: -6 },
+  lusail: { dx: 8, dy: 6 },
+  'yas-marina': { dx: 8, dy: -6 },
+  yas_marina: { dx: 8, dy: -6 }
 };
 
 /**
