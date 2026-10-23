@@ -86,7 +86,7 @@ describe('CircuitsComponent', () => {
   it('updates macro region and map viewBox when selecting a region', () => {
     component.onSelectMacroRegion('europe');
     expect(component.selectedMacroRegion).toBe('europe');
-    expect(component.mapViewBox).toBe('440 60 220 160');
+    expect(component.mapViewBox).toBe('470 85 110 70');
 
     component.onSelectMacroRegion('world');
     expect(component.selectedMacroRegion).toBe('world');
@@ -100,7 +100,7 @@ describe('CircuitsComponent', () => {
     expect(component.viewMode).toBe('map');
     expect(component.selectedCircuitOnMap?.id).toBe('interlagos');
     expect(component.selectedMacroRegion).toBe('americas');
-    expect(component.mapViewBox).toBe('120 70 360 330');
+    expect(component.mapViewBox).toBe('130 90 310 270');
   });
 
   it('computes 4 regional legs for the calendar with total km and average turns', () => {

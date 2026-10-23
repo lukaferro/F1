@@ -8,6 +8,12 @@ export interface GeoPoint {
   y: number;
 }
 
+export interface CircuitDisplayPoint extends GeoPoint {
+  trueX: number;
+  trueY: number;
+  isOffset: boolean;
+}
+
 export type MacroRegionId = 'world' | 'europe' | 'americas' | 'middle_east' | 'asia_pacific';
 
 export interface MacroRegionInfo {
@@ -36,7 +42,7 @@ export const MACRO_REGIONS: MacroRegionInfo[] = [
     shortLabel: 'Europa',
     icon: 'pi pi-compass',
     color: '#e10600',
-    viewBox: '440 60 220 160',
+    viewBox: '470 85 110 70',
     description: 'La culla della F1: Monza, Spa, Silverstone, Monaco, Imola, Barcellona, Spielberg, Budapest e Zandvoort.'
   },
   {
@@ -45,7 +51,7 @@ export const MACRO_REGIONS: MacroRegionInfo[] = [
     shortLabel: 'Americhe',
     icon: 'pi pi-map',
     color: '#38bdf8',
-    viewBox: '120 70 360 330',
+    viewBox: '130 90 310 270',
     description: 'La trasferta atlantica: Montreal, Miami, Austin COTA, Las Vegas, Città del Messico e Interlagos.'
   },
   {
@@ -54,7 +60,7 @@ export const MACRO_REGIONS: MacroRegionInfo[] = [
     shortLabel: 'Medio Oriente',
     icon: 'pi pi-sun',
     color: '#f59e0b',
-    viewBox: '580 120 200 150',
+    viewBox: '595 155 75 50',
     description: 'I giganti del Golfo: Sakhir Bahrain, Jeddah Corniche, Lusail Qatar e il gran finale a Yas Marina Abu Dhabi.'
   },
   {
@@ -63,7 +69,7 @@ export const MACRO_REGIONS: MacroRegionInfo[] = [
     shortLabel: 'Asia & Pacifico',
     icon: 'pi pi-sparkles',
     color: '#10b981',
-    viewBox: '680 90 320 330',
+    viewBox: '710 90 280 290',
     description: 'Dalle notturne di Singapore e Baku alle sfide storiche di Suzuka, Shanghai e Melbourne Albert Park.'
   }
 ];
@@ -77,6 +83,57 @@ export function geoToSvg(lat: number, lng: number, width = 1000, height = 500): 
   return {
     x: Math.round(x * 10) / 10,
     y: Math.round(y * 10) / 10
+  };
+}
+
+/**
+ * Offset calibrati per la vista globale (0 0 1000 500) per evitare
+ * che circuiti geograficamente vicini (es. Monza, Imola, Monaco, Spa, Zandvoort)
+ * si accavallino rendendo difficile l'interazione.
+ * Nella vista regionale (zoom) questi offset non vengono applicati (valori reali 1:1).
+ */
+export const GLOBAL_VIEW_OFFSETS: Record<string, { dx: number; dy: number }> = {
+  // Monaco verso sud-ovest (Mar Ligure)
+  monaco: { dx: -7, dy: 8 },
+  // Monza verso nord-ovest (Alpi / Prealpi)
+  monza: { dx: -6, dy: -8 },
+  // Imola verso sud-est (Romagna / Adriatico)
+  imola: { dx: 8, dy: 6 },
+  // Spa verso sud-est (Ardenne)
+  spa: { dx: 6, dy: 6 },
+  // Zandvoort verso nord-ovest (costa Mare del Nord)
+  zandvoort: { dx: -6, dy: -7 },
+  // Lusail (Qatar) verso est
+  lusail: { dx: 6, dy: 5 },
+  // Bahrain verso ovest
+  bahrain: { dx: -6, dy: -5 }
+};
+
+/**
+ * Calcola la posizione su schermo di un circuito:
+ * se in vista globale applica gli offset di decluttering, altrimenti restituisce la posizione reale.
+ */
+export function getCircuitDisplayCoords(
+  circuit: { id: string; latitude?: number; longitude?: number },
+  isGlobalView = true
+): CircuitDisplayPoint {
+  if (typeof circuit.latitude !== 'number' || typeof circuit.longitude !== 'number') {
+    return { x: 500, y: 250, trueX: 500, trueY: 250, isOffset: false };
+  }
+  const truePos = geoToSvg(circuit.latitude, circuit.longitude);
+  if (!isGlobalView) {
+    return { x: truePos.x, y: truePos.y, trueX: truePos.x, trueY: truePos.y, isOffset: false };
+  }
+  const offset = GLOBAL_VIEW_OFFSETS[circuit.id];
+  if (!offset) {
+    return { x: truePos.x, y: truePos.y, trueX: truePos.x, trueY: truePos.y, isOffset: false };
+  }
+  return {
+    x: Math.round((truePos.x + offset.dx) * 10) / 10,
+    y: Math.round((truePos.y + offset.dy) * 10) / 10,
+    trueX: truePos.x,
+    trueY: truePos.y,
+    isOffset: true
   };
 }
 
@@ -202,7 +259,7 @@ export const GRID_LINES: { label: string; d: string }[] = [
 
 export interface CircuitMapTarget {
   id: string;
-  name: string;
+  name?: string;
   latitude?: number;
   longitude?: number;
   round_number?: number;
@@ -211,14 +268,14 @@ export interface CircuitMapTarget {
 /**
  * Genera la stringa SVG path 'd' che collega i 24 Gran Premi in ordine di round stagionale.
  */
-export function generateFlightPath(circuits: CircuitMapTarget[]): string {
+export function generateFlightPath(circuits: CircuitMapTarget[], isGlobalView = true): string {
   const ordered = [...circuits]
     .filter(c => typeof c.latitude === 'number' && typeof c.longitude === 'number' && typeof c.round_number === 'number')
     .sort((a, b) => (a.round_number || 0) - (b.round_number || 0));
 
   if (ordered.length < 2) return '';
 
-  const points = ordered.map(c => geoToSvg(c.latitude!, c.longitude!));
+  const points = ordered.map(c => getCircuitDisplayCoords(c, isGlobalView));
   let d = `M ${points[0].x} ${points[0].y}`;
 
   for (let i = 0; i < points.length - 1; i++) {

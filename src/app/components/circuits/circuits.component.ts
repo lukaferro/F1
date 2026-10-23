@@ -13,13 +13,15 @@ import { GranPremiStateService } from '../../services/gran-premi-state.service';
 import { smallFlagUrl } from '../../utils/country-flags';
 import {
   geoToSvg,
+  getCircuitDisplayCoords,
   generateFlightPath,
   MACRO_REGIONS,
   CONTINENT_PATHS,
   GRID_LINES,
   MacroRegionId,
   MacroRegionInfo,
-  GeoPoint
+  GeoPoint,
+  CircuitDisplayPoint
 } from '../../utils/world-map-data';
 
 export type CircuitSortOption =
@@ -149,6 +151,23 @@ export class CircuitsComponent implements OnInit {
     }
   }
 
+  get isGlobalView(): boolean {
+    return this.selectedMacroRegion === 'world';
+  }
+
+  get sortedCalendarForMap(): Circuit[] {
+    const list = [...this.seasonCalendar];
+    const topId = this.hoveredCircuitOnMap?.id || this.selectedCircuitOnMap?.id;
+    if (topId) {
+      list.sort((a, b) => {
+        if (a.id === topId) return 1;
+        if (b.id === topId) return -1;
+        return 0;
+      });
+    }
+    return list;
+  }
+
   // --- Mappa Geografica Interattiva ---
 
   onSelectMacroRegion(regionId: MacroRegionId): void {
@@ -157,13 +176,11 @@ export class CircuitsComponent implements OnInit {
     if (regionInfo) {
       this.mapViewBox = regionInfo.viewBox;
     }
+    this.flightPathD = generateFlightPath(this.seasonCalendar, this.isGlobalView);
   }
 
-  getSvgCoords(circuit: Circuit): GeoPoint {
-    if (typeof circuit.latitude === 'number' && typeof circuit.longitude === 'number') {
-      return geoToSvg(circuit.latitude, circuit.longitude);
-    }
-    return { x: 500, y: 250 };
+  getSvgCoords(circuit: Circuit): CircuitDisplayPoint {
+    return getCircuitDisplayCoords(circuit, this.isGlobalView);
   }
 
   selectCircuitOnMap(circuit: Circuit): void {

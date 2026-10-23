@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   geoToSvg,
+  getCircuitDisplayCoords,
   generateFlightPath,
   MACRO_REGIONS,
   CONTINENT_PATHS,
   GRID_LINES,
+  GLOBAL_VIEW_OFFSETS,
   CircuitMapTarget
 } from './world-map-data';
 
@@ -27,6 +29,21 @@ describe('world-map-data', () => {
     const monza = geoToSvg(45.6156, 9.2811);
     expect(monza.x).toBeCloseTo(525.8, 1);
     expect(monza.y).toBeCloseTo(123.3, 1);
+  });
+
+  it('applies calibrated decluttering offsets in global view for close tracks like Monza, Imola, Monaco', () => {
+    const monza = { id: 'monza', latitude: 45.6156, longitude: 9.2811 };
+    const globalCoords = getCircuitDisplayCoords(monza, true);
+    const regionalCoords = getCircuitDisplayCoords(monza, false);
+
+    expect(globalCoords.isOffset).toBe(true);
+    expect(globalCoords.x).toBeCloseTo(525.8 + GLOBAL_VIEW_OFFSETS['monza'].dx, 1);
+    expect(globalCoords.y).toBeCloseTo(123.3 + GLOBAL_VIEW_OFFSETS['monza'].dy, 1);
+
+    // Nella vista regionale l'offset è disattivato per mostrare la posizione reale
+    expect(regionalCoords.isOffset).toBe(false);
+    expect(regionalCoords.x).toBe(globalCoords.trueX);
+    expect(regionalCoords.y).toBe(globalCoords.trueY);
   });
 
   it('defines all 5 macro regions with valid viewboxes and icons', () => {

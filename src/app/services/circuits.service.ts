@@ -28,7 +28,7 @@ export class CircuitsService {
       history: 'Nel 2004 è stato il primo circuito del Medio Oriente a ospitare un Gran Premio di Formula 1. Dal 2014 la gara si disputa in notturna sotto i riflettori.',
       memorable_moment: 'Il leggendario duello ruota a ruota "Duel in the Desert" del 2014 tra Lewis Hamilton e Nico Rosberg.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Sakhir',
-      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackbahraindetailed.webp',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026tracksakhirdetailed.webp',
       latitude: 26.0325,
       longitude: 50.5106
     },
@@ -54,7 +54,7 @@ export class CircuitsService {
       history: 'Debutta nel calendario 2021 lungo il Mar Rosso e si afferma subito come una delle sfide psicologiche e fisiche più estreme per i piloti.',
       memorable_moment: 'La controversa ed emozionante prima edizione del 2021, con la lotta senza esclusione di colpi tra Hamilton e Verstappen per il titolo mondiale.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Jeddah',
-      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026tracksaudiarabiadetailed.webp',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackjeddahdetailed.webp',
       latitude: 21.6319,
       longitude: 39.1044
     },
@@ -80,7 +80,7 @@ export class CircuitsService {
       history: 'Ha preso il posto di Adelaide nel 1996 ed è diventato per oltre due decenni la tradizionale gara inaugurale della stagione F1.',
       memorable_moment: 'Il debutto vincente della Brawn GP nel 2009 con una straordinaria doppietta Button-Barrichello.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_Albert_Park',
-      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackaustraliadetailed.webp',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackmelbournedetailed.webp',
       latitude: -37.8497,
       longitude: 144.9680
     },
@@ -106,7 +106,7 @@ export class CircuitsService {
       history: 'Progettato da John Hugenholtz per Honda nel 1962 come pista di prova, ha ospitato il GP del Giappone dal 1987 ed è stato teatro di innumerevoli sfide iridate.',
       memorable_moment: 'I clamorosi contatti tra Ayrton Senna e Alain Prost nel 1989 alla chicane del Triangolo e nel 1990 alla prima curva, entrambi decisivi per l\'assegnazione del titolo.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Suzuka',
-      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackjapandetailed.webp',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026tracksuzukadetailed.webp',
       latitude: 34.8431,
       longitude: 136.5410
     },
@@ -210,7 +210,7 @@ export class CircuitsService {
       history: 'Parte del campionato inaugurale del 1950, Monaco è il gioiello della corona della Formula 1 e costituisce uno dei tre pilastri della Triple Crown del motorsport.',
       memorable_moment: 'Le 6 memorabili vittorie di Ayrton Senna nel Principato e il trionfo a lungo sognato di Charles Leclerc nel 2024 tra le strade di casa.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Monte_Carlo',
-      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackmonacodetailed.webp',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackmontecarlodetailed.webp',
       latitude: 43.7347,
       longitude: 7.4206
     },
@@ -548,7 +548,7 @@ export class CircuitsService {
       history: 'Costruito negli anni \'40 tra due laghi artificiali, Interlagos è stato il teatro delle gare più decisive e drammatiche nella storia dei titoli mondiali.',
       memorable_moment: 'Il finale al cardiopalma del mondiale 2008, con Lewis Hamilton che conquista il suo primo titolo iridato superando Timo Glock all\'ultima curva dell\'ultimo giro.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Autodromo_Jos%C3%A9_Carlos_Pace',
-      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackbrazildetailed.webp',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackinterlagosdetailed.webp',
       latitude: -23.7036,
       longitude: -46.6997
     },
@@ -626,7 +626,7 @@ export class CircuitsService {
       history: 'Inaugurato nel 2009, è diventato la sede fissa dell\'ultima gara dell\'anno e ha assegnato ben quattro titoli mondiali (2010, 2014, 2016 e 2021).',
       memorable_moment: 'Il drammatico e indimenticabile finale del GP di Abu Dhabi 2021, deciso al replay della Safety Car all\'ultimo giro con il sorpasso di Verstappen su Hamilton.',
       wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Yas_Marina',
-      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackabudhabidetailed.webp',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackyasmarinadetailed.webp',
       latitude: 24.4672,
       longitude: 54.6031
     }
