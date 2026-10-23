@@ -132,4 +132,52 @@ describe('GranPremiDetailComponent', () => {
     expect(fastest?.driver_number).toBe(16);
     expect(fastest?.pit_duration).toBe(21.8);
   });
+
+  it('should load and compare lap-by-lap and fastest lap telemetry for two drivers in a session', async () => {
+    const openF1 = TestBed.inject(Openf1ServiceService);
+    component.drivers = [
+      { driver_number: 1, broadcast_name: 'M VERSTAPPEN', full_name: 'Max Verstappen', name_acronym: 'VER', team_name: 'Red Bull Racing', team_color: '3671C6', first_name: 'Max', last_name: 'Verstappen', country_code: 'NED' },
+      { driver_number: 16, broadcast_name: 'C LECLERC', full_name: 'Charles Leclerc', name_acronym: 'LEC', team_name: 'Ferrari', team_color: 'ED1131', first_name: 'Charles', last_name: 'Leclerc', country_code: 'MON' }
+    ];
+
+    vi.spyOn(openF1, 'getResults').mockResolvedValue([
+      { driver_number: 1, broadcast_name: 'M VERSTAPPEN', position: 1, grid_position: 1, status: 'Finished', points: 25, team_name: 'Red Bull Racing', team_color: '3671C6' },
+      { driver_number: 16, broadcast_name: 'C LECLERC', position: 2, grid_position: 2, status: 'Finished', points: 18, team_name: 'Ferrari', team_color: 'ED1131' }
+    ]);
+    vi.spyOn(openF1, 'getStints').mockResolvedValue([
+      { compound: 'SOFT', driver_number: 1, lap_start: 1, lap_end: 10, meeting_key: 1201, session_key: 9001, stint_number: 1, tyre_age_at_start: 0 },
+      { compound: 'MEDIUM', driver_number: 16, lap_start: 1, lap_end: 10, meeting_key: 1201, session_key: 9001, stint_number: 1, tyre_age_at_start: 0 }
+    ]);
+    vi.spyOn(openF1, 'getLaps').mockImplementation(async (_sk, driverNum) => [
+      {
+        meeting_key: 1201,
+        session_key: 9001,
+        driver_number: driverNum ?? 1,
+        lap_number: 1,
+        date_start: '2025-03-02T15:00:00.000Z',
+        lap_duration: driverNum === 1 ? 92.4 : 92.9,
+        duration_sector_1: 29.5,
+        duration_sector_2: 40.0,
+        duration_sector_3: driverNum === 1 ? 22.9 : 23.4,
+        i1_speed: 245,
+        i2_speed: 265,
+        st_speed: driverNum === 1 ? 324 : 320,
+        is_pit_out_lap: false
+      }
+    ]);
+    vi.spyOn(openF1, 'getCarTelemetry').mockResolvedValue([
+      { date: '2025-03-02T15:00:00.000Z', session_key: 9001, meeting_key: 1201, driver_number: 1, speed: 305, throttle: 100, brake: 0, n_gear: 8, rpm: 11600, drs: 12 },
+      { date: '2025-03-02T15:01:32.000Z', session_key: 9001, meeting_key: 1201, driver_number: 1, speed: 324, throttle: 100, brake: 0, n_gear: 8, rpm: 11900, drs: 12 }
+    ]);
+
+    await component.setActiveTab(9001, 'telemetry');
+
+    const telState = component.telemetryState[9001];
+    expect(telState).toBeTruthy();
+    expect(telState.driverANumber).toBe(1);
+    expect(telState.driverBNumber).toBe(16);
+    expect(telState.lapChart?.bestLapA?.formattedTime).toBe('1:32.400');
+    expect(telState.lapChart?.bestLapB?.formattedTime).toBe('1:32.900');
+    expect(telState.telemetryChart?.kpis.maxSpeedA).toBe(324);
+  });
 });

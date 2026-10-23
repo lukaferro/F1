@@ -95,10 +95,11 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-### 11. Confronto Telemetria e Tempi sul Giro (Lap-by-Lap & Telemetry) 🏎️
-- Nei dettagli dei Gran Premi moderni (`/granpremi/:id`), strumento di confronto diretto tra 2 piloti della sessione:
-  - Grafico comparativo dei tempi sul giro (Lap-by-Lap) con indicazione mescola gomme.
-  - Confronto telemetrico (Velocità, Acceleratore, Freno, Marcia/DRS) sul giro più veloce.
+### 11. Confronto Telemetria e Tempi sul Giro (Lap-by-Lap & Telemetry) 🏎️ (Completato) ✅
+- Nei dettagli dei Gran Premi moderni (`/granpremi/:id`), tab dedicato **`Telemetria & Giri`** per il confronto diretto tra 2 piloti qualsiasi della sessione (con selettori rapidi e pulsante d'inversione `VS`):
+  - **KPI comparativi di sessione**: Giro più veloce e delta, Passo medio sui giri puliti, Velocità di punta (*Speed Trap*) e confronto intertempi settore per settore (`S1 · S2 · S3`).
+  - **Grafico comparativo dei tempi sul giro (Lap-by-Lap)**: tracciato SVG interattivo con indicatori colore della **mescola gomme** su ogni giro, filtro rapido dei giri anomali (*Pit Out / Safety Car*) e **Ispettore Giro** con tempi, età gomma, settori e caricamento diretto della telemetria di qualsiasi giro.
+  - **Confronto telemetrico sincronizzato sul giro più veloce**: 4 canali grafici SVG allineati sullo sviluppo del tracciato (`0% → 100%`) per **Velocità (`km/h`)**, **Acceleratore (`%`)**, **Freno (`%`)** e **Marcia (`1ª–8ª`) / Zone DRS**, con cursore sincronizzato e ispettore in tempo reale.
 
 ---
 

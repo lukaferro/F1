@@ -250,6 +250,637 @@
                         }
                       </div>
                     }
+
+                    <!-- Telemetry & Lap-by-Lap comparison tab -->
+                    @if (activeTab[session.session_key] === 'telemetry' && !isTabLoading(session.session_key, 'telemetry')) {
+                      @if (telemetryState[session.session_key]; as telState) {
+                        <div class="telemetry-tab-container">
+                          <!-- Barra selettori Pilota A vs Pilota B -->
+                          <div class="telemetry-selectors-bar">
+                            <div class="telemetry-driver-picker" [style.--picker-color]="'#' + getDriverTeamColor(telState.driverANumber)">
+                              <label class="picker-label" [attr.for]="'driver-a-' + session.session_key">Pilota A</label>
+                              <div class="picker-control">
+                                <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(telState.driverANumber)" [style.color]="'#000'">
+                                  {{ telState.driverANumber }}
+                                </span>
+                                <select
+                                  [id]="'driver-a-' + session.session_key"
+                                  class="telemetry-select"
+                                  [ngModel]="telState.driverANumber"
+                                  (ngModelChange)="onTelemetryDriverChange(session.session_key, 'A', $event)">
+                                  @for (d of getSessionOrderedDrivers(session.session_key); track d.driver_number) {
+                                    <option [ngValue]="d.driver_number">
+                                      #{{ d.driver_number }} {{ getDriverName(d.driver_number) }} ({{ d.team_name }})
+                                    </option>
+                                  }
+                                </select>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              class="telemetry-swap-btn"
+                              (click)="swapTelemetryDrivers(session.session_key)"
+                              title="Inverti i due piloti">
+                              <i class="pi pi-arrows-h"></i>
+                              <span>VS</span>
+                            </button>
+
+                            <div class="telemetry-driver-picker" [style.--picker-color]="telState.lapChart?.driverB?.colorHex || ('#' + getDriverTeamColor(telState.driverBNumber))">
+                              <label class="picker-label" [attr.for]="'driver-b-' + session.session_key">Pilota B</label>
+                              <div class="picker-control">
+                                <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(telState.driverBNumber)" [style.color]="'#000'">
+                                  {{ telState.driverBNumber }}
+                                </span>
+                                <select
+                                  [id]="'driver-b-' + session.session_key"
+                                  class="telemetry-select"
+                                  [ngModel]="telState.driverBNumber"
+                                  (ngModelChange)="onTelemetryDriverChange(session.session_key, 'B', $event)">
+                                  @for (d of getSessionOrderedDrivers(session.session_key); track d.driver_number) {
+                                    <option [ngValue]="d.driver_number">
+                                      #{{ d.driver_number }} {{ getDriverName(d.driver_number) }} ({{ d.team_name }})
+                                    </option>
+                                  }
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          @if (telState.lapsLoading) {
+                            <div class="telemetry-loading-box" aria-busy="true">
+                              <i class="pi pi-spin pi-spinner"></i>
+                              <span>Caricamento tempi sul giro dei piloti...</span>
+                            </div>
+                          } @else if (!telState.lapChart) {
+                            <p class="tab-status">Tempi sul giro e telemetria non disponibili per questa sessione.</p>
+                          } @else if (telState.lapChart; as lapChart) {
+                            <!-- KPI Riepilogo Confronto Sessione -->
+                            <div class="telemetry-kpi-grid">
+                              <div class="stint-kpi-card">
+                                <span class="stint-kpi-lbl">Giro più Veloce</span>
+                                <div class="telemetry-kpi-pair">
+                                  <span class="kpi-driver-row">
+                                    <span class="kpi-dot" [style.background]="lapChart.driverA.colorHex"></span>
+                                    <strong>{{ lapChart.driverA.shortName }}:</strong>
+                                    {{ lapChart.bestLapA?.formattedTime || '-' }}
+                                    @if (lapChart.bestLapA; as bA) {
+                                      <small>(G{{ bA.lapNumber }} · {{ bA.tyre.compoundShort }})</small>
+                                    }
+                                  </span>
+                                  <span class="kpi-driver-row">
+                                    <span class="kpi-dot" [style.background]="lapChart.driverB.colorHex"></span>
+                                    <strong>{{ lapChart.driverB.shortName }}:</strong>
+                                    {{ lapChart.bestLapB?.formattedTime || '-' }}
+                                    @if (lapChart.bestLapB; as bB) {
+                                      <small>(G{{ bB.lapNumber }} · {{ bB.tyre.compoundShort }})</small>
+                                    }
+                                  </span>
+                                </div>
+                                <span class="telemetry-kpi-delta">Delta: {{ lapChart.bestLapDeltaLabel }}</span>
+                              </div>
+
+                              <div class="stint-kpi-card">
+                                <span class="stint-kpi-lbl">Passo Medio (Giri Puliti)</span>
+                                <div class="telemetry-kpi-pair">
+                                  <span class="kpi-driver-row">
+                                    <span class="kpi-dot" [style.background]="lapChart.driverA.colorHex"></span>
+                                    <strong>{{ lapChart.driverA.shortName }}:</strong> {{ lapChart.avgPaceFormattedA }}
+                                  </span>
+                                  <span class="kpi-driver-row">
+                                    <span class="kpi-dot" [style.background]="lapChart.driverB.colorHex"></span>
+                                    <strong>{{ lapChart.driverB.shortName }}:</strong> {{ lapChart.avgPaceFormattedB }}
+                                  </span>
+                                </div>
+                                <span class="telemetry-kpi-delta">Delta passo: {{ lapChart.avgPaceDeltaLabel }}</span>
+                              </div>
+
+                              <div class="stint-kpi-card">
+                                <span class="stint-kpi-lbl">Velocità di Punta (Speed Trap)</span>
+                                <div class="telemetry-kpi-pair">
+                                  <span class="kpi-driver-row">
+                                    <span class="kpi-dot" [style.background]="lapChart.driverA.colorHex"></span>
+                                    <strong>{{ lapChart.driverA.shortName }}:</strong>
+                                    {{ lapChart.topSpeedA ? (lapChart.topSpeedA + ' km/h') : '-' }}
+                                  </span>
+                                  <span class="kpi-driver-row">
+                                    <span class="kpi-dot" [style.background]="lapChart.driverB.colorHex"></span>
+                                    <strong>{{ lapChart.driverB.shortName }}:</strong>
+                                    {{ lapChart.topSpeedB ? (lapChart.topSpeedB + ' km/h') : '-' }}
+                                  </span>
+                                </div>
+                                <span class="telemetry-kpi-delta">Giri totali confrontati: {{ lapChart.totalLaps }}</span>
+                              </div>
+
+                              <div class="stint-kpi-card">
+                                <span class="stint-kpi-lbl">Settori Giro Veloce (S1 · S2 · S3)</span>
+                                <div class="sector-mini-list">
+                                  @for (sec of lapChart.sectors; track sec.sector) {
+                                    <div class="sector-mini-row">
+                                      <span class="sector-tag">{{ sec.sector }}</span>
+                                      <span [class.sector-win]="sec.faster === 'A'">{{ sec.timeA }}</span>
+                                      <span class="sector-vs">vs</span>
+                                      <span [class.sector-win]="sec.faster === 'B'">{{ sec.timeB }}</span>
+                                    </div>
+                                  }
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- SEZIONE 1: Grafico Tempi sul Giro (Lap-by-Lap) con indicazione mescola gomme -->
+                            <div class="telemetry-chart-card">
+                              <div class="telemetry-card-header">
+                                <div>
+                                  <h4 class="telemetry-card-title">
+                                    <i class="pi pi-chart-line"></i>
+                                    Confronto Tempi sul Giro (Lap-by-Lap) &amp; Mescole Gomme
+                                  </h4>
+                                  <p class="telemetry-card-subtitle">
+                                    Ogni punto sul grafico mostra la mescola gomme utilizzata nel giro. Passa il cursore o clicca su un giro per ispezionare tempi, settori e gomme.
+                                  </p>
+                                </div>
+                                @if (lapChart.outlierCount > 0) {
+                                  <button
+                                    type="button"
+                                    class="outlier-toggle-btn"
+                                    [class.active]="telState.filterOutliers"
+                                    (click)="toggleTelemetryOutliers(session.session_key)">
+                                    <i class="pi pi-filter"></i>
+                                    <span>{{ telState.filterOutliers ? 'Giri Pit/SC nascosti (' + lapChart.outlierCount + ')' : 'Filtra Pit & SC' }}</span>
+                                  </button>
+                                }
+                              </div>
+
+                              <div class="telemetry-legend-bar">
+                                <div class="telemetry-drivers-legend">
+                                  <span class="driver-legend-item">
+                                    <span class="driver-line-sample" [style.--line-color]="lapChart.driverA.colorHex"></span>
+                                    <strong>{{ lapChart.driverA.name }}</strong>
+                                    <small>({{ lapChart.driverA.teamName }})</small>
+                                  </span>
+                                  <span class="driver-legend-item">
+                                    <span
+                                      class="driver-line-sample"
+                                      [class.dashed]="lapChart.driverB.dashed"
+                                      [style.--line-color]="lapChart.driverB.colorHex"></span>
+                                    <strong>{{ lapChart.driverB.name }}</strong>
+                                    <small>({{ lapChart.driverB.teamName }})</small>
+                                  </span>
+                                </div>
+
+                                <div class="telemetry-tyre-legend">
+                                  <span class="tyre-legend-item"><span class="tyre-dot soft"></span>Soft</span>
+                                  <span class="tyre-legend-item"><span class="tyre-dot medium"></span>Medium</span>
+                                  <span class="tyre-legend-item"><span class="tyre-dot hard"></span>Hard</span>
+                                  <span class="tyre-legend-item"><span class="tyre-dot intermediate"></span>Inter</span>
+                                  <span class="tyre-legend-item"><span class="tyre-dot wet"></span>Wet</span>
+                                </div>
+                              </div>
+
+                              <div class="telemetry-svg-wrap">
+                                <svg
+                                  class="telemetry-svg"
+                                  [attr.viewBox]="'0 0 ' + lapChart.width + ' ' + lapChart.height"
+                                  role="img"
+                                  [attr.aria-label]="'Grafico tempi sul giro ' + lapChart.driverA.name + ' vs ' + lapChart.driverB.name">
+                                  <!-- Griglia orizzontale e tacche tempi sul giro -->
+                                  @for (yt of lapChart.yTicks; track yt.value) {
+                                    <line
+                                      class="tel-grid-line"
+                                      [attr.x1]="lapChart.plotLeft"
+                                      [attr.y1]="yt.y"
+                                      [attr.x2]="lapChart.plotRight"
+                                      [attr.y2]="yt.y" />
+                                    <text
+                                      class="tel-axis-text y-label"
+                                      [attr.x]="lapChart.plotLeft - 8"
+                                      [attr.y]="yt.y + 4">{{ yt.label }}</text>
+                                  }
+
+                                  <!-- Linea verticale del giro attivo -->
+                                  @if (getActiveLapRow(session.session_key); as activeRow) {
+                                    <line
+                                      class="tel-active-guide"
+                                      [attr.x1]="activeRow.x"
+                                      [attr.y1]="lapChart.plotTop"
+                                      [attr.x2]="activeRow.x"
+                                      [attr.y2]="lapChart.plotBottom" />
+                                  }
+
+                                  <!-- Etichette Giri sull'asse X -->
+                                  @for (row of lapChart.rows; track row.lapNumber) {
+                                    @if (row.showAxisLabel || $index === telState.activeLapIndex) {
+                                      <text
+                                        class="tel-axis-text x-label"
+                                        [class.active]="$index === telState.activeLapIndex"
+                                        [attr.x]="row.x"
+                                        [attr.y]="lapChart.height - 8">G{{ row.lapNumber }}</text>
+                                    }
+                                  }
+
+                                  <!-- Tracce Pilota A e Pilota B -->
+                                  @if (lapChart.pathA) {
+                                    <path
+                                      class="tel-series-path"
+                                      [attr.d]="lapChart.pathA"
+                                      [attr.stroke]="lapChart.driverA.colorHex" />
+                                  }
+                                  @if (lapChart.pathB) {
+                                    <path
+                                      class="tel-series-path"
+                                      [attr.d]="lapChart.pathB"
+                                      [attr.stroke]="lapChart.driverB.colorHex"
+                                      [attr.stroke-dasharray]="lapChart.driverB.dashed ? '7 5' : null" />
+                                  }
+
+                                  <!-- Pallini giro con colore mescola gomme (Pilota A) -->
+                                  @for (n of lapChart.nodesA; track n.lapNumber) {
+                                    <circle
+                                      class="tel-lap-dot"
+                                      [class.fastest]="n.isFastest"
+                                      [attr.cx]="n.x"
+                                      [attr.cy]="n.y"
+                                      [attr.r]="n.isFastest ? 5.5 : 3.8"
+                                      [attr.fill]="n.tyre.compoundColor"
+                                      [attr.stroke]="lapChart.driverA.colorHex" />
+                                  }
+
+                                  <!-- Pallini giro con colore mescola gomme (Pilota B) -->
+                                  @for (n of lapChart.nodesB; track n.lapNumber) {
+                                    <circle
+                                      class="tel-lap-dot"
+                                      [class.fastest]="n.isFastest"
+                                      [attr.cx]="n.x"
+                                      [attr.cy]="n.y"
+                                      [attr.r]="n.isFastest ? 5.5 : 3.8"
+                                      [attr.fill]="n.tyre.compoundColor"
+                                      [attr.stroke]="lapChart.driverB.colorHex" />
+                                  }
+
+                                  <!-- Aree interattive di selezione giro -->
+                                  @for (row of lapChart.rows; track row.lapNumber) {
+                                    <rect
+                                      class="tel-hit-col"
+                                      [attr.x]="row.hitLeft"
+                                      [attr.y]="lapChart.plotTop"
+                                      [attr.width]="row.hitWidth"
+                                      [attr.height]="lapChart.plotBottom - lapChart.plotTop"
+                                      (mouseenter)="selectComparisonLap(session.session_key, $index)"
+                                      (click)="selectComparisonLap(session.session_key, $index)" />
+                                  }
+                                </svg>
+                              </div>
+
+                              <!-- Ispettore Giro selezionato -->
+                              @if (getActiveLapRow(session.session_key); as activeLap) {
+                                <div class="lap-inspector-box">
+                                  <div class="lap-inspector-top">
+                                    <div class="lap-inspector-title">
+                                      <span class="lap-badge">Giro {{ activeLap.lapNumber }} / {{ lapChart.totalLaps }}</span>
+                                      <span class="lap-delta-pill" [class.win-a]="activeLap.faster === 'A'" [class.win-b]="activeLap.faster === 'B'">
+                                        Delta Giro: <strong>{{ activeLap.deltaLabel }}</strong>
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      class="inspect-lap-telemetry-btn"
+                                      [disabled]="telState.telemetryLoading"
+                                      (click)="loadTelemetryForLap(session.session_key, activeLap.lapNumber)">
+                                      <i class="pi pi-sliders-h"></i>
+                                      <span>Carica telemetria Giro {{ activeLap.lapNumber }}</span>
+                                    </button>
+                                  </div>
+
+                                  <div class="lap-inspector-drivers">
+                                    <!-- Dettaglio Giro Pilota A -->
+                                    <div class="lap-driver-card" [style.--driver-accent]="lapChart.driverA.colorHex">
+                                      <div class="lap-driver-head">
+                                        <strong>{{ lapChart.driverA.name }}</strong>
+                                        <span class="lap-time-val">{{ activeLap.a?.formattedTime || 'N/D' }}</span>
+                                      </div>
+                                      @if (activeLap.a; as dA) {
+                                        <div class="lap-driver-meta">
+                                          <span class="tyre-mini-pill" [ngClass]="dA.tyre.compound">
+                                            {{ dA.tyre.compoundLabel }} ({{ dA.tyre.tyreAge }}g)
+                                          </span>
+                                          <span>S1: {{ dA.s1 }}</span>
+                                          <span>S2: {{ dA.s2 }}</span>
+                                          <span>S3: {{ dA.s3 }}</span>
+                                          @if (dA.speedTrap) {
+                                            <span><i class="pi pi-gauge"></i> {{ dA.speedTrap }} km/h</span>
+                                          }
+                                          @if (dA.isPitOut) {
+                                            <span class="pit-out-tag">PIT OUT</span>
+                                          }
+                                        </div>
+                                      }
+                                    </div>
+
+                                    <!-- Dettaglio Giro Pilota B -->
+                                    <div class="lap-driver-card" [style.--driver-accent]="lapChart.driverB.colorHex">
+                                      <div class="lap-driver-head">
+                                        <strong>{{ lapChart.driverB.name }}</strong>
+                                        <span class="lap-time-val">{{ activeLap.b?.formattedTime || 'N/D' }}</span>
+                                      </div>
+                                      @if (activeLap.b; as dB) {
+                                        <div class="lap-driver-meta">
+                                          <span class="tyre-mini-pill" [ngClass]="dB.tyre.compound">
+                                            {{ dB.tyre.compoundLabel }} ({{ dB.tyre.tyreAge }}g)
+                                          </span>
+                                          <span>S1: {{ dB.s1 }}</span>
+                                          <span>S2: {{ dB.s2 }}</span>
+                                          <span>S3: {{ dB.s3 }}</span>
+                                          @if (dB.speedTrap) {
+                                            <span><i class="pi pi-gauge"></i> {{ dB.speedTrap }} km/h</span>
+                                          }
+                                          @if (dB.isPitOut) {
+                                            <span class="pit-out-tag">PIT OUT</span>
+                                          }
+                                        </div>
+                                      }
+                                    </div>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+
+                            <!-- SEZIONE 2: Confronto Telemetrico sul Giro più Veloce (Velocità, Acceleratore, Freno, Marcia/DRS) -->
+                            <div class="telemetry-chart-card">
+                              <div class="telemetry-card-header">
+                                <div>
+                                  <h4 class="telemetry-card-title">
+                                    <i class="pi pi-gauge"></i>
+                                    Confronto Telemetrico ({{ telState.customLapNumber ? ('Giro ' + telState.customLapNumber) : 'Giro più Veloce' }})
+                                  </h4>
+                                  <p class="telemetry-card-subtitle">
+                                    @if (telState.telemetryLapA || telState.telemetryLapB) {
+                                      <span>
+                                        <strong>{{ lapChart.driverA.shortName }}</strong>:
+                                        Giro {{ telState.telemetryLapA?.lapNumber || '-' }} ({{ telState.telemetryLapA?.formattedTime || '-' }})
+                                        &nbsp;vs&nbsp;
+                                        <strong>{{ lapChart.driverB.shortName }}</strong>:
+                                        Giro {{ telState.telemetryLapB?.lapNumber || '-' }} ({{ telState.telemetryLapB?.formattedTime || '-' }})
+                                      </span>
+                                    } @else {
+                                      <span>Confronto telemetrico sincronizzato lungo lo sviluppo del giro (0% → 100% del tracciato).</span>
+                                    }
+                                  </p>
+                                </div>
+
+                                @if (telState.customLapNumber !== null) {
+                                  <button
+                                    type="button"
+                                    class="outlier-toggle-btn active"
+                                    (click)="loadTelemetryForLap(session.session_key, null)">
+                                    <i class="pi pi-bolt"></i>
+                                    <span>Torna al Giro più Veloce</span>
+                                  </button>
+                                }
+                              </div>
+
+                              @if (telState.telemetryLoading) {
+                                <div class="telemetry-loading-box" aria-busy="true">
+                                  <i class="pi pi-spin pi-spinner"></i>
+                                  <span>Scaricamento ed elaborazione canali telemetrici (Velocità, Acceleratore, Freno, Marce/DRS)...</span>
+                                </div>
+                              } @else if (!telState.telemetryChart) {
+                                <p class="tab-status">Dati telemetrici ad alta frequenza non disponibili per questo giro.</p>
+                              } @else if (telState.telemetryChart; as telChart) {
+                                <!-- KPI Telemetrici sul Giro -->
+                                <div class="telemetry-kpi-grid compact">
+                                  <div class="stint-kpi-card">
+                                    <span class="stint-kpi-lbl">Velocità Max nel Giro</span>
+                                    <span class="stint-kpi-val">
+                                      {{ telChart.kpis.maxSpeedA }} <small>km/h ({{ lapChart.driverA.shortName }})</small>
+                                      · {{ telChart.kpis.maxSpeedB }} <small>km/h ({{ lapChart.driverB.shortName }})</small>
+                                    </span>
+                                  </div>
+                                  <div class="stint-kpi-card">
+                                    <span class="stint-kpi-lbl">Pieno Acceleratore (≥95%)</span>
+                                    <span class="stint-kpi-val">
+                                      {{ telChart.kpis.fullThrottlePctA }}% <small>({{ lapChart.driverA.shortName }})</small>
+                                      · {{ telChart.kpis.fullThrottlePctB }}% <small>({{ lapChart.driverB.shortName }})</small>
+                                    </span>
+                                  </div>
+                                  <div class="stint-kpi-card">
+                                    <span class="stint-kpi-lbl">Fase di Frenata</span>
+                                    <span class="stint-kpi-val">
+                                      {{ telChart.kpis.brakingPctA }}% <small>({{ lapChart.driverA.shortName }})</small>
+                                      · {{ telChart.kpis.brakingPctB }}% <small>({{ lapChart.driverB.shortName }})</small>
+                                    </span>
+                                  </div>
+                                  <div class="stint-kpi-card">
+                                    <span class="stint-kpi-lbl">Utilizzo DRS nel Giro</span>
+                                    <span class="stint-kpi-val">
+                                      {{ telChart.kpis.drsActivePctA }}% <small>({{ lapChart.driverA.shortName }})</small>
+                                      · {{ telChart.kpis.drsActivePctB }}% <small>({{ lapChart.driverB.shortName }})</small>
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Ispettore Punto Tracciato Sincronizzato -->
+                                @if (getActiveTelemetrySample(session.session_key); as sample) {
+                                  <div class="telemetry-live-inspector">
+                                    <div class="live-inspector-pos">
+                                      <span class="lap-badge">Posizione Giro: {{ sample.pct }}%</span>
+                                      <span class="live-speed-delta">
+                                        Delta Velocità:
+                                        <strong>
+                                          {{ sample.speedDelta > 0 ? ('+' + sample.speedDelta + ' km/h ' + lapChart.driverA.shortName) : (sample.speedDelta < 0 ? ('+' + (-sample.speedDelta) + ' km/h ' + lapChart.driverB.shortName) : 'Pari') }}
+                                        </strong>
+                                      </span>
+                                    </div>
+
+                                    <div class="live-inspector-grid">
+                                      <div class="live-driver-row" [style.--driver-accent]="telChart.driverA.colorHex">
+                                        <strong class="live-drv-name">{{ telChart.driverA.shortName }}</strong>
+                                        <span><strong>{{ sample.a.speed }}</strong> km/h</span>
+                                        <span>Gas: <strong>{{ sample.a.throttle }}%</strong></span>
+                                        <span>Freno: <strong [class.braking-on]="sample.a.brake > 0">{{ sample.a.brake > 0 ? (sample.a.brake + '%') : 'OFF' }}</strong></span>
+                                        <span>Marcia: <strong>{{ sample.a.gear }}ª</strong></span>
+                                        <span>{{ sample.a.rpm }} rpm</span>
+                                        <span class="drs-pill" [class.open]="sample.a.drsOpen">DRS {{ sample.a.drsOpen ? 'ON' : 'OFF' }}</span>
+                                      </div>
+
+                                      <div class="live-driver-row" [style.--driver-accent]="telChart.driverB.colorHex">
+                                        <strong class="live-drv-name">{{ telChart.driverB.shortName }}</strong>
+                                        <span><strong>{{ sample.b.speed }}</strong> km/h</span>
+                                        <span>Gas: <strong>{{ sample.b.throttle }}%</strong></span>
+                                        <span>Freno: <strong [class.braking-on]="sample.b.brake > 0">{{ sample.b.brake > 0 ? (sample.b.brake + '%') : 'OFF' }}</strong></span>
+                                        <span>Marcia: <strong>{{ sample.b.gear }}ª</strong></span>
+                                        <span>{{ sample.b.rpm }} rpm</span>
+                                        <span class="drs-pill" [class.open]="sample.b.drsOpen">DRS {{ sample.b.drsOpen ? 'ON' : 'OFF' }}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                }
+
+                                <!-- Canale 1: VELOCITÀ (km/h) -->
+                                <div class="telemetry-channel-block">
+                                  <div class="channel-label-row">
+                                    <span class="channel-title">1. Velocità (km/h)</span>
+                                    <span class="channel-hint">0% → 100% del giro</span>
+                                  </div>
+                                  <div class="telemetry-svg-wrap">
+                                    <svg
+                                      class="telemetry-svg"
+                                      [attr.viewBox]="'0 0 ' + telChart.width + ' ' + telChart.speedChannel.height"
+                                      role="img"
+                                      aria-label="Canale telemetrico velocità">
+                                      @for (yt of telChart.speedChannel.yTicks; track yt.label) {
+                                        <line class="tel-grid-line" [attr.x1]="telChart.plotLeft" [attr.y1]="yt.y" [attr.x2]="telChart.plotRight" [attr.y2]="yt.y" />
+                                        <text class="tel-axis-text y-label" [attr.x]="telChart.plotLeft - 8" [attr.y]="yt.y + 4">{{ yt.label }}</text>
+                                      }
+                                      @if (getActiveTelemetrySample(session.session_key); as activeS) {
+                                        <line class="tel-active-guide" [attr.x1]="activeS.x" [attr.y1]="telChart.speedChannel.plotTop" [attr.x2]="activeS.x" [attr.y2]="telChart.speedChannel.plotBottom" />
+                                      }
+                                      <path class="tel-series-path" [attr.d]="telChart.speedChannel.pathA" [attr.stroke]="telChart.driverA.colorHex" />
+                                      <path class="tel-series-path" [attr.d]="telChart.speedChannel.pathB" [attr.stroke]="telChart.driverB.colorHex" [attr.stroke-dasharray]="telChart.driverB.dashed ? '7 5' : null" />
+                                      @for (s of telChart.samples; track s.index) {
+                                        <rect
+                                          class="tel-hit-col"
+                                          [attr.x]="s.hitLeft"
+                                          [attr.y]="telChart.speedChannel.plotTop"
+                                          [attr.width]="s.hitWidth"
+                                          [attr.height]="telChart.speedChannel.plotBottom - telChart.speedChannel.plotTop"
+                                          (mouseenter)="selectTelemetrySample(session.session_key, s.index)"
+                                          (click)="selectTelemetrySample(session.session_key, s.index)" />
+                                      }
+                                    </svg>
+                                  </div>
+                                </div>
+
+                                <!-- Canale 2: ACCELERATORE (%) -->
+                                <div class="telemetry-channel-block">
+                                  <div class="channel-label-row">
+                                    <span class="channel-title">2. Acceleratore (%)</span>
+                                  </div>
+                                  <div class="telemetry-svg-wrap">
+                                    <svg
+                                      class="telemetry-svg"
+                                      [attr.viewBox]="'0 0 ' + telChart.width + ' ' + telChart.throttleChannel.height"
+                                      role="img"
+                                      aria-label="Canale telemetrico acceleratore">
+                                      @for (yt of telChart.throttleChannel.yTicks; track yt.label) {
+                                        <line class="tel-grid-line" [attr.x1]="telChart.plotLeft" [attr.y1]="yt.y" [attr.x2]="telChart.plotRight" [attr.y2]="yt.y" />
+                                        <text class="tel-axis-text y-label" [attr.x]="telChart.plotLeft - 8" [attr.y]="yt.y + 4">{{ yt.label }}</text>
+                                      }
+                                      @if (getActiveTelemetrySample(session.session_key); as activeS) {
+                                        <line class="tel-active-guide" [attr.x1]="activeS.x" [attr.y1]="telChart.throttleChannel.plotTop" [attr.x2]="activeS.x" [attr.y2]="telChart.throttleChannel.plotBottom" />
+                                      }
+                                      <path class="tel-series-path" [attr.d]="telChart.throttleChannel.pathA" [attr.stroke]="telChart.driverA.colorHex" />
+                                      <path class="tel-series-path" [attr.d]="telChart.throttleChannel.pathB" [attr.stroke]="telChart.driverB.colorHex" [attr.stroke-dasharray]="telChart.driverB.dashed ? '7 5' : null" />
+                                      @for (s of telChart.samples; track s.index) {
+                                        <rect
+                                          class="tel-hit-col"
+                                          [attr.x]="s.hitLeft"
+                                          [attr.y]="telChart.throttleChannel.plotTop"
+                                          [attr.width]="s.hitWidth"
+                                          [attr.height]="telChart.throttleChannel.plotBottom - telChart.throttleChannel.plotTop"
+                                          (mouseenter)="selectTelemetrySample(session.session_key, s.index)"
+                                          (click)="selectTelemetrySample(session.session_key, s.index)" />
+                                      }
+                                    </svg>
+                                  </div>
+                                </div>
+
+                                <!-- Canale 3: FRENO (ON / %) -->
+                                <div class="telemetry-channel-block">
+                                  <div class="channel-label-row">
+                                    <span class="channel-title">3. Freno (%)</span>
+                                  </div>
+                                  <div class="telemetry-svg-wrap">
+                                    <svg
+                                      class="telemetry-svg"
+                                      [attr.viewBox]="'0 0 ' + telChart.width + ' ' + telChart.brakeChannel.height"
+                                      role="img"
+                                      aria-label="Canale telemetrico freno">
+                                      @for (yt of telChart.brakeChannel.yTicks; track yt.label) {
+                                        <line class="tel-grid-line" [attr.x1]="telChart.plotLeft" [attr.y1]="yt.y" [attr.x2]="telChart.plotRight" [attr.y2]="yt.y" />
+                                        <text class="tel-axis-text y-label" [attr.x]="telChart.plotLeft - 8" [attr.y]="yt.y + 4">{{ yt.label }}</text>
+                                      }
+                                      @if (getActiveTelemetrySample(session.session_key); as activeS) {
+                                        <line class="tel-active-guide" [attr.x1]="activeS.x" [attr.y1]="telChart.brakeChannel.plotTop" [attr.x2]="activeS.x" [attr.y2]="telChart.brakeChannel.plotBottom" />
+                                      }
+                                      <path class="tel-series-path" [attr.d]="telChart.brakeChannel.pathA" [attr.stroke]="telChart.driverA.colorHex" />
+                                      <path class="tel-series-path" [attr.d]="telChart.brakeChannel.pathB" [attr.stroke]="telChart.driverB.colorHex" [attr.stroke-dasharray]="telChart.driverB.dashed ? '7 5' : null" />
+                                      @for (s of telChart.samples; track s.index) {
+                                        <rect
+                                          class="tel-hit-col"
+                                          [attr.x]="s.hitLeft"
+                                          [attr.y]="telChart.brakeChannel.plotTop"
+                                          [attr.width]="s.hitWidth"
+                                          [attr.height]="telChart.brakeChannel.plotBottom - telChart.brakeChannel.plotTop"
+                                          (mouseenter)="selectTelemetrySample(session.session_key, s.index)"
+                                          (click)="selectTelemetrySample(session.session_key, s.index)" />
+                                      }
+                                    </svg>
+                                  </div>
+                                </div>
+
+                                <!-- Canale 4: MARCIA (1ª-8ª) & DRS -->
+                                <div class="telemetry-channel-block">
+                                  <div class="channel-label-row">
+                                    <span class="channel-title">4. Marcia (1ª–8ª) &amp; Zone attivazione DRS</span>
+                                    <span class="channel-hint">Barre superiori = DRS Aperto</span>
+                                  </div>
+                                  <div class="telemetry-svg-wrap">
+                                    <svg
+                                      class="telemetry-svg"
+                                      [attr.viewBox]="'0 0 ' + telChart.width + ' ' + telChart.gearChannel.height"
+                                      role="img"
+                                      aria-label="Canale telemetrico marce e DRS">
+                                      @for (yt of telChart.gearChannel.yTicks; track yt.label) {
+                                        <line class="tel-grid-line" [attr.x1]="telChart.plotLeft" [attr.y1]="yt.y" [attr.x2]="telChart.plotRight" [attr.y2]="yt.y" />
+                                        <text class="tel-axis-text y-label" [attr.x]="telChart.plotLeft - 8" [attr.y]="yt.y + 4">{{ yt.label }}</text>
+                                      }
+                                      <!-- Indicatori DRS Aperto in alto nel canale -->
+                                      @for (segA of telChart.gearChannel.drsSegmentsA; track segA.x1) {
+                                        <rect
+                                          [attr.x]="segA.x1"
+                                          y="4"
+                                          [attr.width]="segA.width"
+                                          height="5"
+                                          rx="2"
+                                          [attr.fill]="telChart.driverA.colorHex" />
+                                      }
+                                      @for (segB of telChart.gearChannel.drsSegmentsB; track segB.x1) {
+                                        <rect
+                                          [attr.x]="segB.x1"
+                                          y="11"
+                                          [attr.width]="segB.width"
+                                          height="5"
+                                          rx="2"
+                                          [attr.fill]="telChart.driverB.colorHex" />
+                                      }
+                                      @if (getActiveTelemetrySample(session.session_key); as activeS) {
+                                        <line class="tel-active-guide" [attr.x1]="activeS.x" [attr.y1]="telChart.gearChannel.plotTop" [attr.x2]="activeS.x" [attr.y2]="telChart.gearChannel.plotBottom" />
+                                      }
+                                      <path class="tel-series-path" [attr.d]="telChart.gearChannel.pathA" [attr.stroke]="telChart.driverA.colorHex" />
+                                      <path class="tel-series-path" [attr.d]="telChart.gearChannel.pathB" [attr.stroke]="telChart.driverB.colorHex" [attr.stroke-dasharray]="telChart.driverB.dashed ? '7 5' : null" />
+                                      @for (xt of telChart.xTicks; track xt.label) {
+                                        <text class="tel-axis-text x-label" [attr.x]="xt.x" [attr.y]="telChart.gearChannel.height - 4">{{ xt.label }}</text>
+                                      }
+                                      @for (s of telChart.samples; track s.index) {
+                                        <rect
+                                          class="tel-hit-col"
+                                          [attr.x]="s.hitLeft"
+                                          [attr.y]="telChart.gearChannel.plotTop"
+                                          [attr.width]="s.hitWidth"
+                                          [attr.height]="telChart.gearChannel.plotBottom - telChart.gearChannel.plotTop"
+                                          (mouseenter)="selectTelemetrySample(session.session_key, s.index)"
+                                          (click)="selectTelemetrySample(session.session_key, s.index)" />
+                                      }
+                                    </svg>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    }
+
                     <!-- Stints tab -->
                     @if (activeTab[session.session_key] === 'stints' && !isTabLoading(session.session_key, 'stints')) {
                       <div>

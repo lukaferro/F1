@@ -53,6 +53,35 @@ export interface Overtake {
   session_key: number;
 }
 
+export interface LapData {
+  meeting_key: number;
+  session_key: number;
+  driver_number: number;
+  lap_number: number;
+  date_start: string | null;
+  lap_duration: number | null;
+  duration_sector_1: number | null;
+  duration_sector_2: number | null;
+  duration_sector_3: number | null;
+  i1_speed: number | null;
+  i2_speed: number | null;
+  st_speed: number | null;
+  is_pit_out_lap: boolean;
+}
+
+export interface CarTelemetryPoint {
+  date: string;
+  session_key: number;
+  meeting_key: number;
+  driver_number: number;
+  speed: number;
+  throttle: number;
+  brake: number;
+  n_gear: number;
+  rpm: number;
+  drs: number;
+}
+
 export interface Driver {
   driver_number: number;
   broadcast_name: string;
@@ -129,7 +158,7 @@ export class Openf1ServiceService {
   /**
    * Get drivers. By default treats the numeric key as meeting_key. If you need to fetch by session_key,
    * pass type = 'session'.
-   */
+  */
   async getDrivers(key?: number, type: 'meeting' | 'session' = 'meeting'): Promise<Driver[]> {
     let url = `${this.baseUrl}/drivers`;
     if (typeof key === 'number') {
@@ -183,6 +212,21 @@ export class Openf1ServiceService {
 
   async getOvertakes(sessionKey: number): Promise<Overtake[]> {
     return this.cache.getList<Overtake>(`${this.baseUrl}/overtakes?session_key=${sessionKey}`);
+  }
+
+  async getLaps(sessionKey: number, driverNumber?: number): Promise<LapData[]> {
+    const driverFilter = typeof driverNumber === 'number' ? `&driver_number=${driverNumber}` : '';
+    return this.cache.getList<LapData>(`${this.baseUrl}/laps?session_key=${sessionKey}${driverFilter}`);
+  }
+
+  async getCarTelemetry(
+    sessionKey: number,
+    driverNumber: number,
+    dateStartIso: string,
+    dateEndIso: string
+  ): Promise<CarTelemetryPoint[]> {
+    const url = `${this.baseUrl}/car_data?session_key=${sessionKey}&driver_number=${driverNumber}&date>=${dateStartIso}&date<=${dateEndIso}`;
+    return this.cache.getList<CarTelemetryPoint>(url);
   }
 
   /** Tutte le gare (session_name = Race) di tutte le stagioni, con una sola richiesta */

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -12,14 +13,26 @@ import {
   TeamRadio,
   Weather,
   Pit,
-  Overtake 
+  Overtake,
+  LapData
 } from '../../services/openf1-service';
 import { Session } from '../../models/session';
 import { circuitMapUrl, SponsorInfo, titleSponsor } from '../../utils/f1-media';
 import { TEAM_COLORS } from '../../utils/team-colors';
+import {
+  buildLapComparisonChart,
+  buildTelemetryComparisonChart,
+  LapComparisonChart,
+  LapComparisonRow,
+  resolveLapTimeWindow,
+  TelemetryAlignedSample,
+  TelemetryComparisonChart,
+  TelemetryDriverInput,
+  TelemetryLapWindow
+} from '../../utils/telemetry-chart';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 
-type SessionTab = 'results' | 'stints' | 'weather' | 'pits' | 'overtakes' | 'radio';
+type SessionTab = 'results' | 'telemetry' | 'stints' | 'weather' | 'pits' | 'overtakes' | 'radio';
 
 // Un segmento della barra della strategia gomme
 export interface TyreSegment {
@@ -51,6 +64,22 @@ export interface StintSessionSummary {
   longestStintLaps: number;
 }
 
+export interface SessionTelemetryState {
+  driverANumber: number;
+  driverBNumber: number;
+  filterOutliers: boolean;
+  lapsLoading: boolean;
+  telemetryLoading: boolean;
+  lapsByDriver: { [driver_number: number]: LapData[] };
+  lapChart: LapComparisonChart | null;
+  activeLapIndex: number;
+  telemetryChart: TelemetryComparisonChart | null;
+  activeTelemetryIndex: number;
+  telemetryLapA: TelemetryLapWindow | null;
+  telemetryLapB: TelemetryLapWindow | null;
+  customLapNumber: number | null;
+}
+
 const COMPOUND_LABELS: Record<string, string> = {
   soft: 'Soft', medium: 'Medium', hard: 'Hard', intermediate: 'Intermedie', wet: 'Da bagnato'
 };
@@ -58,7 +87,7 @@ const COMPOUND_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-gran-premi-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonModule, TableModule, ApiUnavailableComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ButtonModule, TableModule, ApiUnavailableComponent],
   templateUrl: './gran-premi-detail.component.html',
   styleUrl: './gran-premi-detail.component.css'
 })
@@ -87,11 +116,13 @@ export class GranPremiDetailComponent implements OnInit {
   stintSummaries: { [session_key: number]: StintSessionSummary | null } = {};
   fastestPitBySession: { [session_key: number]: Pit | null } = {};
   filteredWeather: { [session_key: number]: Weather[] } = {};
+  telemetryState: { [session_key: number]: SessionTelemetryState } = {};
 
   // Tab di ogni sessione: i dati vengono scaricati solo quando il tab viene aperto,
   // perché OpenF1 accetta al massimo 30 richieste al minuto
   readonly sessionTabs: { id: SessionTab; label: string }[] = [
     { id: 'results', label: 'Risultati' },
+    { id: 'telemetry', label: 'Telemetria & Giri' },
     { id: 'stints', label: 'Gomme' },
     { id: 'weather', label: 'Meteo' },
     { id: 'pits', label: 'Pit Stop' },
@@ -466,9 +497,42 @@ export class GranPremiDetailComponent implements OnInit {
     return driver.broadcast_name || `Driver ${driverNumber}`;
   }
 
+  getDriverAcronym(driverNumber: number): string {
+    const driver = this.drivers.find(d => d.driver_number === driverNumber);
+    if (driver?.name_acronym) return driver.name_acronym;
+    const name = this.getDriverName(driverNumber);
+    const last = name.split(' ').pop() || name;
+    return last.substring(0, 3).toUpperCase();
+  }
+
   getDriverTeam(driverNumber: number): string {
     const driver = this.drivers.find(d => d.driver_number === driverNumber);
     return driver?.team_name || 'Unknown Team';
+  }
+
+  private toTelemetryDriverInput(driverNumber: number): TelemetryDriverInput {
+    return {
+      driverNumber,
+      name: this.getDriverName(driverNumber),
+      shortName: this.getDriverAcronym(driverNumber),
+      teamName: this.getDriverTeam(driverNumber),
+      color: this.getDriverTeamColor(driverNumber)
+    };
+  }
+
+  // Restituisce i piloti ordinati per posizione nella sessione (o per numero di gara se senza classifica)
+  getSessionOrderedDrivers(sessionKey: number): Driver[] {
+    const results = this.sessionResultsNormalized[sessionKey] ?? [];
+    if (!results.length) {
+      return [...this.drivers].sort((a, b) => a.driver_number - b.driver_number);
+    }
+    const orderMap = new Map<number, number>();
+    results.forEach((r, idx) => orderMap.set(r.driver_number, idx));
+    return [...this.drivers].sort((a, b) => {
+      const iA = orderMap.get(a.driver_number) ?? 999;
+      const iB = orderMap.get(b.driver_number) ?? 999;
+      return iA !== iB ? iA - iB : a.driver_number - b.driver_number;
+    });
   }
 
   // Filtra i dati meteo per mostrare solo quelli ogni 30 minuti
@@ -620,6 +684,7 @@ export class GranPremiDetailComponent implements OnInit {
     this.error = undefined;
     this.expandedSessionKey = null;
     this.activeTab = {};
+    this.telemetryState = {};
     this.tabRequests.clear();
     this.loadingTabs.clear();
 
@@ -763,9 +828,21 @@ export class GranPremiDetailComponent implements OnInit {
         case 'results':
           await this.loadResults(sessionKey);
           break;
+        case 'telemetry': {
+          const [stints] = await Promise.all([
+            this.stints[sessionKey] ? Promise.resolve(this.stints[sessionKey]) : orEmpty(this.openF1Service.getStints(sessionKey)),
+            this.loadTab(sessionKey, 'results')
+          ]);
+          this.stints[sessionKey] = stints;
+          await this.initSessionTelemetry(sessionKey);
+          break;
+        }
         case 'stints': {
           // la posizione finale serve per ordinare i piloti
-          const [stints] = await Promise.all([orEmpty(this.openF1Service.getStints(sessionKey)), this.loadTab(sessionKey, 'results')]);
+          const [stints] = await Promise.all([
+            this.stints[sessionKey] ? Promise.resolve(this.stints[sessionKey]) : orEmpty(this.openF1Service.getStints(sessionKey)),
+            this.loadTab(sessionKey, 'results')
+          ]);
           this.stints[sessionKey] = stints;
           const grouped = this.groupStints(stints, this.sessionResultsNormalized[sessionKey] ?? []);
           this.groupedStints[sessionKey] = grouped;
@@ -791,6 +868,217 @@ export class GranPremiDetailComponent implements OnInit {
       }
     } finally {
       this.loadingTabs.delete(id);
+    }
+  }
+
+  private async initSessionTelemetry(sessionKey: number): Promise<void> {
+    if (!this.telemetryState[sessionKey]) {
+      const ordered = this.getSessionOrderedDrivers(sessionKey);
+      const driverA = ordered[0]?.driver_number ?? 1;
+      const driverB = ordered[1]?.driver_number ?? (ordered[0]?.driver_number === 16 ? 1 : 16);
+
+      this.telemetryState[sessionKey] = {
+        driverANumber: driverA,
+        driverBNumber: driverB,
+        filterOutliers: true,
+        lapsLoading: false,
+        telemetryLoading: false,
+        lapsByDriver: {},
+        lapChart: null,
+        activeLapIndex: 0,
+        telemetryChart: null,
+        activeTelemetryIndex: 50,
+        telemetryLapA: null,
+        telemetryLapB: null,
+        customLapNumber: null
+      };
+    }
+
+    await this.updateSessionTelemetryComparison(sessionKey, true);
+  }
+
+  async onTelemetryDriverChange(sessionKey: number, slot: 'A' | 'B', rawValue: number | string): Promise<void> {
+    const state = this.telemetryState[sessionKey];
+    if (!state) return;
+
+    const newNumber = Number(rawValue);
+    if (!Number.isFinite(newNumber)) return;
+
+    if (slot === 'A') {
+      if (newNumber === state.driverBNumber) {
+        state.driverBNumber = state.driverANumber;
+      }
+      state.driverANumber = newNumber;
+    } else {
+      if (newNumber === state.driverANumber) {
+        state.driverANumber = state.driverBNumber;
+      }
+      state.driverBNumber = newNumber;
+    }
+
+    state.customLapNumber = null;
+    await this.updateSessionTelemetryComparison(sessionKey, true);
+  }
+
+  async swapTelemetryDrivers(sessionKey: number): Promise<void> {
+    const state = this.telemetryState[sessionKey];
+    if (!state) return;
+
+    const tmp = state.driverANumber;
+    state.driverANumber = state.driverBNumber;
+    state.driverBNumber = tmp;
+    await this.updateSessionTelemetryComparison(sessionKey, true);
+  }
+
+  toggleTelemetryOutliers(sessionKey: number): void {
+    const state = this.telemetryState[sessionKey];
+    if (!state) return;
+
+    state.filterOutliers = !state.filterOutliers;
+    this.rebuildLapChartOnly(sessionKey);
+  }
+
+  selectComparisonLap(sessionKey: number, rowIndex: number): void {
+    const state = this.telemetryState[sessionKey];
+    if (!state || !state.lapChart) return;
+    if (rowIndex >= 0 && rowIndex < state.lapChart.rows.length) {
+      state.activeLapIndex = rowIndex;
+    }
+  }
+
+  selectTelemetrySample(sessionKey: number, sampleIndex: number): void {
+    const state = this.telemetryState[sessionKey];
+    if (!state || !state.telemetryChart) return;
+    if (sampleIndex >= 0 && sampleIndex < state.telemetryChart.samples.length) {
+      state.activeTelemetryIndex = sampleIndex;
+    }
+  }
+
+  async loadTelemetryForLap(sessionKey: number, lapNumber: number | null): Promise<void> {
+    const state = this.telemetryState[sessionKey];
+    if (!state) return;
+    state.customLapNumber = lapNumber;
+    await this.loadFastestOrSelectedLapTelemetry(sessionKey);
+  }
+
+  getActiveLapRow(sessionKey: number): LapComparisonRow | null {
+    const state = this.telemetryState[sessionKey];
+    if (!state?.lapChart?.rows.length) return null;
+    return state.lapChart.rows[state.activeLapIndex] ?? state.lapChart.rows[0];
+  }
+
+  getActiveTelemetrySample(sessionKey: number): TelemetryAlignedSample | null {
+    const state = this.telemetryState[sessionKey];
+    if (!state?.telemetryChart?.samples.length) return null;
+    return state.telemetryChart.samples[state.activeTelemetryIndex] ?? state.telemetryChart.samples[0];
+  }
+
+  private rebuildLapChartOnly(sessionKey: number): void {
+    const state = this.telemetryState[sessionKey];
+    if (!state) return;
+
+    const lapsA = state.lapsByDriver[state.driverANumber] ?? [];
+    const lapsB = state.lapsByDriver[state.driverBNumber] ?? [];
+    const stints = this.stints[sessionKey] ?? [];
+
+    state.lapChart = buildLapComparisonChart(
+      this.toTelemetryDriverInput(state.driverANumber),
+      lapsA,
+      this.toTelemetryDriverInput(state.driverBNumber),
+      lapsB,
+      stints,
+      state.filterOutliers
+    );
+
+    if (state.lapChart && state.lapChart.rows.length) {
+      if (state.activeLapIndex >= state.lapChart.rows.length) {
+        state.activeLapIndex = state.lapChart.rows.length - 1;
+      }
+    }
+  }
+
+  async updateSessionTelemetryComparison(sessionKey: number, reloadTelemetry = true): Promise<void> {
+    const state = this.telemetryState[sessionKey];
+    if (!state) return;
+
+    state.lapsLoading = true;
+    try {
+      const fetchDriverLaps = async (driverNum: number): Promise<LapData[]> => {
+        if (!state.lapsByDriver[driverNum]) {
+          state.lapsByDriver[driverNum] = await this.openF1Service.getLaps(sessionKey, driverNum).catch(() => []);
+        }
+        return state.lapsByDriver[driverNum];
+      };
+
+      const [lapsA, lapsB] = await Promise.all([
+        fetchDriverLaps(state.driverANumber),
+        fetchDriverLaps(state.driverBNumber)
+      ]);
+
+      const stints = this.stints[sessionKey] ?? [];
+      state.lapChart = buildLapComparisonChart(
+        this.toTelemetryDriverInput(state.driverANumber),
+        lapsA,
+        this.toTelemetryDriverInput(state.driverBNumber),
+        lapsB,
+        stints,
+        state.filterOutliers
+      );
+
+      if (state.lapChart?.bestLapA) {
+        const idx = state.lapChart.rows.findIndex(r => r.lapNumber === state.lapChart!.bestLapA!.lapNumber);
+        state.activeLapIndex = idx >= 0 ? idx : 0;
+      } else {
+        state.activeLapIndex = 0;
+      }
+    } finally {
+      state.lapsLoading = false;
+    }
+
+    if (reloadTelemetry) {
+      await this.loadFastestOrSelectedLapTelemetry(sessionKey);
+    }
+  }
+
+  private async loadFastestOrSelectedLapTelemetry(sessionKey: number): Promise<void> {
+    const state = this.telemetryState[sessionKey];
+    if (!state) return;
+
+    const lapsA = state.lapsByDriver[state.driverANumber] ?? [];
+    const lapsB = state.lapsByDriver[state.driverBNumber] ?? [];
+
+    const winA = resolveLapTimeWindow(lapsA, state.customLapNumber ?? undefined);
+    const winB = resolveLapTimeWindow(lapsB, state.customLapNumber ?? undefined);
+    state.telemetryLapA = winA;
+    state.telemetryLapB = winB;
+
+    if (!winA && !winB) {
+      state.telemetryChart = null;
+      return;
+    }
+
+    state.telemetryLoading = true;
+    try {
+      const [telA, telB] = await Promise.all([
+        winA
+          ? this.openF1Service.getCarTelemetry(sessionKey, state.driverANumber, winA.startIso, winA.endIso).catch(() => [])
+          : Promise.resolve([]),
+        winB
+          ? this.openF1Service.getCarTelemetry(sessionKey, state.driverBNumber, winB.startIso, winB.endIso).catch(() => [])
+          : Promise.resolve([])
+      ]);
+
+      state.telemetryChart = buildTelemetryComparisonChart(
+        this.toTelemetryDriverInput(state.driverANumber),
+        telA,
+        this.toTelemetryDriverInput(state.driverBNumber),
+        telB
+      );
+      if (state.telemetryChart) {
+        state.activeTelemetryIndex = Math.min(50, state.telemetryChart.samples.length - 1);
+      }
+    } finally {
+      state.telemetryLoading = false;
     }
   }
 
