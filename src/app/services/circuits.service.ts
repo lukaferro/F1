@@ -14,7 +14,7 @@ export class CircuitsService {
       country_code: 'BH',
       continent: 'Medio Oriente',
       macro_region: 'middle_east',
-      round_number: 1,
+      round_number: 4,
       gp_circuit_filter: 'Sakhir',
       length_km: 5.412,
       turns: 15,
@@ -41,7 +41,7 @@ export class CircuitsService {
       country_code: 'SA',
       continent: 'Medio Oriente',
       macro_region: 'middle_east',
-      round_number: 2,
+      round_number: 5,
       gp_circuit_filter: 'Jeddah',
       length_km: 6.174,
       turns: 27,
@@ -67,7 +67,7 @@ export class CircuitsService {
       country_code: 'AU',
       continent: 'Asia e Oceania',
       macro_region: 'asia_pacific',
-      round_number: 3,
+      round_number: 1,
       gp_circuit_filter: 'Melbourne',
       length_km: 5.278,
       turns: 14,
@@ -93,7 +93,7 @@ export class CircuitsService {
       country_code: 'JP',
       continent: 'Asia',
       macro_region: 'asia_pacific',
-      round_number: 4,
+      round_number: 3,
       gp_circuit_filter: 'Suzuka',
       length_km: 5.807,
       turns: 18,
@@ -119,7 +119,7 @@ export class CircuitsService {
       country_code: 'CN',
       continent: 'Asia',
       macro_region: 'asia_pacific',
-      round_number: 5,
+      round_number: 2,
       gp_circuit_filter: 'Shanghai',
       length_km: 5.451,
       turns: 16,
@@ -630,6 +630,51 @@ export class CircuitsService {
       image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackyasmarinadetailed.webp',
       latitude: 24.4672,
       longitude: 54.6031
+    },
+    {
+      id: 'madrid',
+      name: 'Circuito Madring IFEMA',
+      location: 'Madrid',
+      country: 'Spagna',
+      country_code: 'ES',
+      continent: 'Europa',
+      macro_region: 'europe',
+      gp_circuit_filter: 'Madring',
+      length_km: 5.474,
+      turns: 20,
+      first_grand_prix: 2026,
+      description: 'Nuovo e avveniristico tracciato semi-cittadino allestito attorno al polo fieristico IFEMA di Madrid, caratterizzato da tratti veloci e curve paraboliche innovative.',
+      history: 'Inserito nel calendario mondiale FIA dal 2026 come sede del Gran Premio di Spagna, segna il ritorno della F1 nella capitale spagnola dopo oltre quarant\'anni.',
+      memorable_moment: 'L\'attesissimo debutto inaugurale nel campionato mondiale 2026 davanti al caloroso pubblico iberico.',
+      wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Madrid',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026trackcatalunyadetailed.webp',
+      latitude: 40.4653,
+      longitude: -3.6153
+    },
+    {
+      id: 'sepang',
+      name: 'Sepang International Circuit',
+      location: 'Kuala Lumpur',
+      country: 'Malesia',
+      country_code: 'MY',
+      continent: 'Asia',
+      macro_region: 'asia_pacific',
+      gp_circuit_filter: 'Sepang',
+      length_km: 5.543,
+      turns: 15,
+      first_grand_prix: 1999,
+      lap_record: {
+        time: '1:34.080',
+        driver: 'Sebastian Vettel',
+        year: 2017
+      },
+      description: 'Capolavoro dell\'architetto Hermann Tilke celebre per la sua larghezza, i due lunghi rettilinei contrapposti separati dalla spettacolare tribuna centrale e il meteo tropicale imprevedibile.',
+      history: 'Ha ospitato la Formula 1 dal 1999 al 2017 offrendo sfide epiche sotto monsoni improvvisi e caldo asfissiante, prima di tornare nel calendario ufficiale.',
+      memorable_moment: 'La prima vittoria di Fernando Alonso con la Ferrari nel 2012 in condizioni di diluvio estremo e la celebre controversia "Multi 21" tra Vettel e Webber nel 2013.',
+      wikipedia_url: 'https://it.wikipedia.org/wiki/Circuito_di_Sepang',
+      image_url: 'https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/common/f1/2026/track/2026tracksingaporedetailed.webp',
+      latitude: 2.7608,
+      longitude: 101.7380
     }
   ];
 
@@ -651,6 +696,104 @@ export class CircuitsService {
   }
 
   getSeasonCalendar(): Circuit[] {
-    return [...this.circuits].sort((a, b) => (a.round_number || 0) - (b.round_number || 0));
+    return this.circuits
+      .filter(c => typeof c.round_number === 'number' && c.round_number > 0)
+      .sort((a, b) => a.round_number! - b.round_number!);
+  }
+
+  /**
+   * Sincronizza i round stagionali e le rotte della mappa con l'elenco dei Gran Premi
+   * dell'anno in corso fornito da OpenF1 (calendario ufficiale).
+   */
+  applyMeetings(meetings: Array<{ circuit_short_name?: string; location?: string; country_name?: string; date_start: string }>): void {
+    if (!meetings || meetings.length === 0) return;
+
+    const sorted = [...meetings].sort(
+      (a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime()
+    );
+
+    const matchedIds = new Set<string>();
+
+    sorted.forEach((m, idx) => {
+      const round = idx + 1;
+      const circuit = this.findMatchingCircuit(m.circuit_short_name, m.location, m.country_name);
+      if (circuit) {
+        circuit.round_number = round;
+        matchedIds.add(circuit.id);
+      }
+    });
+
+    for (const c of this.circuits) {
+      if (!matchedIds.has(c.id)) {
+        c.round_number = undefined;
+      }
+    }
+  }
+
+  /**
+   * Sincronizza i round stagionali e le rotte della mappa con l'elenco delle gare
+   * dell'anno in corso fornito dall'API Jolpica / Ergast.
+   */
+  applySeasonRaces(races: Array<{ round: number; circuitId?: string; circuitName?: string; locality?: string; country?: string }>): void {
+    if (!races || races.length === 0) return;
+
+    const matchedIds = new Set<string>();
+
+    for (const r of races) {
+      const circuit = this.findMatchingCircuit(r.circuitId, r.locality, r.country, r.circuitName);
+      if (circuit) {
+        circuit.round_number = r.round;
+        matchedIds.add(circuit.id);
+      }
+    }
+
+    for (const c of this.circuits) {
+      if (!matchedIds.has(c.id)) {
+        c.round_number = undefined;
+      }
+    }
+  }
+
+  private findMatchingCircuit(shortName?: string, locality?: string, country?: string, circuitName?: string): Circuit | undefined {
+    const s = (shortName || '').toLowerCase().trim();
+    const loc = (locality || '').toLowerCase().trim();
+    const cnt = (country || '').toLowerCase().trim();
+    const nm = (circuitName || '').toLowerCase().trim();
+
+    // 1. Corrispondenza diretta su id
+    if (s && this.circuits.some(c => c.id === s)) {
+      return this.circuits.find(c => c.id === s);
+    }
+
+    // 2. Mappatura alias noti
+    const aliasMap: Record<string, string> = {
+      albert_park: 'melbourne',
+      villeneuve: 'montreal',
+      catalunya: 'barcelona',
+      red_bull_ring: 'red-bull-ring',
+      marina_bay: 'singapore',
+      americas: 'austin',
+      rodriguez: 'mexico',
+      vegas: 'las-vegas',
+      losail: 'lusail',
+      yas_marina: 'yas-marina',
+      madring: 'madrid'
+    };
+    if (aliasMap[s]) {
+      const found = this.circuits.find(c => c.id === aliasMap[s]);
+      if (found) return found;
+    }
+
+    // 3. Corrispondenza per gp_circuit_filter o location o nome
+    return this.circuits.find(c => {
+      const cFilter = (c.gp_circuit_filter || '').toLowerCase();
+      const cLoc = c.location.toLowerCase();
+      const cName = c.name.toLowerCase();
+      return (
+        (s && (cFilter === s || cLoc === s || cName.includes(s))) ||
+        (loc && (cLoc === loc || cFilter === loc || cName.includes(loc))) ||
+        (nm && (cName.includes(nm) || nm.includes(cName)))
+      );
+    });
   }
 }

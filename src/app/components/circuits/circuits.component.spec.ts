@@ -55,7 +55,7 @@ describe('CircuitsComponent', () => {
     expect(component.filteredCircuits[0].id).toBe('jeddah');
 
     component.onSortChange('first-gp-desc');
-    expect(component.filteredCircuits[0].id).toBe('las-vegas');
+    expect(component.filteredCircuits[0].id).toBe('madrid');
   });
 
   it('navigates to /granpremi with circuit filter preselected when clicking Edizioni GP', () => {

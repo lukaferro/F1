@@ -11,6 +11,8 @@ import { SelectModule } from 'primeng/select';
 import { Circuit } from '../../models/circuit';
 import { CircuitsService } from '../../services/circuits.service';
 import { GranPremiStateService } from '../../services/gran-premi-state.service';
+import { Openf1ServiceService } from '../../services/openf1-service';
+import { JolpicaService } from '../../services/jolpica.service';
 import { smallFlagUrl } from '../../utils/country-flags';
 import {
   geoToSvg,
@@ -58,6 +60,10 @@ export class CircuitsComponent implements OnInit {
   private readonly granPremiState = inject(GranPremiStateService);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient, { optional: true });
+  private readonly openF1 = inject(Openf1ServiceService, { optional: true });
+  private readonly jolpica = inject(JolpicaService, { optional: true });
+
+  currentSeasonYear = new Date().getFullYear();
 
   circuits: Circuit[] = [];
   filteredCircuits: Circuit[] = [];
@@ -112,6 +118,51 @@ export class CircuitsComponent implements OnInit {
     this.applyFilters();
     this.initMapAndCalendar();
     this.loadWorldGeoData();
+    void this.syncCurrentSeasonCalendar();
+  }
+
+  get totalSeasonKm(): number {
+    const total = this.seasonCalendar.reduce((sum, c) => sum + (c.length_km || 0), 0);
+    return Math.round(total * 10) / 10;
+  }
+
+  get totalSeasonTurns(): number {
+    return this.seasonCalendar.reduce((sum, c) => sum + (c.turns || 0), 0);
+  }
+
+  getCircuitCountForRegion(regionId: string): number {
+    return this.seasonCalendar.filter(c => c.macro_region === regionId).length;
+  }
+
+  private async syncCurrentSeasonCalendar(): Promise<void> {
+    try {
+      if (this.openF1) {
+        const meetings = await this.openF1.getMeetings(this.currentSeasonYear);
+        const gpMeetings = Array.isArray(meetings)
+          ? meetings.filter(m => !m.meeting_name.toLowerCase().includes('testing'))
+          : [];
+        if (gpMeetings.length > 0) {
+          this.circuitsService.applyMeetings(gpMeetings);
+          this.refreshSeasonCalendar();
+          return;
+        }
+      }
+
+      if (this.jolpica) {
+        const races = await this.jolpica.getSeasonRaces(this.currentSeasonYear);
+        if (races && races.length > 0) {
+          this.circuitsService.applySeasonRaces(races);
+          this.refreshSeasonCalendar();
+        }
+      }
+    } catch {
+      // Mantiene trasparente il calendario base di default
+    }
+  }
+
+  private refreshSeasonCalendar(): void {
+    this.seasonCalendar = this.circuitsService.getSeasonCalendar();
+    this.initMapAndCalendar();
   }
 
   private loadWorldGeoData(): void {

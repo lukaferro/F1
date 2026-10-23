@@ -160,8 +160,7 @@ export class TeamsComponent implements OnInit {
   async onYearChange(year: number | null): Promise<void> {
     this.selectedYear = year;
     this.saveState();
-    const latestFromDropdown = this.years.length > 1 ? (this.years[1].value ?? 2025) + 1 : new Date().getFullYear();
-    await this.loadSeasonTeams(year ?? latestFromDropdown);
+    await this.loadSeasonTeams(year ?? this.activeSeasonYear);
   }
 
   onFilterChange(): void {

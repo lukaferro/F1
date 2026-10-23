@@ -277,7 +277,7 @@
               <i [class]="reg.icon"></i>
               <span>{{ reg.shortLabel }}</span>
               <span class="pill-badge" *ngIf="reg.id !== 'world'">
-                {{ reg.id === 'europe' ? '9' : reg.id === 'americas' ? '6' : reg.id === 'middle_east' ? '4' : '5' }}
+                {{ getCircuitCountForRegion(reg.id) }}
               </span>
             </button>
           }
@@ -582,22 +582,22 @@
       <!-- Banner di Sintesi Stagionale -->
       <div class="season-summary-banner">
         <div class="summary-kpi">
-          <span class="kpi-number">24</span>
-          <span class="kpi-label">Gran Premi</span>
+          <span class="kpi-number">{{ seasonCalendar.length }}</span>
+          <span class="kpi-label">Gran Premi (Stagione {{ currentSeasonYear }})</span>
         </div>
         <div class="summary-divider"></div>
         <div class="summary-kpi">
-          <span class="kpi-number">4</span>
+          <span class="kpi-number">{{ regionalLegs.length }}</span>
           <span class="kpi-label">Macro-Aree Geografiche</span>
         </div>
         <div class="summary-divider"></div>
         <div class="summary-kpi">
-          <span class="kpi-number">131.2</span>
+          <span class="kpi-number">{{ totalSeasonKm }}</span>
           <span class="kpi-label">Km Totali di Asfalto</span>
         </div>
         <div class="summary-divider"></div>
         <div class="summary-kpi">
-          <span class="kpi-number">390</span>
+          <span class="kpi-number">{{ totalSeasonTurns }}</span>
           <span class="kpi-label">Curve da Affrontare</span>
         </div>
       </div>
