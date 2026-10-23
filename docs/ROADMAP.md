@@ -103,9 +103,15 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-### 12. Team Radio & Race Control Migliorati 📻
-- Filtri per pilota, tipo di messaggio/bandiera (*Bandiera Rossa*, *Safety Car*, *VSC*, *Penalità*, *DRS*) e ricerca testuale nella direzione gara.
-- Player audio Team Radio migliorato con indicatore di riproduzione, durata e ordinamento cronologico.
+### 12. Team Radio & Race Control Migliorati 📻 (Completato) ✅
+- Tab **`Direzione Gara`** (Race Control) nei dettagli Gran Premio con messaggi ufficiali FIA in tempo reale:
+  - Filtri per tipologia di evento e bandiere (*Tutti*, *Bandiera Rossa*, *Safety Car*, *VSC*, *Penalità & Investigazioni*, *DRS*).
+  - Ricerca testuale per messaggio, pilota o curva e filtro per singolo pilota.
+  - Badge cromatici dedicati per bandiere (*Rossa, Gialla, Verde, Blu, Scacchi, Bianco/Nera*), settore e giro di riferimento.
+- Tab **`Team Radio`** arricchito:
+  - Filtro istantaneo per pilota e ricerca testuale.
+  - Ordinamento cronologico reversibile (*Dal primo all'ultimo* ↔ *Dal più recente*).
+  - Player audio avanzato con indicatore di riproduzione, slider interattivo per scorrere la traccia, timing in tempo reale (`currentTime / duration`) e link diretto all'audio originale MP3.
 
 ---
 

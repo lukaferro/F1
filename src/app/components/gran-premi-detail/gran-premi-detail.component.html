@@ -958,28 +958,261 @@
                         }
                       </div>
                     }
-                    <!-- Team Radio tab -->
-                    @if (activeTab[session.session_key] === 'radio' && !isTabLoading(session.session_key, 'radio')) {
-                      <div>
-                        @if (!teamRadios[session.session_key]?.length) {
-                          <p class="tab-status">Nessun team radio disponibile per questa sessione.</p>
-                        }
-                        <div class="radio-list">
-                          @for (radio of teamRadios[session.session_key]; track radio) {
-                            <div class="radio-item">
-                              <div class="radio-header">
-                                <div class="driver-info">
-                                  <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(radio.driver_number)" [style.color]="'#000'">{{ radio.driver_number }}</span>
-                                  <span class="driver-name">{{ getDriverName(radio.driver_number) }}</span>
-                                </div>
-                                <span class="radio-time">{{ radio.date | date:'HH:mm:ss' }}</span>
+
+                    <!-- Race Control tab (Direzione Gara) -->
+                    @if (activeTab[session.session_key] === 'race_control' && !isTabLoading(session.session_key, 'race_control')) {
+                      @if (raceControlState[session.session_key]; as rcState) {
+                        <div class="rc-tab-container">
+                          <!-- Barra di controllo e filtri Race Control -->
+                          <div class="rc-filter-bar">
+                            <div class="rc-filter-chips" role="tablist" aria-label="Filtra per tipologia evento">
+                              <button
+                                type="button"
+                                class="rc-chip"
+                                [class.active]="rcState.selectedFilter === 'all'"
+                                (click)="rcState.selectedFilter = 'all'">
+                                <span>Tutti</span>
+                                <span class="rc-chip-count">{{ countRaceControlByFilter(session.session_key, 'all') }}</span>
+                              </button>
+                              <button
+                                type="button"
+                                class="rc-chip red"
+                                [class.active]="rcState.selectedFilter === 'red_flag'"
+                                (click)="rcState.selectedFilter = 'red_flag'">
+                                <i class="pi pi-flag-fill"></i>
+                                <span>Bandiera Rossa</span>
+                                <span class="rc-chip-count">{{ countRaceControlByFilter(session.session_key, 'red_flag') }}</span>
+                              </button>
+                              <button
+                                type="button"
+                                class="rc-chip sc"
+                                [class.active]="rcState.selectedFilter === 'safety_car'"
+                                (click)="rcState.selectedFilter = 'safety_car'">
+                                <i class="pi pi-shield"></i>
+                                <span>Safety Car</span>
+                                <span class="rc-chip-count">{{ countRaceControlByFilter(session.session_key, 'safety_car') }}</span>
+                              </button>
+                              <button
+                                type="button"
+                                class="rc-chip vsc"
+                                [class.active]="rcState.selectedFilter === 'vsc'"
+                                (click)="rcState.selectedFilter = 'vsc'">
+                                <i class="pi pi-stopwatch"></i>
+                                <span>VSC</span>
+                                <span class="rc-chip-count">{{ countRaceControlByFilter(session.session_key, 'vsc') }}</span>
+                              </button>
+                              <button
+                                type="button"
+                                class="rc-chip penalty"
+                                [class.active]="rcState.selectedFilter === 'penalty'"
+                                (click)="rcState.selectedFilter = 'penalty'">
+                                <i class="pi pi-exclamation-triangle"></i>
+                                <span>Penalità</span>
+                                <span class="rc-chip-count">{{ countRaceControlByFilter(session.session_key, 'penalty') }}</span>
+                              </button>
+                              <button
+                                type="button"
+                                class="rc-chip drs"
+                                [class.active]="rcState.selectedFilter === 'drs'"
+                                (click)="rcState.selectedFilter = 'drs'">
+                                <i class="pi pi-bolt"></i>
+                                <span>DRS</span>
+                                <span class="rc-chip-count">{{ countRaceControlByFilter(session.session_key, 'drs') }}</span>
+                              </button>
+                            </div>
+
+                            <div class="rc-inputs-row">
+                              <div class="rc-search-wrap">
+                                <i class="pi pi-search"></i>
+                                <input
+                                  type="text"
+                                  class="rc-search-input"
+                                  [(ngModel)]="rcState.searchQuery"
+                                  placeholder="Cerca messaggio, curva o pilota..." />
+                                @if (rcState.searchQuery) {
+                                  <button type="button" class="rc-clear-btn" (click)="rcState.searchQuery = ''">
+                                    <i class="pi pi-times"></i>
+                                  </button>
+                                }
                               </div>
-                              <audio controls [src]="radio.recording_url" class="radio-player"></audio>
+
+                              <div class="rc-driver-select-wrap">
+                                <label [attr.for]="'rc-driver-' + session.session_key">Pilota:</label>
+                                <select
+                                  [id]="'rc-driver-' + session.session_key"
+                                  class="rc-driver-select"
+                                  [(ngModel)]="rcState.selectedDriver">
+                                  <option [ngValue]="null">Tutti i piloti</option>
+                                  @for (d of getSessionOrderedDrivers(session.session_key); track d.driver_number) {
+                                    <option [ngValue]="d.driver_number">
+                                      #{{ d.driver_number }} {{ getDriverName(d.driver_number) }}
+                                    </option>
+                                  }
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Lista messaggi Direzione Gara -->
+                          @if (!getFilteredRaceControlMessages(session.session_key).length) {
+                            <p class="tab-status">Nessun messaggio della Direzione Gara trovato per i filtri selezionati.</p>
+                          } @else {
+                            <div class="rc-messages-list">
+                              @for (msg of getFilteredRaceControlMessages(session.session_key); track $index) {
+                                <div class="rc-message-item" [ngClass]="getRaceControlTagClass(msg)">
+                                  <div class="rc-msg-meta">
+                                    <span class="rc-msg-time">{{ msg.date | date:'HH:mm:ss' }}</span>
+                                    @if (msg.lap_number) {
+                                      <span class="rc-msg-lap">Giro {{ msg.lap_number }}</span>
+                                    }
+                                    <span class="rc-badge" [ngClass]="getRaceControlTagClass(msg)">
+                                      {{ getRaceControlTagLabel(msg) }}
+                                    </span>
+                                    @if (msg.scope) {
+                                      <span class="rc-scope-pill">{{ msg.scope }}</span>
+                                    }
+                                    @if (msg.sector) {
+                                      <span class="rc-scope-pill">Settore {{ msg.sector }}</span>
+                                    }
+                                  </div>
+
+                                  <div class="rc-msg-body">
+                                    <p class="rc-msg-text">{{ msg.message }}</p>
+                                    @if (msg.driver_number) {
+                                      <div class="rc-msg-driver">
+                                        <span class="driver-number mini" [style.background-color]="'#' + getDriverTeamColor(msg.driver_number)" [style.color]="'#000'">
+                                          {{ msg.driver_number }}
+                                        </span>
+                                        <span class="rc-driver-name">{{ getDriverName(msg.driver_number) }}</span>
+                                        <span class="rc-driver-team">({{ getDriverTeam(msg.driver_number) }})</span>
+                                      </div>
+                                    }
+                                  </div>
+                                </div>
+                              }
                             </div>
                           }
                         </div>
-                      </div>
+                      }
                     }
+
+                    <!-- Team Radio tab (Migliorato con filtri, ordinamento e player custom) -->
+                    @if (activeTab[session.session_key] === 'radio' && !isTabLoading(session.session_key, 'radio')) {
+                      @if (radioState[session.session_key]; as rState) {
+                        <div class="radio-tab-container">
+                          <!-- Barra di controllo e filtri Team Radio -->
+                          <div class="radio-control-bar">
+                            <div class="rc-search-wrap">
+                              <i class="pi pi-search"></i>
+                              <input
+                                type="text"
+                                class="rc-search-input"
+                                [(ngModel)]="rState.searchQuery"
+                                placeholder="Cerca comunicazione o pilota..." />
+                              @if (rState.searchQuery) {
+                                <button type="button" class="rc-clear-btn" (click)="rState.searchQuery = ''">
+                                  <i class="pi pi-times"></i>
+                                </button>
+                              }
+                            </div>
+
+                            <div class="rc-driver-select-wrap">
+                              <label [attr.for]="'radio-driver-' + session.session_key">Pilota:</label>
+                              <select
+                                [id]="'radio-driver-' + session.session_key"
+                                class="rc-driver-select"
+                                [(ngModel)]="rState.selectedDriver">
+                                <option [ngValue]="null">Tutti i piloti</option>
+                                @for (d of getSessionOrderedDrivers(session.session_key); track d.driver_number) {
+                                  <option [ngValue]="d.driver_number">
+                                    #{{ d.driver_number }} {{ getDriverName(d.driver_number) }}
+                                  </option>
+                                }
+                              </select>
+                            </div>
+
+                            <button
+                              type="button"
+                              class="radio-sort-btn"
+                              (click)="toggleRadioSort(session.session_key)"
+                              title="Cambia ordinamento cronologico">
+                              <i class="pi" [class.pi-sort-amount-down-alt]="rState.sortAscending" [class.pi-sort-amount-down]="!rState.sortAscending"></i>
+                              <span>{{ rState.sortAscending ? 'Dal primo all\'ultimo' : 'Dal più recente' }}</span>
+                            </button>
+                          </div>
+
+                          <!-- Lista comunicazioni Team Radio -->
+                          @if (!getFilteredTeamRadios(session.session_key).length) {
+                            <p class="tab-status">Nessun team radio disponibile per i filtri selezionati.</p>
+                          } @else {
+                            <div class="radio-cards-grid">
+                              @for (radio of getFilteredTeamRadios(session.session_key); track radio.recording_url) {
+                                <div class="radio-card-item" [class.is-playing]="rState.playingUrl === radio.recording_url && rState.isPlaying">
+                                  <div class="radio-card-top">
+                                    <div class="driver-info">
+                                      <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(radio.driver_number)" [style.color]="'#000'">
+                                        {{ radio.driver_number }}
+                                      </span>
+                                      <div class="radio-driver-block">
+                                        <span class="driver-name">{{ getDriverName(radio.driver_number) }}</span>
+                                        <span class="radio-team-name">{{ getDriverTeam(radio.driver_number) }}</span>
+                                      </div>
+                                    </div>
+                                    <span class="radio-time-badge">
+                                      <i class="pi pi-clock"></i>
+                                      {{ radio.date | date:'HH:mm:ss' }}
+                                    </span>
+                                  </div>
+
+                                  <!-- Custom Player Bar -->
+                                  <div class="radio-player-bar">
+                                    <button
+                                      type="button"
+                                      class="radio-play-btn"
+                                      (click)="togglePlayRadio(session.session_key, radio)"
+                                      [attr.aria-label]="(rState.playingUrl === radio.recording_url && rState.isPlaying) ? 'Pausa' : 'Riproduci'">
+                                      <i class="pi" [class.pi-pause]="rState.playingUrl === radio.recording_url && rState.isPlaying" [class.pi-play]="!(rState.playingUrl === radio.recording_url && rState.isPlaying)"></i>
+                                    </button>
+
+                                    <div class="radio-progress-wrap">
+                                      @if (rState.playingUrl === radio.recording_url) {
+                                        <input
+                                          type="range"
+                                          class="radio-seek-slider"
+                                          min="0"
+                                          [max]="rState.playingDuration || 10"
+                                          step="0.1"
+                                          [value]="rState.playingCurrentTime"
+                                          (input)="seekRadio(session.session_key, $event)" />
+                                        <div class="radio-timing-row">
+                                          <span>{{ formatAudioTime(rState.playingCurrentTime) }}</span>
+                                          <span>{{ formatAudioTime(rState.playingDuration) }}</span>
+                                        </div>
+                                      } @else {
+                                        <div class="radio-idle-track">
+                                          <i class="pi pi-volume-up"></i>
+                                          <span>Clicca per ascoltare la comunicazione radio</span>
+                                        </div>
+                                      }
+                                    </div>
+
+                                    <a
+                                      [href]="radio.recording_url"
+                                      target="_blank"
+                                      rel="noopener"
+                                      class="radio-download-link"
+                                      title="Apri file audio originale">
+                                      <i class="pi pi-external-link"></i>
+                                    </a>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    }
+
                     <!-- Weather tab -->
                     @if (activeTab[session.session_key] === 'weather' && !isTabLoading(session.session_key, 'weather')) {
                       <div>

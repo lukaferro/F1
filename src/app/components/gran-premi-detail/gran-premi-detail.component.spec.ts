@@ -180,4 +180,66 @@ describe('GranPremiDetailComponent', () => {
     expect(telState.lapChart?.bestLapB?.formattedTime).toBe('1:32.900');
     expect(telState.telemetryChart?.kpis.maxSpeedA).toBe(324);
   });
+
+  it('should filter race control messages by category, flag, and driver', async () => {
+    const openF1 = TestBed.inject(Openf1ServiceService);
+    component.drivers = [
+      { driver_number: 1, broadcast_name: 'M VERSTAPPEN', full_name: 'Max Verstappen', name_acronym: 'VER', team_name: 'Red Bull Racing', team_color: '3671C6', first_name: 'Max', last_name: 'Verstappen', country_code: 'NED' },
+      { driver_number: 16, broadcast_name: 'C LECLERC', full_name: 'Charles Leclerc', name_acronym: 'LEC', team_name: 'Ferrari', team_color: 'ED1131', first_name: 'Charles', last_name: 'Leclerc', country_code: 'MON' }
+    ];
+
+    vi.spyOn(openF1, 'getRaceControl').mockResolvedValue([
+      { meeting_key: 1201, session_key: 9001, date: '2025-03-02T15:10:00Z', driver_number: null, lap_number: 5, category: 'SafetyCar', flag: null, scope: 'Track', sector: null, qualifying_phase: null, message: 'SAFETY CAR DEPLOYED' },
+      { meeting_key: 1201, session_key: 9001, date: '2025-03-02T15:20:00Z', driver_number: 16, lap_number: 12, category: 'Other', flag: null, scope: 'Driver', sector: null, qualifying_phase: null, message: '5 SECOND TIME PENALTY FOR CAR 16 (LEC)' },
+      { meeting_key: 1201, session_key: 9001, date: '2025-03-02T15:25:00Z', driver_number: null, lap_number: 15, category: 'Flag', flag: 'RED', scope: 'Track', sector: null, qualifying_phase: null, message: 'RED FLAG' }
+    ]);
+
+    await component.setActiveTab(9001, 'race_control');
+    const state = component.raceControlState[9001];
+    expect(state).toBeTruthy();
+
+    expect(component.countRaceControlByFilter(9001, 'red_flag')).toBe(1);
+    expect(component.countRaceControlByFilter(9001, 'safety_car')).toBe(1);
+    expect(component.countRaceControlByFilter(9001, 'penalty')).toBe(1);
+
+    state.selectedFilter = 'penalty';
+    const penaltyFiltered = component.getFilteredRaceControlMessages(9001);
+    expect(penaltyFiltered.length).toBe(1);
+    expect(penaltyFiltered[0].driver_number).toBe(16);
+
+    state.selectedFilter = 'all';
+    state.searchQuery = 'Safety';
+    const searchFiltered = component.getFilteredRaceControlMessages(9001);
+    expect(searchFiltered.length).toBe(1);
+    expect(searchFiltered[0].message).toContain('SAFETY CAR');
+  });
+
+  it('should filter and sort team radios chronologically', async () => {
+    const openF1 = TestBed.inject(Openf1ServiceService);
+    component.drivers = [
+      { driver_number: 1, broadcast_name: 'M VERSTAPPEN', full_name: 'Max Verstappen', name_acronym: 'VER', team_name: 'Red Bull Racing', team_color: '3671C6', first_name: 'Max', last_name: 'Verstappen', country_code: 'NED' },
+      { driver_number: 16, broadcast_name: 'C LECLERC', full_name: 'Charles Leclerc', name_acronym: 'LEC', team_name: 'Ferrari', team_color: 'ED1131', first_name: 'Charles', last_name: 'Leclerc', country_code: 'MON' }
+    ];
+
+    vi.spyOn(openF1, 'getTeamRadio').mockResolvedValue([
+      { date: '2025-03-02T15:05:00Z', driver_number: 1, meeting_key: 1201, session_key: 9001, recording_url: 'https://example.com/radio1.mp3' },
+      { date: '2025-03-02T15:25:00Z', driver_number: 16, meeting_key: 1201, session_key: 9001, recording_url: 'https://example.com/radio2.mp3' }
+    ]);
+
+    await component.setActiveTab(9001, 'radio');
+    const state = component.radioState[9001];
+    expect(state).toBeTruthy();
+
+    const asc = component.getFilteredTeamRadios(9001);
+    expect(asc[0].driver_number).toBe(1);
+
+    component.toggleRadioSort(9001);
+    const desc = component.getFilteredTeamRadios(9001);
+    expect(desc[0].driver_number).toBe(16);
+
+    state.selectedDriver = 1;
+    const driverFiltered = component.getFilteredTeamRadios(9001);
+    expect(driverFiltered.length).toBe(1);
+    expect(driverFiltered[0].driver_number).toBe(1);
+  });
 });

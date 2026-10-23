@@ -60,4 +60,15 @@ describe('Openf1ServiceService', () => {
     http.expectOne(`${API}/stints?session_key=789`).flush([{ stint_number: 1 }]);
     expect(await a).toEqual(await b);
   });
+
+  it('fetches race control messages via /race_control endpoint', async () => {
+    const promise = service.getRaceControl(9001);
+    await nextTick();
+    http.expectOne(`${API}/race_control?session_key=9001`).flush([
+      { meeting_key: 1201, session_key: 9001, category: 'Flag', flag: 'RED', message: 'RED FLAG' }
+    ]);
+    const res = await promise;
+    expect(res.length).toBe(1);
+    expect(res[0].flag).toBe('RED');
+  });
 });

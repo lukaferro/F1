@@ -1809,3 +1809,563 @@ Stili per i tab di PrimeNG
   color: #8e8e99;
   font-size: 0.74rem;
 }
+
+
+/* ---------- Punto 12: Team Radio & Direzione Gara (Race Control) Migliorati ---------- */
+.rc-tab-container,
+.radio-tab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.75rem 0 0.25rem;
+}
+
+.rc-filter-bar,
+.radio-control-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.radio-control-bar {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rc-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d4d4d8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rc-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.rc-chip.active {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+
+.rc-chip.red.active {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+.rc-chip.red i { color: #ef4444; }
+
+.rc-chip.sc.active {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+  color: #fde68a;
+}
+
+.rc-chip.sc i { color: #f59e0b; }
+
+.rc-chip.vsc.active {
+  background: rgba(234, 179, 8, 0.22);
+  border-color: #eab308;
+  color: #fef08a;
+}
+
+.rc-chip.vsc i { color: #eab308; }
+
+.rc-chip.penalty.active {
+  background: rgba(168, 85, 247, 0.22);
+  border-color: #a855f7;
+  color: #e9d5ff;
+}
+
+.rc-chip.penalty i { color: #a855f7; }
+
+.rc-chip.drs.active {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  color: #bae6fd;
+}
+
+.rc-chip.drs i { color: #38bdf8; }
+
+.rc-chip-count {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+}
+
+.rc-inputs-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.rc-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 240px;
+}
+
+.rc-search-wrap i.pi-search {
+  position: absolute;
+  left: 0.85rem;
+  color: #71717a;
+  pointer-events: none;
+}
+
+.rc-search-input {
+  width: 100%;
+  padding: 0.55rem 2rem 0.55rem 2.3rem;
+  border-radius: 8px;
+  background: #141419;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0.88rem;
+}
+
+.rc-search-input:focus {
+  outline: none;
+  border-color: #e10600;
+}
+
+.rc-clear-btn {
+  position: absolute;
+  right: 0.6rem;
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+.rc-clear-btn:hover {
+  color: #ffffff;
+}
+
+.rc-driver-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #a1a1aa;
+}
+
+.rc-driver-select {
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: #141419;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rc-driver-select:focus {
+  outline: none;
+  border-color: #e10600;
+}
+
+.radio-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.radio-sort-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.radio-sort-btn i {
+  color: #e10600;
+}
+
+/* Messaggi Direzione Gara (Cards) */
+.rc-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.rc-message-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid #71717a;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.rc-message-item:hover {
+  transform: translateX(2px);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.rc-message-item.rc-tag-red {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.rc-message-item.rc-tag-sc {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.rc-message-item.rc-tag-vsc {
+  border-left-color: #eab308;
+  background: rgba(234, 179, 8, 0.06);
+}
+
+.rc-message-item.rc-tag-penalty {
+  border-left-color: #a855f7;
+  background: rgba(168, 85, 247, 0.06);
+}
+
+.rc-message-item.rc-tag-yellow {
+  border-left-color: #eab308;
+}
+
+.rc-message-item.rc-tag-green {
+  border-left-color: #22c55e;
+}
+
+.rc-message-item.rc-tag-blue {
+  border-left-color: #3b82f6;
+}
+
+.rc-message-item.rc-tag-drs {
+  border-left-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.05);
+}
+
+.rc-msg-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  font-size: 0.8rem;
+}
+
+.rc-msg-time {
+  font-weight: 700;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 0.88rem;
+}
+
+.rc-msg-lap {
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d4d4d8;
+  font-weight: 600;
+  font-size: 0.74rem;
+}
+
+.rc-badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e4e4e7;
+}
+
+.rc-badge.rc-tag-red {
+  background: rgba(239, 68, 68, 0.22);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.rc-badge.rc-tag-sc {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.rc-badge.rc-tag-vsc {
+  background: rgba(234, 179, 8, 0.22);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.rc-badge.rc-tag-penalty {
+  background: rgba(168, 85, 247, 0.22);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.rc-badge.rc-tag-yellow {
+  background: rgba(234, 179, 8, 0.18);
+  color: #facc15;
+}
+
+.rc-badge.rc-tag-green {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+}
+
+.rc-badge.rc-tag-blue {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+}
+
+.rc-badge.rc-tag-drs {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.rc-scope-pill {
+  color: #a1a1aa;
+  font-size: 0.74rem;
+}
+
+.rc-msg-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.rc-msg-text {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #ffffff;
+  font-weight: 500;
+  flex: 1 1 320px;
+}
+
+.rc-msg-driver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.driver-number.mini {
+  width: 22px;
+  height: 22px;
+  font-size: 0.72rem;
+  border-radius: 4px;
+}
+
+.rc-driver-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.rc-driver-team {
+  color: #a1a1aa;
+  font-size: 0.76rem;
+}
+
+/* Griglia e Player Cards Team Radio */
+.radio-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 0.85rem;
+}
+
+.radio-card-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.radio-card-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.radio-card-item.is-playing {
+  border-color: #e10600;
+  background: linear-gradient(135deg, rgba(225, 6, 0, 0.08) 0%, rgba(20, 20, 26, 0.6) 100%);
+  box-shadow: 0 4px 16px rgba(225, 6, 0, 0.15);
+}
+
+.radio-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.radio-driver-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.radio-team-name {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.radio-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-family: monospace;
+  color: #a1a1aa;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.radio-player-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.radio-play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e10600;
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.radio-play-btn:hover {
+  background: #ff1e1e;
+  transform: scale(1.05);
+}
+
+.radio-progress-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.radio-idle-track {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: #a1a1aa;
+}
+
+.radio-idle-track i {
+  color: #e10600;
+}
+
+.radio-seek-slider {
+  width: 100%;
+  accent-color: #e10600;
+  height: 4px;
+  cursor: pointer;
+}
+
+.radio-timing-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #a1a1aa;
+  font-family: monospace;
+}
+
+.radio-download-link {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  color: #d4d4d8;
+  text-decoration: none;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.radio-download-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .radio-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rc-inputs-row,
+  .radio-control-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .radio-sort-btn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}

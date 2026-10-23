@@ -11,6 +11,7 @@ import {
   Result,
   Stint,
   TeamRadio,
+  RaceControlMessage,
   Weather,
   Pit,
   Overtake,
@@ -32,7 +33,7 @@ import {
 } from '../../utils/telemetry-chart';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 
-type SessionTab = 'results' | 'telemetry' | 'stints' | 'weather' | 'pits' | 'overtakes' | 'radio';
+type SessionTab = 'results' | 'telemetry' | 'stints' | 'race_control' | 'weather' | 'pits' | 'overtakes' | 'radio';
 
 // Un segmento della barra della strategia gomme
 export interface TyreSegment {
@@ -80,6 +81,24 @@ export interface SessionTelemetryState {
   customLapNumber: number | null;
 }
 
+export type RaceControlFilter = 'all' | 'red_flag' | 'safety_car' | 'vsc' | 'penalty' | 'drs';
+
+export interface RaceControlState {
+  searchQuery: string;
+  selectedFilter: RaceControlFilter;
+  selectedDriver: number | null; // null = tutti i piloti
+}
+
+export interface RadioState {
+  searchQuery: string;
+  selectedDriver: number | null; // null = tutti i piloti
+  sortAscending: boolean; // true = dal primo all'ultimo, false = dal più recente
+  playingUrl: string | null;
+  playingCurrentTime: number;
+  playingDuration: number;
+  isPlaying: boolean;
+}
+
 const COMPOUND_LABELS: Record<string, string> = {
   soft: 'Soft', medium: 'Medium', hard: 'Hard', intermediate: 'Intermedie', wet: 'Da bagnato'
 };
@@ -108,6 +127,7 @@ export class GranPremiDetailComponent implements OnInit {
   // Additional session data
   stints: { [session_key: number]: Stint[] } = {};
   teamRadios: { [session_key: number]: TeamRadio[] } = {};
+  raceControlMessages: { [session_key: number]: RaceControlMessage[] } = {};
   weather: { [session_key: number]: Weather[] } = {};
   pits: { [session_key: number]: Pit[] } = {};
   overtakes: { [session_key: number]: Overtake[] } = {};
@@ -118,16 +138,21 @@ export class GranPremiDetailComponent implements OnInit {
   filteredWeather: { [session_key: number]: Weather[] } = {};
   telemetryState: { [session_key: number]: SessionTelemetryState } = {};
 
+  // Filtri e stato interattivo Direzione Gara e Team Radio per sessione
+  raceControlState: { [session_key: number]: RaceControlState } = {};
+  radioState: { [session_key: number]: RadioState } = {};
+
   // Tab di ogni sessione: i dati vengono scaricati solo quando il tab viene aperto,
   // perché OpenF1 accetta al massimo 30 richieste al minuto
   readonly sessionTabs: { id: SessionTab; label: string }[] = [
     { id: 'results', label: 'Risultati' },
     { id: 'telemetry', label: 'Telemetria & Giri' },
     { id: 'stints', label: 'Gomme' },
+    { id: 'race_control', label: 'Direzione Gara' },
+    { id: 'radio', label: 'Team Radio' },
     { id: 'weather', label: 'Meteo' },
     { id: 'pits', label: 'Pit Stop' },
-    { id: 'overtakes', label: 'Sorpassi' },
-    { id: 'radio', label: 'Team Radio' }
+    { id: 'overtakes', label: 'Sorpassi' }
   ];
   activeTab: { [session_key: number]: SessionTab } = {};
   private readonly tabRequests = new Map<string, Promise<void>>();
@@ -136,6 +161,10 @@ export class GranPremiDetailComponent implements OnInit {
   loadingSessions = false;
 
   currentSponsor?: SponsorInfo;
+
+  // Audio HTML5 globale per player avanzato
+  private currentAudioElement: HTMLAudioElement | null = null;
+  private currentAudioSessionKey: number | null = null;
 
   // Mappatura dei codici paese dell'API ai codici ISO 3166-1 alpha-2 per le bandiere
   countryCodeMapping: Record<string, string> = {
@@ -243,7 +272,6 @@ export class GranPremiDetailComponent implements OnInit {
   getCountryFlagCode(apiCountryCode: string): string {
     return this.countryCodeMapping[apiCountryCode] || apiCountryCode.toLowerCase();
   }
-
 
   // Formatta il fuso orario in formato italiano (24 ore)
   formatTimeOffset(offset: string): string {
@@ -685,8 +713,11 @@ export class GranPremiDetailComponent implements OnInit {
     this.expandedSessionKey = null;
     this.activeTab = {};
     this.telemetryState = {};
+    this.raceControlState = {};
+    this.radioState = {};
     this.tabRequests.clear();
     this.loadingTabs.clear();
+    this.stopCurrentAudio();
 
     try {
       const meetings = await this.openF1Service.getMeetings();
@@ -777,6 +808,7 @@ export class GranPremiDetailComponent implements OnInit {
   async toggleSession(sessionKey: number) {
     if (this.expandedSessionKey === sessionKey) {
       this.expandedSessionKey = null;
+      this.stopCurrentAudio();
       return;
     }
     this.expandedSessionKey = sessionKey;
@@ -849,6 +881,16 @@ export class GranPremiDetailComponent implements OnInit {
           this.stintSummaries[sessionKey] = this.computeStintSummary(grouped);
           break;
         }
+        case 'race_control': {
+          this.raceControlMessages[sessionKey] = await orEmpty(this.openF1Service.getRaceControl(sessionKey));
+          this.initRaceControlState(sessionKey);
+          break;
+        }
+        case 'radio': {
+          this.teamRadios[sessionKey] = await orEmpty(this.openF1Service.getTeamRadio(sessionKey));
+          this.initRadioState(sessionKey);
+          break;
+        }
         case 'weather':
           this.weather[sessionKey] = await orEmpty(this.openF1Service.getWeather(sessionKey));
           this.filteredWeather[sessionKey] = this.filterWeather(this.weather[sessionKey]);
@@ -862,15 +904,294 @@ export class GranPremiDetailComponent implements OnInit {
         case 'overtakes':
           this.overtakes[sessionKey] = await orEmpty(this.openF1Service.getOvertakes(sessionKey));
           break;
-        case 'radio':
-          this.teamRadios[sessionKey] = await orEmpty(this.openF1Service.getTeamRadio(sessionKey));
-          break;
       }
     } finally {
       this.loadingTabs.delete(id);
     }
   }
 
+  // ---------- Direzione Gara (Race Control) Helpers ----------
+  private initRaceControlState(sessionKey: number): void {
+    if (!this.raceControlState[sessionKey]) {
+      this.raceControlState[sessionKey] = {
+        searchQuery: '',
+        selectedFilter: 'all',
+        selectedDriver: null
+      };
+    }
+  }
+
+  getFilteredRaceControlMessages(sessionKey: number): RaceControlMessage[] {
+    const list = this.raceControlMessages[sessionKey] ?? [];
+    const state = this.raceControlState[sessionKey] ?? {
+      searchQuery: '',
+      selectedFilter: 'all',
+      selectedDriver: null
+    };
+
+    const query = state.searchQuery.trim().toLowerCase();
+
+    return list.filter(msg => {
+      // Filtro per pilota
+      if (state.selectedDriver !== null && msg.driver_number !== state.selectedDriver) {
+        return false;
+      }
+
+      // Filtro per tipologia / flag
+      if (state.selectedFilter !== 'all') {
+        const flag = (msg.flag || '').toUpperCase();
+        const text = (msg.message || '').toUpperCase();
+        const cat = (msg.category || '').toUpperCase();
+
+        switch (state.selectedFilter) {
+          case 'red_flag':
+            if (flag !== 'RED' && !text.includes('RED FLAG')) return false;
+            break;
+          case 'safety_car':
+            if (!text.includes('SAFETY CAR') || text.includes('VIRTUAL SAFETY CAR')) return false;
+            break;
+          case 'vsc':
+            if (!text.includes('VIRTUAL SAFETY CAR') && !text.includes('VSC')) return false;
+            break;
+          case 'penalty':
+            if (!text.includes('PENALTY') && !text.includes('INVESTIGAT') && !text.includes('DELETED')) return false;
+            break;
+          case 'drs':
+            if (cat !== 'DRS' && !text.includes('DRS')) return false;
+            break;
+        }
+      }
+
+      // Filtro testuale
+      if (query) {
+        const driverName = msg.driver_number ? this.getDriverName(msg.driver_number).toLowerCase() : '';
+        const driverTeam = msg.driver_number ? this.getDriverTeam(msg.driver_number).toLowerCase() : '';
+        const text = (msg.message || '').toLowerCase();
+        const flag = (msg.flag || '').toLowerCase();
+        const cat = (msg.category || '').toLowerCase();
+        if (
+          !text.includes(query) &&
+          !driverName.includes(query) &&
+          !driverTeam.includes(query) &&
+          !flag.includes(query) &&
+          !cat.includes(query)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  countRaceControlByFilter(sessionKey: number, filter: RaceControlFilter): number {
+    const list = this.raceControlMessages[sessionKey] ?? [];
+    if (filter === 'all') return list.length;
+    return list.filter(msg => {
+      const flag = (msg.flag || '').toUpperCase();
+      const text = (msg.message || '').toUpperCase();
+      const cat = (msg.category || '').toUpperCase();
+      switch (filter) {
+        case 'red_flag': return flag === 'RED' || text.includes('RED FLAG');
+        case 'safety_car': return text.includes('SAFETY CAR') && !text.includes('VIRTUAL SAFETY CAR');
+        case 'vsc': return text.includes('VIRTUAL SAFETY CAR') || text.includes('VSC');
+        case 'penalty': return text.includes('PENALTY') || text.includes('INVESTIGAT') || text.includes('DELETED');
+        case 'drs': return cat === 'DRS' || text.includes('DRS');
+        default: return true;
+      }
+    }).length;
+  }
+
+  getRaceControlTagClass(msg: RaceControlMessage): string {
+    const flag = (msg.flag || '').toUpperCase();
+    const text = (msg.message || '').toUpperCase();
+    const cat = (msg.category || '').toUpperCase();
+
+    if (flag === 'RED' || text.includes('RED FLAG')) return 'rc-tag-red';
+    if (text.includes('SAFETY CAR') && !text.includes('VIRTUAL SAFETY CAR')) return 'rc-tag-sc';
+    if (text.includes('VIRTUAL SAFETY CAR') || text.includes('VSC')) return 'rc-tag-vsc';
+    if (text.includes('PENALTY') || text.includes('INVESTIGAT')) return 'rc-tag-penalty';
+    if (flag === 'YELLOW' || flag === 'DOUBLE YELLOW') return 'rc-tag-yellow';
+    if (flag === 'GREEN') return 'rc-tag-green';
+    if (flag === 'BLUE') return 'rc-tag-blue';
+    if (flag === 'CHEQUERED') return 'rc-tag-chequered';
+    if (flag === 'BLACK AND WHITE') return 'rc-tag-bw';
+    if (cat === 'DRS' || text.includes('DRS')) return 'rc-tag-drs';
+    return 'rc-tag-default';
+  }
+
+  getRaceControlTagLabel(msg: RaceControlMessage): string {
+    const flag = (msg.flag || '').toUpperCase();
+    const text = (msg.message || '').toUpperCase();
+    const cat = (msg.category || '').toUpperCase();
+
+    if (flag === 'RED' || text.includes('RED FLAG')) return 'Bandiera Rossa';
+    if (text.includes('SAFETY CAR') && !text.includes('VIRTUAL SAFETY CAR')) return 'Safety Car';
+    if (text.includes('VIRTUAL SAFETY CAR') || text.includes('VSC')) return 'VSC';
+    if (text.includes('PENALTY')) return 'Penalità';
+    if (text.includes('INVESTIGAT')) return 'Sotto Investigazione';
+    if (flag === 'DOUBLE YELLOW') return 'Doppia Gialla';
+    if (flag === 'YELLOW') return 'Bandiera Gialla';
+    if (flag === 'GREEN') return 'Verde';
+    if (flag === 'BLUE') return 'Bandiera Blu';
+    if (flag === 'CHEQUERED') return 'Bandiera a Scacchi';
+    if (flag === 'BLACK AND WHITE') return 'Bianco e Nera';
+    if (cat === 'DRS' || text.includes('DRS')) return 'DRS';
+    return msg.category || 'Avviso';
+  }
+
+  // ---------- Team Radio Helpers & Audio Player ----------
+  private initRadioState(sessionKey: number): void {
+    if (!this.radioState[sessionKey]) {
+      this.radioState[sessionKey] = {
+        searchQuery: '',
+        selectedDriver: null,
+        sortAscending: true,
+        playingUrl: null,
+        playingCurrentTime: 0,
+        playingDuration: 0,
+        isPlaying: false
+      };
+    }
+  }
+
+  getFilteredTeamRadios(sessionKey: number): TeamRadio[] {
+    const list = this.teamRadios[sessionKey] ?? [];
+    const state = this.radioState[sessionKey] ?? {
+      searchQuery: '',
+      selectedDriver: null,
+      sortAscending: true,
+      playingUrl: null,
+      playingCurrentTime: 0,
+      playingDuration: 0,
+      isPlaying: false
+    };
+
+    const query = state.searchQuery.trim().toLowerCase();
+
+    const filtered = list.filter(item => {
+      if (state.selectedDriver !== null && item.driver_number !== state.selectedDriver) {
+        return false;
+      }
+      if (query) {
+        const name = this.getDriverName(item.driver_number).toLowerCase();
+        const team = this.getDriverTeam(item.driver_number).toLowerCase();
+        const num = String(item.driver_number);
+        if (!name.includes(query) && !team.includes(query) && !num.includes(query)) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
+      return state.sortAscending ? diff : -diff;
+    });
+  }
+
+  toggleRadioSort(sessionKey: number): void {
+    const state = this.radioState[sessionKey];
+    if (state) {
+      state.sortAscending = !state.sortAscending;
+    }
+  }
+
+  togglePlayRadio(sessionKey: number, radio: TeamRadio): void {
+    const state = this.radioState[sessionKey];
+    if (!state) return;
+
+    if (state.playingUrl === radio.recording_url && state.isPlaying) {
+      this.currentAudioElement?.pause();
+      state.isPlaying = false;
+      return;
+    }
+
+    if (state.playingUrl === radio.recording_url && this.currentAudioElement) {
+      this.currentAudioElement.play().catch(() => {});
+      state.isPlaying = true;
+      return;
+    }
+
+    this.stopCurrentAudio();
+
+    const audio = new Audio(radio.recording_url);
+    this.currentAudioElement = audio;
+    this.currentAudioSessionKey = sessionKey;
+
+    state.playingUrl = radio.recording_url;
+    state.playingCurrentTime = 0;
+    state.playingDuration = 0;
+    state.isPlaying = true;
+
+    audio.addEventListener('loadedmetadata', () => {
+      if (state.playingUrl === radio.recording_url) {
+        state.playingDuration = audio.duration || 0;
+      }
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (state.playingUrl === radio.recording_url) {
+        state.playingCurrentTime = audio.currentTime || 0;
+        if (!state.playingDuration && audio.duration) {
+          state.playingDuration = audio.duration;
+        }
+      }
+    });
+
+    audio.addEventListener('ended', () => {
+      if (state.playingUrl === radio.recording_url) {
+        state.isPlaying = false;
+        state.playingCurrentTime = 0;
+      }
+    });
+
+    audio.addEventListener('error', () => {
+      if (state.playingUrl === radio.recording_url) {
+        state.isPlaying = false;
+      }
+    });
+
+    audio.play().catch(() => {
+      state.isPlaying = false;
+    });
+  }
+
+  seekRadio(sessionKey: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const newTime = Number(input.value);
+    const state = this.radioState[sessionKey];
+    if (state && this.currentAudioElement && Number.isFinite(newTime)) {
+      this.currentAudioElement.currentTime = newTime;
+      state.playingCurrentTime = newTime;
+    }
+  }
+
+  stopCurrentAudio(): void {
+    if (this.currentAudioElement) {
+      this.currentAudioElement.pause();
+      this.currentAudioElement = null;
+    }
+    if (this.currentAudioSessionKey !== null) {
+      const state = this.radioState[this.currentAudioSessionKey];
+      if (state) {
+        state.isPlaying = false;
+        state.playingUrl = null;
+        state.playingCurrentTime = 0;
+        state.playingDuration = 0;
+      }
+      this.currentAudioSessionKey = null;
+    }
+  }
+
+  formatAudioTime(seconds: number): string {
+    if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  // ---------- Telemetria e Confronto Tempi sul Giro ----------
   private async initSessionTelemetry(sessionKey: number): Promise<void> {
     if (!this.telemetryState[sessionKey]) {
       const ordered = this.getSessionOrderedDrivers(sessionKey);

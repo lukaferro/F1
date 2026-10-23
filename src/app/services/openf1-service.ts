@@ -53,6 +53,20 @@ export interface Overtake {
   session_key: number;
 }
 
+export interface RaceControlMessage {
+  meeting_key: number;
+  session_key: number;
+  date: string;
+  driver_number: number | null;
+  lap_number: number | null;
+  category: string;
+  flag: string | null;
+  scope: string | null;
+  sector: number | null;
+  qualifying_phase: number | null;
+  message: string;
+}
+
 export interface LapData {
   meeting_key: number;
   session_key: number;
@@ -200,6 +214,10 @@ export class Openf1ServiceService {
 
   async getTeamRadio(sessionKey: number): Promise<TeamRadio[]> {
     return this.cache.getList<TeamRadio>(`${this.baseUrl}/team_radio?session_key=${sessionKey}`);
+  }
+
+  async getRaceControl(sessionKey: number): Promise<RaceControlMessage[]> {
+    return this.cache.getList<RaceControlMessage>(`${this.baseUrl}/race_control?session_key=${sessionKey}`);
   }
 
   async getWeather(sessionKey: number): Promise<Weather[]> {
