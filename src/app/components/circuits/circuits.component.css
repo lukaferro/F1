@@ -468,10 +468,12 @@
 
 .expand-btn {
   flex: 1 1 120px;
+  border-radius: 10px !important;
 }
 
 .map-focus-btn {
   flex: 0 0 auto;
+  border-radius: 10px !important;
   border-color: rgba(255, 255, 255, 0.2);
   color: #ffffff;
 }
@@ -483,9 +485,19 @@
 
 .gp-link-btn {
   flex: 1 1 130px;
-  background: #e10600 !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, rgba(225, 6, 0, 0.22), rgba(225, 6, 0, 0.12)) !important;
+  border: 1px solid rgba(225, 6, 0, 0.45) !important;
+  color: #ff5e5e !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+.gp-link-btn:hover {
+  background: linear-gradient(135deg, #e10600, #b80500) !important;
   border-color: #e10600 !important;
   color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(225, 6, 0, 0.35) !important;
 }
 
 .empty-circuits {
@@ -958,21 +970,25 @@
   justify-content: center;
   gap: 0.45rem;
   padding: 0.6rem 0.85rem;
-  border-radius: 8px;
-  border: none;
+  border-radius: 10px;
+  border: 1px solid transparent;
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .inspector-btn.primary {
-  background: #e10600;
-  color: #ffffff;
+  background: linear-gradient(135deg, rgba(225, 6, 0, 0.22), rgba(225, 6, 0, 0.12));
+  border-color: rgba(225, 6, 0, 0.45);
+  color: #ff5e5e;
 }
 
 .inspector-btn.primary:hover {
-  background: #ff1e1e;
+  background: linear-gradient(135deg, #e10600, #b80500);
+  border-color: #e10600;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(225, 6, 0, 0.35);
 }
 
 .inspector-btn.secondary {

@@ -131,11 +131,5 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-### 14. Preferiti / Il Mio Garage ⭐
-- Possibilità di salvare piloti, scuderie e circuiti preferiti in `localStorage` tramite pulsante stella su card e profili.
-- Sezione rapida *"Il Mio Garage"* in Home per accedere subito ai propri preferiti e alle loro statistiche.
-
----
-
-### 15. Simulatore Punti & Calcolatore Matematico Titolo Mondiale 🧮
+### 14. Simulatore Punti & Calcolatore Matematico Titolo Mondiale 🧮
 - Strumento interattivo in `/classifiche` per simulare l'esito dei prossimi Gran Premi / Sprint e calcolare istantaneamente la nuova classifica e le combinazioni matematiche per la conquista del titolo.

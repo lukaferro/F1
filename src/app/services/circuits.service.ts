@@ -643,6 +643,11 @@ export class CircuitsService {
       length_km: 5.474,
       turns: 20,
       first_grand_prix: 2026,
+      lap_record: {
+        time: '1:35.587',
+        driver: 'George Russell',
+        year: 2026
+      },
       description: 'Nuovo e avveniristico tracciato semi-cittadino allestito attorno al polo fieristico IFEMA di Madrid, caratterizzato da tratti veloci e curve paraboliche innovative.',
       history: 'Inserito nel calendario mondiale FIA dal 2026 come sede del Gran Premio di Spagna, segna il ritorno della F1 nella capitale spagnola dopo oltre quarant\'anni.',
       memorable_moment: 'L\'attesissimo debutto inaugurale nel campionato mondiale 2026 davanti al caloroso pubblico iberico.',

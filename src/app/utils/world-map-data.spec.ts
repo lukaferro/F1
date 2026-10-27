@@ -46,6 +46,26 @@ describe('world-map-data', () => {
     expect(regionalCoords.y).toBe(globalCoords.trueY);
   });
 
+  it('keeps Madrid and Barcelona at their true geographic coordinates without offsets', () => {
+    const madrid = { id: 'madrid', latitude: 40.4653, longitude: -3.6153 };
+    const barcelona = { id: 'barcelona', latitude: 41.5700, longitude: 2.2611 };
+
+    const madridCoords = getCircuitDisplayCoords(madrid, true);
+    const barcelonaCoords = getCircuitDisplayCoords(barcelona, true);
+
+    expect(madridCoords.isOffset).toBe(false);
+    expect(madridCoords.x).toBeCloseTo(490.0, 1);
+    expect(madridCoords.y).toBeCloseTo(137.6, 1);
+
+    expect(barcelonaCoords.isOffset).toBe(false);
+    expect(barcelonaCoords.x).toBeCloseTo(506.3, 1);
+    expect(barcelonaCoords.y).toBeCloseTo(134.5, 1);
+
+    // Distanza adeguata per non sovrapporsi sui marker pin standard
+    const distance = Math.hypot(barcelonaCoords.x - madridCoords.x, barcelonaCoords.y - madridCoords.y);
+    expect(distance).toBeGreaterThan(15);
+  });
+
   it('defines all 5 macro regions with valid viewboxes and icons', () => {
     expect(MACRO_REGIONS.length).toBe(5);
     const ids = MACRO_REGIONS.map(m => m.id);

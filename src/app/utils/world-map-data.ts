@@ -97,8 +97,6 @@ export const GLOBAL_VIEW_OFFSETS: Record<string, { dx: number; dy: number }> = {
   silverstone: { dx: -12, dy: -8 },
   zandvoort: { dx: -6, dy: -12 },
   spa: { dx: 4, dy: -7 },
-  madrid: { dx: -10, dy: 6 },
-  barcelona: { dx: 4, dy: 10 },
   monaco: { dx: 0, dy: 9 },
   monza: { dx: 6, dy: -7 },
   imola: { dx: 10, dy: 12 },
