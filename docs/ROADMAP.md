@@ -133,3 +133,17 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ### 14. Simulatore Punti & Calcolatore Matematico Titolo Mondiale 🧮
 - Strumento interattivo in `/classifiche` per simulare l'esito dei prossimi Gran Premi / Sprint e calcolare istantaneamente la nuova classifica e le combinazioni matematiche per la conquista del titolo.
+
+---
+
+### 15. Sistema di Auto-Aggiornamento Dinamico Stagionale (Auto-Sync & Media Pipeline) 🔄
+- **Rilevamento Automatico Calendario & Tappe**:
+  - Rilevamento automatico della stagione attiva tramite OpenF1 e Jolpica all'avvio del nuovo anno, con auto-configurazione di round, orari, date e tracciati senza interventi manuali.
+- **Sincronizzazione Dinamica Classifiche, Posizioni & Roster**:
+  - Popolamento istantaneo delle classifiche piloti/costruttori, punti, vittorie, e abbinamenti pilota-scuderia ufficiali per ogni stagione.
+- **Aggiornamento Automatico Giri Record dei Circuiti (Fastest Laps Pipeline)**:
+  - Strategia *Stale-While-Revalidate* in [circuits.service.ts](file:///C:/Sviluppo/Personale/F1/src/app/services/circuits.service.ts): il catalogo locale funge da cache istantanea (0 ms di latenza) mentre un servizio in background interroga le API Jolpica (`/circuits/{id}/fastest/1/results.json`) e OpenF1 (`/sessions` + `/laps`) per aggiornare automaticamente tempo, pilota e anno del giro record ogni volta che viene infranto in gara.
+- **Pipeline Dinamica per Immagini e Risorse Grafiche**:
+  - Risoluzione automatica di foto piloti, loghi scuderie e sagome circuiti tramite pattern CDN Formula 1 (`media.formula1.com`) basato sull'anno corrente.
+  - Fallback dinamico su **Wikimedia Commons / Wikidata API** (proprietà `P18` immagine, `P154` logo) per recuperare l'ultima foto ufficiale ad alta risoluzione caricata dalla community.
+  - Gestione fallback a cascata (immagine anno precedente → placeholder vettoriale elegante) nei periodi invernali pre-stagione prima del rilascio dei photoshoot ufficiali.
