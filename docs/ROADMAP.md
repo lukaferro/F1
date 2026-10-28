@@ -131,8 +131,21 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-### 14. Simulatore Punti & Calcolatore Matematico Titolo Mondiale 🧮
-- Strumento interattivo in `/classifiche` per simulare l'esito dei prossimi Gran Premi / Sprint e calcolare istantaneamente la nuova classifica e le combinazioni matematiche per la conquista del titolo.
+### 14. Simulatore Punti & Calcolatore Matematico Titolo Mondiale 🧮 (Completato) ✅
+- **Tab dedicato `🧮 Simulatore Titolo` in `/classifiche`**:
+  - Simulatore interattivo sia per il **Mondiale Piloti** sia per il **Mondiale Costruttori**.
+  - **Integrazione calendario reale**: recupero dei Gran Premi e delle Sprint rimanenti della stagione da Jolpica API con rilevamento automatico dei round già disputati e selettore di scenari per le stagioni storiche (*Ultime 3 gare*, *Ultime 5 gare*, *Tutta la stagione*).
+  - **Selettori interattivi di piazzamento**: per ogni round simulabile, assegnazione di 1° posto (+25 pt), 2° posto (+18 pt), 3° posto (+15 pt), Giro Veloce (+1 pt) e Sprint (+8 pt).
+  - **Preset rapidi di simulazione**:
+    - ⚡ *Reset simulazione* (ripristina la classifica ufficiale).
+    - 🥇 *Tutte al Leader* (simula il dominio del capoclassifica).
+    - 🥈 *Rimonta Rivale* (simula le vittorie dell'inseguitore diretto).
+  - **Dashboard KPI e Calcolo Matematico Aritmetico**:
+    - **Magic Number**: calcolo dei punti esatti mancanti al leader per la certezza matematica del titolo iridato indipendente da qualsiasi risultato degli avversari.
+    - **Contendenti matematicamente in corsa vs eliminati**: badge di stato (*🏆 Campione*, *🟢 In corsa*, *🔴 Fuori*).
+    - **Banner Celebrativo Oro**: incoronazione istantanea con punti finali e vittorie non appena il titolo è aritmeticamente assegnato.
+    - **Scenario Prossimo Gran Premio**: calcolo dinamico della combinazione di punti richiesta al leader nella gara successiva per laurearsi Campione del Mondo in anticipo.
+  - **Classifica Ricalcolata Live**: tabella sticky con punti base, bonus simulati (`+X pt`), totale ricalcolato e distacco aggiornato.
 
 ---
 

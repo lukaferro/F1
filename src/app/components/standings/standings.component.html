@@ -25,13 +25,21 @@
   <div class="standings-tabs" role="tablist">
     <button class="tab-button" role="tab" id="tab-drivers" aria-controls="standings-panel" [class.active]="tab === 'drivers'" [attr.aria-selected]="tab === 'drivers'" (click)="setTab('drivers')">Piloti</button>
     <button class="tab-button" role="tab" id="tab-constructors" aria-controls="standings-panel" [class.active]="tab === 'constructors'" [attr.aria-selected]="tab === 'constructors'" (click)="setTab('constructors')">Costruttori</button>
+    <button class="tab-button" role="tab" id="tab-simulator" aria-controls="standings-panel" [class.active]="tab === 'simulator'" [attr.aria-selected]="tab === 'simulator'" (click)="setTab('simulator')">🧮 Simulatore Titolo</button>
     <button class="tab-button" role="tab" id="tab-hall-of-fame" aria-controls="standings-panel" [class.active]="tab === 'hall-of-fame'" [attr.aria-selected]="tab === 'hall-of-fame'" (click)="setTab('hall-of-fame')">🏆 Albo d'Oro (1950–Oggi)</button>
   </div>
 
   <!-- altezza minima: cambiando stagione o tab l'area non si richiude -->
-  <section class="standings-content" id="standings-panel" role="tabpanel" [attr.aria-labelledby]="tab === 'drivers' ? 'tab-drivers' : (tab === 'constructors' ? 'tab-constructors' : 'tab-hall-of-fame')">
+  <section class="standings-content" id="standings-panel" role="tabpanel" [attr.aria-labelledby]="tab === 'drivers' ? 'tab-drivers' : (tab === 'constructors' ? 'tab-constructors' : (tab === 'simulator' ? 'tab-simulator' : 'tab-hall-of-fame'))">
     @if (tab === 'hall-of-fame') {
       <app-hall-of-fame (selectYear)="openSeasonFromHallOfFame($event)"></app-hall-of-fame>
+    } @else if (tab === 'simulator') {
+      <app-standings-simulator
+        [season]="selectedSeason!"
+        [driverStandings]="driverStandings"
+        [constructorStandings]="constructorStandings"
+        [isCurrentSeason]="isCurrentSeason">
+      </app-standings-simulator>
     } @else if (loading) {
       <div aria-busy="true" aria-label="Caricamento classifica">
         @if (slowLoading) {

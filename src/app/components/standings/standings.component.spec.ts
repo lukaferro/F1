@@ -322,4 +322,17 @@ describe('StandingsComponent', () => {
     expect(el.querySelector('.progression-svg')).not.toBeNull();
     expect(el.querySelectorAll('.legend-pill').length).toBe(2);
   });
+
+  it('switches to simulator tab and renders championship simulator', async () => {
+    await create();
+    const el = fixture.nativeElement as HTMLElement;
+    const simTabBtn = el.querySelector('#tab-simulator') as HTMLButtonElement;
+    expect(simTabBtn).not.toBeNull();
+    simTabBtn.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.tab).toBe('simulator');
+    expect(el.querySelector('app-standings-simulator')).not.toBeNull();
+  });
 });

@@ -125,6 +125,19 @@ export interface HistoricQualifyingResult {
   q3?: string;
 }
 
+export interface SeasonScheduleItem {
+  season: number;
+  round: number;
+  raceName: string;
+  circuitId: string;
+  circuitName: string;
+  locality: string;
+  country: string;
+  date: string;
+  time?: string;
+  hasSprint: boolean;
+}
+
 export interface SeasonRoundPoints {
   round: number;
   raceName: string;
@@ -429,6 +442,55 @@ export class JolpicaService {
         } : undefined
       };
     });
+  }
+
+  /** Tutte le gare in calendario della stagione (incluse le future), con indicazione presenza Sprint */
+  async getSeasonSchedule(season: number): Promise<SeasonScheduleItem[]> {
+    interface ScheduleRow {
+      season: string;
+      round: string;
+      raceName: string;
+      date: string;
+      time?: string;
+      Circuit: {
+        circuitId: string;
+        circuitName: string;
+        Location: {
+          locality: string;
+          country: string;
+        };
+      };
+      Sprint?: {
+        date: string;
+        time?: string;
+      };
+    }
+    interface ScheduleResponse {
+      MRData: {
+        RaceTable: {
+          Races: ScheduleRow[];
+        };
+      };
+    }
+
+    try {
+      const res = await this.cache.get<ScheduleResponse>(`${BASE_URL}/${season}/races/?limit=${PAGE_SIZE}`);
+      const races = res.MRData?.RaceTable?.Races || [];
+      return races.map(r => ({
+        season: Number(r.season),
+        round: Number(r.round),
+        raceName: r.raceName,
+        circuitId: r.Circuit?.circuitId || '',
+        circuitName: r.Circuit?.circuitName || '',
+        locality: r.Circuit?.Location?.locality || '',
+        country: r.Circuit?.Location?.country || '',
+        date: r.date,
+        time: r.time,
+        hasSprint: Boolean(r.Sprint)
+      }));
+    } catch {
+      return [];
+    }
   }
 
   /** Risultati completi di una gara storica; null se non trovata */

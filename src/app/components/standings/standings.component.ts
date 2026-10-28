@@ -16,6 +16,7 @@ import {
 } from '../../utils/points-progression-chart';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { HallOfFameComponent } from '../hall-of-fame/hall-of-fame.component';
+import { StandingsSimulatorComponent } from './standings-simulator/standings-simulator.component';
 
 // Prima stagione con dati OpenF1: da qui in poi esiste la pagina di dettaglio del pilota
 const FIRST_OPENF1_SEASON = 2023;
@@ -46,7 +47,7 @@ const isNotFound = (err: unknown) => err instanceof HttpErrorResponse && err.sta
 @Component({
   selector: 'app-standings',
   standalone: true,
-  imports: [FormsModule, RouterLink, SelectModule, ApiUnavailableComponent, HallOfFameComponent],
+  imports: [FormsModule, RouterLink, SelectModule, ApiUnavailableComponent, HallOfFameComponent, StandingsSimulatorComponent],
   templateUrl: './standings.component.html',
   styleUrl: './standings.component.css'
 })
@@ -149,7 +150,7 @@ export class StandingsComponent implements OnInit, OnDestroy {
     // Piloti e (se il tab è aperto) costruttori sono indipendenti: un errore non blocca l'altro
     await this.withLoading(year, () => Promise.all([
       this.fetchDrivers(year),
-      this.tab === 'constructors' ? this.fetchConstructors(year) : Promise.resolve()
+      (this.tab === 'constructors' || this.tab === 'simulator') ? this.fetchConstructors(year) : Promise.resolve()
     ]));
   }
 
@@ -159,8 +160,9 @@ export class StandingsComponent implements OnInit, OnDestroy {
     this.hiddenSeriesIds.clear();
     this.hoveredSeriesId = null;
     const year = this.selectedSeason;
-    if (tab !== 'constructors' || year === null || this.constructorsLoadedFor === year) return;
-    await this.withLoading(year, () => this.fetchConstructors(year));
+    if ((tab === 'constructors' || tab === 'simulator') && year !== null && this.constructorsLoadedFor !== year) {
+      await this.withLoading(year, () => this.fetchConstructors(year));
+    }
   }
 
   async openSeasonFromHallOfFame(year: number): Promise<void> {
@@ -171,6 +173,7 @@ export class StandingsComponent implements OnInit, OnDestroy {
 
   get error(): boolean {
     if (this.tab === 'hall-of-fame') return false;
+    if (this.tab === 'simulator') return this.initError || this.driversError;
     return this.initError || (this.tab === 'drivers' ? this.driversError : this.constructorsError);
   }
 

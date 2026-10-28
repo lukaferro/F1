@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type StandingsTab = 'drivers' | 'constructors' | 'hall-of-fame';
+export type StandingsTab = 'drivers' | 'constructors' | 'simulator' | 'hall-of-fame';
 
 @Injectable({
   providedIn: 'root'

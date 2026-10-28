@@ -465,6 +465,46 @@ describe('JolpicaService', () => {
 
       expect(await result).toEqual([]);
     });
+
+    it('reads the season calendar schedule with sprint indicator', async () => {
+      const result = service.getSeasonSchedule(2024);
+      (await request(`${API}/2024/races/?limit=100`)).flush({
+        MRData: {
+          RaceTable: {
+            Races: [
+              {
+                season: '2024',
+                round: '1',
+                raceName: 'Bahrain Grand Prix',
+                date: '2024-03-02',
+                Circuit: {
+                  circuitId: 'bahrain',
+                  circuitName: 'Bahrain International Circuit',
+                  Location: { locality: 'Sakhir', country: 'Bahrain' }
+                }
+              },
+              {
+                season: '2024',
+                round: '5',
+                raceName: 'Chinese Grand Prix',
+                date: '2024-04-21',
+                Circuit: {
+                  circuitId: 'shanghai',
+                  circuitName: 'Shanghai International Circuit',
+                  Location: { locality: 'Shanghai', country: 'China' }
+                },
+                Sprint: { date: '2024-04-20', time: '03:00:00Z' }
+              }
+            ]
+          }
+        }
+      });
+
+      const schedule = await result;
+      expect(schedule.length).toBe(2);
+      expect(schedule[0].hasSprint).toBe(false);
+      expect(schedule[1].hasSprint).toBe(true);
+      expect(schedule[1].raceName).toBe('Chinese Grand Prix');
+    });
   });
 });
-

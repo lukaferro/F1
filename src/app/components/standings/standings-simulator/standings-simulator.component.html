@@ -1,0 +1,334 @@
+<div class="simulator-container">
+  <!-- Header del simulatore -->
+  <div class="simulator-toolbar f1-card">
+    <div class="toolbar-title-section">
+      <div class="toolbar-badge">
+        <span class="f1-badge">
+          <i class="pi pi-calculator"></i>
+          <span>Simulatore Ufficiale &middot; Stagione {{ season }}</span>
+        </span>
+      </div>
+      <h2 class="simulator-title">Calcolatore Matematico Titolo Mondiale</h2>
+      <p class="simulator-desc">
+        Configura i piazzamenti dei Gran Premi e delle Sprint rimanenti per calcolare in tempo reale l'assegnazione aritmetica del titolo.
+      </p>
+    </div>
+
+    <div class="toolbar-controls">
+      <!-- Toggle Piloti / Costruttori -->
+      <div class="mode-switch" role="group" aria-label="Campionato da simulare">
+        <button
+          type="button"
+          class="mode-btn"
+          [class.active]="mode === 'drivers'"
+          (click)="setMode('drivers')">
+          🏎️ Piloti
+        </button>
+        <button
+          type="button"
+          class="mode-btn"
+          [class.active]="mode === 'constructors'"
+          (click)="setMode('constructors')">
+          🏭 Costruttori
+        </button>
+      </div>
+
+      <!-- Preset stagioni passate -->
+      @if (!isCurrentSeason) {
+        <div class="preset-group">
+          <span class="preset-label">Simula gare:</span>
+          <div class="preset-chips">
+            <button
+              type="button"
+              class="chip-btn"
+              [class.active]="pastSeasonPreset === 'last3'"
+              (click)="setPastSeasonPreset('last3')">
+              Ultime 3
+            </button>
+            <button
+              type="button"
+              class="chip-btn"
+              [class.active]="pastSeasonPreset === 'last5'"
+              (click)="setPastSeasonPreset('last5')">
+              Ultime 5
+            </button>
+            <button
+              type="button"
+              class="chip-btn"
+              [class.active]="pastSeasonPreset === 'all'"
+              (click)="setPastSeasonPreset('all')">
+              Tutte
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Preset rapidi simulazione -->
+      <div class="quick-actions">
+        <button type="button" class="action-btn" title="Ripristina valori originali" (click)="resetSimulation()">
+          <i class="pi pi-refresh"></i> Reset
+        </button>
+        <button type="button" class="action-btn leader" title="Assegna tutte le vittorie al leader" (click)="presetAllWinsToLeader()">
+          🥇 Tutte al Leader
+        </button>
+        <button type="button" class="action-btn chaser" title="Assegna le vittorie al secondo per testare la rimonta" (click)="presetAllWinsToSecond()">
+          🥈 Rimonta Rivale
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="loading-state">
+      <div class="skeleton" style="height: 120px; border-radius: 12px; margin-bottom: 1.5rem;"></div>
+      <div class="skeleton" style="height: 350px; border-radius: 12px;"></div>
+    </div>
+  } @else if (simulationResult) {
+    <!-- Banner KPI & Clincher Scenario -->
+    <div class="kpi-section">
+      @if (simulationResult.champion; as champ) {
+        <div class="champion-banner f1-card">
+          <div class="champ-trophy">🏆</div>
+          <div class="champ-info">
+            <span class="champ-badge">CAMPIONE DEL MONDO MATEMATICO {{ season }}</span>
+            <h3 class="champ-name">{{ champ.name }}</h3>
+            <p class="champ-sub">
+              {{ champ.constructorName }} &middot; <strong>{{ champ.totalPoints }} punti</strong> e <strong>{{ champ.totalWins }} vittorie</strong>.
+              Nessun avversario può più superare questo punteggio!
+            </p>
+          </div>
+        </div>
+      } @else {
+        <div class="kpi-grid">
+          <div class="kpi-card f1-card">
+            <span class="kpi-label">Punti per il Titolo (Magic Number)</span>
+            <div class="kpi-value highlight">{{ simulationResult.magicNumber }} pt</div>
+            <span class="kpi-hint">Mancanti al leader per la certezza aritmetica</span>
+          </div>
+
+          <div class="kpi-card f1-card">
+            <span class="kpi-label">In Corsa per il Titolo</span>
+            <div class="kpi-value">{{ simulationResult.contendersInContentionCount }}</div>
+            <span class="kpi-hint">{{ mode === 'drivers' ? 'piloti' : 'scuderie' }} matematicamente in lotta</span>
+          </div>
+
+          <div class="kpi-card f1-card">
+            <span class="kpi-label">Punti Max in Palio</span>
+            <div class="kpi-value">{{ simulationResult.remainingPointsOnTable }} pt</div>
+            <span class="kpi-hint">su {{ simulationResult.remainingRoundsCount }} round ancora da disputare</span>
+          </div>
+        </div>
+
+        @if (simulationResult.nextRoundClinchScenario) {
+          <div class="scenario-banner f1-card">
+            <div class="scenario-icon">🎯</div>
+            <div class="scenario-text">
+              <strong>Scenario Prossimo Gran Premio:</strong>
+              <span>{{ simulationResult.nextRoundClinchScenario }}</span>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Contenuto principale: Griglia Gare vs Classifica Live -->
+    <div class="simulator-main-grid">
+      <!-- Colonna Sinistra: Gare da simulare -->
+      <div class="sim-column races-col">
+        <div class="section-title-wrap">
+          <h3 class="section-heading">
+            <i class="pi pi-flag"></i> Round da Simulare ({{ remainingSimulatableRounds.length }})
+          </h3>
+          <span class="section-note">Seleziona i piazzamenti per aggiornare la classifica</span>
+        </div>
+
+        @if (remainingSimulatableRounds.length === 0) {
+          <div class="empty-races f1-card">
+            <i class="pi pi-check-circle empty-icon"></i>
+            <h4>Tutti i round della stagione sono stati già disputati!</h4>
+            <p>Usa i pulsanti in alto per simulare gli ultimi round con risultati differenti.</p>
+          </div>
+        } @else {
+          <div class="races-list">
+            @for (r of remainingSimulatableRounds; track r.round) {
+              <div class="race-card f1-card" [class.has-results]="r.raceWinnerId || r.raceSecondId">
+                <div class="race-header">
+                  <div class="race-meta">
+                    <span class="race-round-badge">R{{ r.round }}</span>
+                    @if (flagUrl(r.country); as flag) {
+                      <img [src]="flag" [alt]="r.country" class="race-flag" />
+                    }
+                    <div class="race-names">
+                      <strong class="race-title">{{ r.raceName }}</strong>
+                      <span class="race-circuit">{{ r.circuitName }} &middot; {{ r.locality }}</span>
+                    </div>
+                  </div>
+                  <div class="race-tags">
+                    @if (r.hasSprint) {
+                      <span class="sprint-tag"><i class="pi pi-bolt"></i> Sprint</span>
+                    }
+                    <button type="button" class="btn-clear-round" title="Pulisci questo round" (click)="clearRound(r)">
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Selettori posizioni del round -->
+                <div class="selectors-grid">
+                  <!-- 1° Posto (25 pt) -->
+                  <div class="selector-field">
+                    <label class="field-label">🥇 1° Posto (+25 pt)</label>
+                    <select
+                      class="sim-select winner-select"
+                      [(ngModel)]="r.raceWinnerId"
+                      (ngModelChange)="recalculate()">
+                      <option [ngValue]="undefined">-- Non assegnato --</option>
+                      @for (opt of contenderOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- 2° Posto (18 pt) -->
+                  <div class="selector-field">
+                    <label class="field-label">🥈 2° Posto (+18 pt)</label>
+                    <select
+                      class="sim-select"
+                      [(ngModel)]="r.raceSecondId"
+                      (ngModelChange)="recalculate()">
+                      <option [ngValue]="undefined">-- Non assegnato --</option>
+                      @for (opt of contenderOptions; track opt.value) {
+                        <option [value]="opt.value" [disabled]="opt.value === r.raceWinnerId">{{ opt.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- 3° Posto (15 pt) -->
+                  <div class="selector-field">
+                    <label class="field-label">🥉 3° Posto (+15 pt)</label>
+                    <select
+                      class="sim-select"
+                      [(ngModel)]="r.raceThirdId"
+                      (ngModelChange)="recalculate()">
+                      <option [ngValue]="undefined">-- Non assegnato --</option>
+                      @for (opt of contenderOptions; track opt.value) {
+                        <option [value]="opt.value" [disabled]="opt.value === r.raceWinnerId || opt.value === r.raceSecondId">{{ opt.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- Giro Veloce (+1 pt) -->
+                  <div class="selector-field">
+                    <label class="field-label">⚡ Giro Veloce (+1 pt)</label>
+                    <select
+                      class="sim-select"
+                      [(ngModel)]="r.fastestLapDriverId"
+                      (ngModelChange)="recalculate()">
+                      <option [ngValue]="undefined">-- Non assegnato --</option>
+                      @for (opt of contenderOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- Sprint (se presente) -->
+                  @if (r.hasSprint) {
+                    <div class="selector-field sprint-field">
+                      <label class="field-label">🏃 Vincitore Sprint (+8 pt)</label>
+                      <select
+                        class="sim-select sprint-select"
+                        [(ngModel)]="r.sprintWinnerId"
+                        (ngModelChange)="recalculate()">
+                        <option [ngValue]="undefined">-- Non assegnato --</option>
+                        @for (opt of contenderOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Colonna Destra: Classifica Ricalcolata Live -->
+      <div class="sim-column standings-col">
+        <div class="section-title-wrap">
+          <h3 class="section-heading">
+            <i class="pi pi-list"></i> Classifica Ricalcolata Live
+          </h3>
+          <span class="section-note">Punti attuali + bonus simulati</span>
+        </div>
+
+        <div class="standings-table-card f1-card">
+          <div class="table-responsive">
+            <table class="sim-table">
+              <thead>
+                <tr>
+                  <th class="th-pos">Pos</th>
+                  <th class="th-name">{{ mode === 'drivers' ? 'Pilota' : 'Scuderia' }}</th>
+                  <th class="th-num">Punti Base</th>
+                  <th class="th-num">Simulati</th>
+                  <th class="th-num">Totale</th>
+                  <th class="th-num">Gap</th>
+                  <th class="th-status">Stato Titolo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of simulationResult.standings; track c.id) {
+                  <tr [class.is-champion-row]="c.isChampion" [class.is-eliminated-row]="c.isEliminated">
+                    <td class="td-pos">
+                      <span class="pos-badge" [class.first]="c.position === 1">
+                        {{ c.position }}
+                      </span>
+                    </td>
+                    <td class="td-name">
+                      <div class="contender-name-cell">
+                        <span class="team-stripe" [style.background-color]="c.color"></span>
+                        <div class="name-details">
+                          <span class="main-name">{{ c.name }}</span>
+                          @if (mode === 'drivers') {
+                            <span class="sub-team">{{ c.constructorName }}</span>
+                          }
+                        </div>
+                      </div>
+                    </td>
+                    <td class="td-num">{{ c.currentPoints }}</td>
+                    <td class="td-num sim-bonus">
+                      @if (c.simulatedPoints > 0) {
+                        <span class="badge-bonus">+{{ c.simulatedPoints }}</span>
+                      } @else {
+                        <span class="muted">-</span>
+                      }
+                    </td>
+                    <td class="td-num total-pts">
+                      <strong>{{ c.totalPoints }}</strong>
+                    </td>
+                    <td class="td-num gap-pts">
+                      @if (c.position === 1) {
+                        <span class="leader-tag">LEADER</span>
+                      } @else {
+                        <span>-{{ c.gapToLeader }}</span>
+                      }
+                    </td>
+                    <td class="td-status">
+                      @if (c.isChampion) {
+                        <span class="status-pill champion">🏆 CAMPIONE</span>
+                      } @else if (c.isEliminated) {
+                        <span class="status-pill eliminated">🔴 FUORI</span>
+                      } @else {
+                        <span class="status-pill in-contention">🟢 IN CORSA</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
