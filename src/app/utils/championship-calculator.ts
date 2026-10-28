@@ -4,24 +4,107 @@ import {
   SimulatorRaceRound
 } from '../models/championship-simulator';
 
-export const RACE_POINTS = {
-  p1: 25,
-  p2: 18,
-  p3: 15,
-  fastestLap: 1,
-  sprintP1: 8
-};
+export interface SeasonScoringRules {
+  p1: number;
+  p2: number;
+  p3: number;
+  fastestLap: number;
+  hasFastestLapPoint: boolean;
+  sprintP1: number;
+  sprintP2: number;
+  hasSprint: boolean;
+  constructorMaxNormal: number;
+  constructorMaxSprint: number;
+}
+
+/**
+ * Restituisce le regole ufficiali di punteggio FIA in base all'anno della stagione.
+ * - Punto giro veloce: assegnato nel 1950-1959 e nel 2019-2024; ABOLITO dal 2025 in poi e assente nel 1960-2018.
+ * - Scala punti gara: 25-18-15 (2010+), 10-8-6 (2003-2009), 10-6-4 (1991-2002), 9-6-4 (1961-1990), ecc.
+ * - Sprint: introdotta nel 2021 (3-2-1 pt), estesa dal 2022 a oggi (8-7-6-5-4-3-2-1 pt).
+ */
+export function getSeasonScoringRules(season: number): SeasonScoringRules {
+  let p1 = 25;
+  let p2 = 18;
+  let p3 = 15;
+
+  if (season >= 2010) {
+    p1 = 25;
+    p2 = 18;
+    p3 = 15;
+  } else if (season >= 2003) {
+    p1 = 10;
+    p2 = 8;
+    p3 = 6;
+  } else if (season >= 1991) {
+    p1 = 10;
+    p2 = 6;
+    p3 = 4;
+  } else if (season >= 1961) {
+    p1 = 9;
+    p2 = 6;
+    p3 = 4;
+  } else if (season === 1960) {
+    p1 = 8;
+    p2 = 5;
+    p3 = 4;
+  } else {
+    // 1950 - 1959
+    p1 = 8;
+    p2 = 6;
+    p3 = 4;
+  }
+
+  // Punto addizionale per il giro veloce
+  // Abolito ufficialmente dal World Motor Sport Council FIA a partire dalla stagione 2025
+  const hasFastestLapPoint = (season >= 2019 && season <= 2024) || (season >= 1950 && season <= 1959);
+  const fastestLap = hasFastestLapPoint ? 1 : 0;
+
+  // Regole Sprint
+  let sprintP1 = 0;
+  let sprintP2 = 0;
+  let hasSprint = false;
+
+  if (season >= 2022) {
+    sprintP1 = 8;
+    sprintP2 = 7;
+    hasSprint = true;
+  } else if (season === 2021) {
+    sprintP1 = 3;
+    sprintP2 = 2;
+    hasSprint = true;
+  }
+
+  const constructorMaxNormal = p1 + p2 + fastestLap;
+  const constructorMaxSprint = sprintP1 + sprintP2;
+
+  return {
+    p1,
+    p2,
+    p3,
+    fastestLap,
+    hasFastestLapPoint,
+    sprintP1,
+    sprintP2,
+    hasSprint,
+    constructorMaxNormal,
+    constructorMaxSprint
+  };
+}
 
 /**
  * Calcola i punti massimi teorici ancora disponibili per pilota o costruttore in un dato round
  */
-export function maxRoundPoints(hasSprint: boolean, mode: 'drivers' | 'constructors'): number {
+export function maxRoundPoints(
+  hasSprint: boolean,
+  mode: 'drivers' | 'constructors',
+  season = 2024
+): number {
+  const rules = getSeasonScoringRules(season);
   if (mode === 'drivers') {
-    // 25 vittoria + 1 giro veloce + 8 vittoria sprint
-    return RACE_POINTS.p1 + RACE_POINTS.fastestLap + (hasSprint ? RACE_POINTS.sprintP1 : 0);
+    return rules.p1 + rules.fastestLap + (hasSprint ? rules.sprintP1 : 0);
   } else {
-    // 1° (25) + 2° (18) + FL (1) = 44 pt. Sprint: 1° (8) + 2° (7) = 15 pt
-    return 44 + (hasSprint ? 15 : 0);
+    return rules.constructorMaxNormal + (hasSprint ? rules.constructorMaxSprint : 0);
   }
 }
 
@@ -43,6 +126,7 @@ export function calculateChampionship(
   mode: 'drivers' | 'constructors',
   season: number
 ): ChampionshipSimulationResult {
+  const rules = getSeasonScoringRules(season);
   const contenderMap = new Map<string, SimulatorContender>();
 
   for (const c of baseContenders) {
@@ -68,7 +152,6 @@ export function calculateChampionship(
   }
 
   // Costruttori: mappiamo anche da constructorId se mode === 'constructors'
-  // o per mappare i piloti alla scuderia
   const driverToConstructor = new Map<string, string>();
   for (const c of baseContenders) {
     driverToConstructor.set(c.id, c.constructorId);
@@ -79,36 +162,35 @@ export function calculateChampionship(
 
   // Calcolo punti simulati round per round
   for (const r of remainingRounds) {
-    const roundMax = maxRoundPoints(r.hasSprint, mode);
+    const roundMax = maxRoundPoints(r.hasSprint, mode, season);
     remainingPointsOnTable += roundMax;
 
     if (mode === 'drivers') {
       if (r.raceWinnerId && contenderMap.has(r.raceWinnerId)) {
         const c = contenderMap.get(r.raceWinnerId)!;
-        c.simulatedPoints += RACE_POINTS.p1;
+        c.simulatedPoints += rules.p1;
         c.simulatedWins += 1;
       }
       if (r.raceSecondId && contenderMap.has(r.raceSecondId)) {
         const c = contenderMap.get(r.raceSecondId)!;
-        c.simulatedPoints += RACE_POINTS.p2;
+        c.simulatedPoints += rules.p2;
       }
       if (r.raceThirdId && contenderMap.has(r.raceThirdId)) {
         const c = contenderMap.get(r.raceThirdId)!;
-        c.simulatedPoints += RACE_POINTS.p3;
+        c.simulatedPoints += rules.p3;
       }
-      if (r.fastestLapDriverId && contenderMap.has(r.fastestLapDriverId)) {
+      if (rules.hasFastestLapPoint && r.fastestLapDriverId && contenderMap.has(r.fastestLapDriverId)) {
         const c = contenderMap.get(r.fastestLapDriverId)!;
-        c.simulatedPoints += RACE_POINTS.fastestLap;
+        c.simulatedPoints += rules.fastestLap;
       }
       if (r.hasSprint && r.sprintWinnerId && contenderMap.has(r.sprintWinnerId)) {
         const c = contenderMap.get(r.sprintWinnerId)!;
-        c.simulatedPoints += RACE_POINTS.sprintP1;
+        c.simulatedPoints += rules.sprintP1;
       }
     } else {
       // Costruttori: assegna i punti della scuderia
       const addConstructorPoints = (targetId: string | undefined, pts: number, isWin = false) => {
-        if (!targetId) return;
-        // Se targetId è constructorId diretto o id di un pilota
+        if (!targetId || pts === 0) return;
         const constrId = contenderMap.has(targetId) ? targetId : driverToConstructor.get(targetId);
         if (constrId && contenderMap.has(constrId)) {
           const c = contenderMap.get(constrId)!;
@@ -117,12 +199,14 @@ export function calculateChampionship(
         }
       };
 
-      addConstructorPoints(r.raceWinnerId, RACE_POINTS.p1, true);
-      addConstructorPoints(r.raceSecondId, RACE_POINTS.p2);
-      addConstructorPoints(r.raceThirdId, RACE_POINTS.p3);
-      addConstructorPoints(r.fastestLapDriverId, RACE_POINTS.fastestLap);
+      addConstructorPoints(r.raceWinnerId, rules.p1, true);
+      addConstructorPoints(r.raceSecondId, rules.p2);
+      addConstructorPoints(r.raceThirdId, rules.p3);
+      if (rules.hasFastestLapPoint) {
+        addConstructorPoints(r.fastestLapDriverId, rules.fastestLap);
+      }
       if (r.hasSprint) {
-        addConstructorPoints(r.sprintWinnerId, RACE_POINTS.sprintP1);
+        addConstructorPoints(r.sprintWinnerId, rules.sprintP1);
       }
     }
   }
@@ -132,51 +216,43 @@ export function calculateChampionship(
     c.totalPoints = Math.round((c.currentPoints + c.simulatedPoints) * 10) / 10;
     c.totalWins = c.currentWins + c.simulatedWins;
 
-    // Quanti punti rimangono ancora NON simulati per questo pilota/costruttore?
-    // Per ogni round rimanente, se non è stato assegnato il 1° posto (o FL/sprint) a questo pilota,
-    // potrebbe teoricamente vincerlo!
     let potentialUnclaimed = 0;
     for (const r of remainingRounds) {
       if (mode === 'drivers') {
         const isAlreadyWinner = r.raceWinnerId === c.id;
         const isAlreadySecond = r.raceSecondId === c.id;
         const isAlreadyThird = r.raceThirdId === c.id;
-        const hasFL = r.fastestLapDriverId === c.id;
+        const hasFL = rules.hasFastestLapPoint && r.fastestLapDriverId === c.id;
         const hasSprint = r.hasSprint && r.sprintWinnerId === c.id;
 
-        // Se non ha già vinto la gara:
         if (!isAlreadyWinner) {
-          // Se la vittoria è già presa da qualcun altro, il massimo è il 2° posto (18) o 3° (15) o 0
           if (!r.raceWinnerId) {
-            potentialUnclaimed += RACE_POINTS.p1;
+            potentialUnclaimed += rules.p1;
           } else if (!r.raceSecondId && !isAlreadySecond && !isAlreadyThird) {
-            potentialUnclaimed += RACE_POINTS.p2;
+            potentialUnclaimed += rules.p2;
           } else if (!r.raceThirdId && !isAlreadyThird) {
-            potentialUnclaimed += RACE_POINTS.p3;
+            potentialUnclaimed += rules.p3;
           }
         }
-        if (!hasFL && !r.fastestLapDriverId) {
-          potentialUnclaimed += RACE_POINTS.fastestLap;
+        if (rules.hasFastestLapPoint && !hasFL && !r.fastestLapDriverId) {
+          potentialUnclaimed += rules.fastestLap;
         }
         if (r.hasSprint && !hasSprint && !r.sprintWinnerId) {
-          potentialUnclaimed += RACE_POINTS.sprintP1;
+          potentialUnclaimed += rules.sprintP1;
         }
       } else {
-        // Costruttore: se la vittoria non è ancora assegnata, max 44 (o 59 con sprint)
         const constrWinner = r.raceWinnerId ? (contenderMap.has(r.raceWinnerId) ? r.raceWinnerId : driverToConstructor.get(r.raceWinnerId)) : undefined;
         if (!constrWinner) {
-          potentialUnclaimed += 44 + (r.hasSprint ? 15 : 0);
+          potentialUnclaimed += rules.constructorMaxNormal + (r.hasSprint ? rules.constructorMaxSprint : 0);
         } else if (constrWinner === c.id) {
-          // Ha già il 1° posto, potrebbe ancora fare 2° posto (18) se non assegnato
-          if (!r.raceSecondId) potentialUnclaimed += 18;
-          if (!r.fastestLapDriverId) potentialUnclaimed += 1;
-          if (r.hasSprint && !r.sprintWinnerId) potentialUnclaimed += 7;
+          if (!r.raceSecondId) potentialUnclaimed += rules.p2;
+          if (rules.hasFastestLapPoint && !r.fastestLapDriverId) potentialUnclaimed += rules.fastestLap;
+          if (r.hasSprint && !r.sprintWinnerId) potentialUnclaimed += rules.sprintP2;
         } else {
-          // Un altro team ha vinto, questo team può al massimo fare 2° + 3° (18 + 15 = 33) + FL (1)
-          if (!r.raceSecondId) potentialUnclaimed += 18;
-          if (!r.raceThirdId) potentialUnclaimed += 15;
-          if (!r.fastestLapDriverId) potentialUnclaimed += 1;
-          if (r.hasSprint) potentialUnclaimed += 15;
+          if (!r.raceSecondId) potentialUnclaimed += rules.p2;
+          if (!r.raceThirdId) potentialUnclaimed += rules.p3;
+          if (rules.hasFastestLapPoint && !r.fastestLapDriverId) potentialUnclaimed += rules.fastestLap;
+          if (r.hasSprint) potentialUnclaimed += rules.constructorMaxSprint;
         }
       }
     }
@@ -184,7 +260,7 @@ export function calculateChampionship(
     c.maxPossiblePoints = Math.round((c.totalPoints + potentialUnclaimed) * 10) / 10;
   }
 
-  // Ordiniamo per: 1. Punti totali (discendente), 2. Vittorie totali, 3. Nome
+  // Ordinamento: Punti totali, Vittorie totali, Nome
   const sorted = Array.from(contenderMap.values()).sort((a, b) => {
     if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
     if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
@@ -194,15 +270,11 @@ export function calculateChampionship(
   const leader = sorted[0];
   let second = sorted[1];
 
-  // Assegnazione posizioni e gap
   sorted.forEach((c, index) => {
     c.position = index + 1;
     c.gapToLeader = leader ? Math.round((leader.totalPoints - c.totalPoints) * 10) / 10 : 0;
   });
 
-  // Verifica eliminazione e titolo
-  // Un contendente è eliminato se i suoi maxPossiblePoints sono inferiori ai totalPoints del leader
-  // (o a parità di punti max con meno vittorie possibili del leader)
   let contendersInContentionCount = 0;
   for (const c of sorted) {
     if (c === leader) {
@@ -219,31 +291,24 @@ export function calculateChampionship(
     }
   }
 
-  // Campione Matematico:
-  // Se nessun altro concorrente può superare i punti attuali del leader
   let champion: SimulatorContender | null = null;
   if (leader && (contendersInContentionCount === 1 || remainingRounds.length === 0)) {
     leader.isChampion = true;
     champion = leader;
   }
 
-  // Magic Number:
-  // Quanti punti mancano al leader affinché maxPossiblePoints del 2° non possano più superarlo
   let magicNumber: number | null = null;
   if (leader && !champion && second) {
     const diff = Math.round((second.maxPossiblePoints - leader.totalPoints) * 10) / 10;
     magicNumber = Math.max(0, Math.ceil(diff + 1));
   }
 
-  // Scenario del prossimo round (se c'è almeno un round rimanente e non c'è ancora un campione)
   let nextRoundClinchScenario: string | null = null;
   if (!champion && leader && second && remainingRounds.length > 0) {
     const nextRound = remainingRounds[0];
-    const nextMax = maxRoundPoints(nextRound.hasSprint, mode);
-    // Punti rimanenti DOPO il prossimo round
-    const remainingAfterNext = remainingRounds.slice(1).reduce((acc, r) => acc + maxRoundPoints(r.hasSprint, mode), 0);
+    const nextMax = maxRoundPoints(nextRound.hasSprint, mode, season);
+    const remainingAfterNext = remainingRounds.slice(1).reduce((acc, r) => acc + maxRoundPoints(r.hasSprint, mode, season), 0);
 
-    // Se il leader al prossimo round può estendere il gap oltre remainingAfterNext:
     const requiredGap = remainingAfterNext + 1;
     const currentGap = leader.totalPoints - second.totalPoints;
     const neededGain = requiredGap - currentGap;

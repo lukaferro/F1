@@ -8,7 +8,11 @@ import {
   SimulatorContender,
   SimulatorRaceRound
 } from '../../../models/championship-simulator';
-import { calculateChampionship, RACE_POINTS } from '../../../utils/championship-calculator';
+import {
+  calculateChampionship,
+  getSeasonScoringRules,
+  SeasonScoringRules
+} from '../../../utils/championship-calculator';
 import { countryNameToCode, smallFlagUrl } from '../../../utils/country-flags';
 import { constructorColor } from '../../../utils/constructor-branding';
 
@@ -244,5 +248,9 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
 
   get remainingSimulatableRounds(): SimulatorRaceRound[] {
     return this.rounds.filter(r => !r.isCompleted);
+  }
+
+  get rules(): SeasonScoringRules {
+    return getSeasonScoringRules(this.season || 2024);
   }
 }

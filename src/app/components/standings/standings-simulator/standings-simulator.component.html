@@ -175,9 +175,9 @@
 
                 <!-- Selettori posizioni del round -->
                 <div class="selectors-grid">
-                  <!-- 1° Posto (25 pt) -->
+                  <!-- 1° Posto -->
                   <div class="selector-field">
-                    <label class="field-label">🥇 1° Posto (+25 pt)</label>
+                    <label class="field-label">🥇 1° Posto (+{{ rules.p1 }} pt)</label>
                     <select
                       class="sim-select winner-select"
                       [(ngModel)]="r.raceWinnerId"
@@ -189,9 +189,9 @@
                     </select>
                   </div>
 
-                  <!-- 2° Posto (18 pt) -->
+                  <!-- 2° Posto -->
                   <div class="selector-field">
-                    <label class="field-label">🥈 2° Posto (+18 pt)</label>
+                    <label class="field-label">🥈 2° Posto (+{{ rules.p2 }} pt)</label>
                     <select
                       class="sim-select"
                       [(ngModel)]="r.raceSecondId"
@@ -203,9 +203,9 @@
                     </select>
                   </div>
 
-                  <!-- 3° Posto (15 pt) -->
+                  <!-- 3° Posto -->
                   <div class="selector-field">
-                    <label class="field-label">🥉 3° Posto (+15 pt)</label>
+                    <label class="field-label">🥉 3° Posto (+{{ rules.p3 }} pt)</label>
                     <select
                       class="sim-select"
                       [(ngModel)]="r.raceThirdId"
@@ -217,24 +217,26 @@
                     </select>
                   </div>
 
-                  <!-- Giro Veloce (+1 pt) -->
-                  <div class="selector-field">
-                    <label class="field-label">⚡ Giro Veloce (+1 pt)</label>
-                    <select
-                      class="sim-select"
-                      [(ngModel)]="r.fastestLapDriverId"
-                      (ngModelChange)="recalculate()">
-                      <option [ngValue]="undefined">-- Non assegnato --</option>
-                      @for (opt of contenderOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
-                      }
-                    </select>
-                  </div>
+                  <!-- Giro Veloce (+1 pt) - solo per stagioni con regolamento punto FL (1950-1959 e 2019-2024) -->
+                  @if (rules.hasFastestLapPoint) {
+                    <div class="selector-field">
+                      <label class="field-label">⚡ Giro Veloce (+{{ rules.fastestLap }} pt)</label>
+                      <select
+                        class="sim-select"
+                        [(ngModel)]="r.fastestLapDriverId"
+                        (ngModelChange)="recalculate()">
+                        <option [ngValue]="undefined">-- Non assegnato --</option>
+                        @for (opt of contenderOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                  }
 
                   <!-- Sprint (se presente) -->
                   @if (r.hasSprint) {
                     <div class="selector-field sprint-field">
-                      <label class="field-label">🏃 Vincitore Sprint (+8 pt)</label>
+                      <label class="field-label">🏃 Vincitore Sprint (+{{ rules.sprintP1 }} pt)</label>
                       <select
                         class="sim-select sprint-select"
                         [(ngModel)]="r.sprintWinnerId"
