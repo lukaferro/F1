@@ -133,18 +133,17 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ### 14. Scenari Titolo & What If (Completato)
 - **Tab dedicato `Scenari & What If` in `/classifiche`**:
-  - **Grafico SVG a Traiettorie**:
-    - Visualizzazione grafica immediata delle curve dei punti a confronto tra i principali contendenti.
-    - Linee continue per i Gran Premi disputati e linee tratteggiate luminose per le proiezioni future o le divergenze storiche.
-  - **Modalità Proiezioni Future (Stagione in corso)**:
-    - 4 scenari rapidi a 1-click: *Trend Attuale*, *Dominio Leader*, *Grande Rimonta*, *Ritiro Leader (0 pt)*.
-    - Rilevamento visivo del round esatto del clinch matematico sul tracciato grafico.
-    - Card verdetto con punti finali, distacco e condizione esatta richiesta nella prossima gara per chiudere il campionato.
-  - **Modalità Riscrivi la Storia (What If per Stagioni Storiche)**:
-    - Bivi storici celebri pre-configurati (Singapore 2008, Silverstone 2021, Cina 2007, Spa 2012, Abu Dhabi 2010, Sepang 2016, Suzuka 2006, Adelaide 1994, ecc.).
-    - Ricalcolo istantaneo del Campione del Mondo alternativo con banner "Titolo Mondiale Riscritto" e traiettoria divergente a grafico.
-  - **Configurazione Manuale Avanzata (Opzionale)**:
-    - Pannello espandibile per impostare piazzamenti specifici (P1–P10), Sprint, giri veloci con vincolo Top 10 FIA o piloti ritirati (0 pt / DNF).
+  - **Editor completo di tutte le gare della stagione (`Round 1` – `Round N`)**:
+    - Pre-popolamento automatico dei risultati reali di ogni Gran Premio già disputato (ordine d'arrivo reale, Sprint e Giro Veloce) tramite `JolpicaService.getSeasonPointsByRound`.
+    - Possibilità di selezionare e modificare **qualsiasi gara passata o futura** della stagione, scegliendo liberamente tutte le posizioni a punti previste dal regolamento dell'era (`P1–P10`, `P1–P8`, `P1–P6`, `P1–P5`), Sprint Race, Giro Veloce e ritirati a zero punti (`DNF`).
+    - **Smart Swap** automatico quando si assegna un pilota già classificato in un'altra posizione e scalatura automatica delle posizioni in caso di ritiro (`DNF`).
+  - **Grafico SVG Interattivo Reale vs Simulato ad alto contrasto**:
+    - Palette cromatica ad alto contrasto (`assignDistinctSimulatorColors`) che garantisce colori sempre distinti anche tra compagni di scuderia sullo stesso team.
+    - Tracciato continuo per l'andamento simulato e **Ghost Line tratteggiata** per l'andamento reale ufficiale quando una o più gare vengono modificate, con bande evidenziate sui round modificati e selezione diretta della gara cliccando sul grafico.
+  - **Scenari Rapidi & Bivi Storici Celebri collegati alle gare reali**:
+    - Scenari rapidi stagionali (*Dominio Leader*, *Rimonta Inseguitore*, *Colpo di Scena DNF*) e Bivi Storici Famosi (Singapore 2008, Abu Dhabi 2021, Silverstone 2021, Cina 2007, Spa 2012, Abu Dhabi 2010, Sepang 2016, Suzuka 2006, Adelaide 1994) che modificano direttamente l'ordine d'arrivo della gara reale corrispondente.
+  - **Tabella Comparativa Reale vs Simulata**:
+    - Confronto diretto fianco a fianco tra punti ufficiali FIA, variazione punti (`+/-`), punti simulati, guadagno/perdita di posizioni e stato matematico (*Campione*, *In Corsa*, *Fuori*).
 
 ---
 

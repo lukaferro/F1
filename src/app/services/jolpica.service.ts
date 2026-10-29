@@ -146,6 +146,16 @@ export interface SeasonRoundPoints {
   date: string;
   driverPoints: Record<string, number>;
   constructorPoints: Record<string, number>;
+  /** Ordine d'arrivo reale piloti in gara (indice 0 = P1, 1 = P2, ecc.) */
+  raceOrder?: string[];
+  /** Ordine d'arrivo reale costruttori in gara (indice 0 = team P1, 1 = team P2, ecc.) */
+  constructorRaceOrder?: string[];
+  /** Ordine d'arrivo reale piloti nella Sprint (indice 0 = P1 Sprint, ecc.) */
+  sprintOrder?: string[];
+  /** Ordine d'arrivo reale costruttori nella Sprint */
+  constructorSprintOrder?: string[];
+  /** Pilota autore del giro veloce in gara (rank === "1") */
+  fastestLapDriverId?: string;
 }
 
 // Forme delle risposte Jolpica (solo i campi usati)
@@ -180,6 +190,7 @@ interface JolpicaResultRow {
   Driver: JolpicaDriver;
   Constructor: JolpicaConstructor;
   Time?: { millis?: string; time?: string };
+  FastestLap?: { rank?: string };
 }
 
 interface JolpicaQualifyingRow {
@@ -559,8 +570,8 @@ export class JolpicaService {
   }
 
   /**
-   * Punti guadagnati gara per gara (inclusa eventuale Sprint dal 2021) per tutti i piloti e costruttori
-   * della stagione selezionata, ordinati per round crescente.
+   * Punti guadagnati gara per gara (inclusa eventuale Sprint dal 2021) e ordine d'arrivo
+   * per tutti i piloti e costruttori della stagione selezionata, ordinati per round crescente.
    */
   async getSeasonPointsByRound(season: number): Promise<SeasonRoundPoints[]> {
     const FIRST_SPRINT_SEASON = 2021;
@@ -585,7 +596,11 @@ export class JolpicaService {
             country: r.Circuit.Location.country,
             date: r.date,
             driverPoints: {},
-            constructorPoints: {}
+            constructorPoints: {},
+            raceOrder: [],
+            constructorRaceOrder: [],
+            sprintOrder: [],
+            constructorSprintOrder: []
           };
           byRound.set(roundNum, entry);
         }
@@ -596,10 +611,18 @@ export class JolpicaService {
         for (const race of page.MRData.RaceTable.Races || []) {
           const entry = ensureRound(race);
           for (const row of race.Results || []) {
+            const dId = row.Driver.driverId;
+            const cId = row.Constructor.constructorId;
+            const posIdx = (Number(row.position) || 0) - 1;
+            if (posIdx >= 0 && posIdx < 30) {
+              entry.raceOrder![posIdx] = dId;
+              entry.constructorRaceOrder![posIdx] = cId;
+            }
+            if (row.FastestLap?.rank === '1') {
+              entry.fastestLapDriverId = dId;
+            }
             const pts = Number(row.points) || 0;
             if (pts > 0) {
-              const dId = row.Driver.driverId;
-              const cId = row.Constructor.constructorId;
               entry.driverPoints[dId] = (entry.driverPoints[dId] ?? 0) + pts;
               entry.constructorPoints[cId] = (entry.constructorPoints[cId] ?? 0) + pts;
             }
@@ -611,10 +634,15 @@ export class JolpicaService {
         for (const race of page.MRData.RaceTable.Races || []) {
           const entry = ensureRound(race);
           for (const row of race.SprintResults || []) {
+            const dId = row.Driver.driverId;
+            const cId = row.Constructor.constructorId;
+            const posIdx = (Number(row.position) || 0) - 1;
+            if (posIdx >= 0 && posIdx < 30) {
+              entry.sprintOrder![posIdx] = dId;
+              entry.constructorSprintOrder![posIdx] = cId;
+            }
             const pts = Number(row.points) || 0;
             if (pts > 0) {
-              const dId = row.Driver.driverId;
-              const cId = row.Constructor.constructorId;
               entry.driverPoints[dId] = (entry.driverPoints[dId] ?? 0) + pts;
               entry.constructorPoints[cId] = (entry.constructorPoints[cId] ?? 0) + pts;
             }
@@ -629,4 +657,3 @@ export class JolpicaService {
     }
   }
 }
-

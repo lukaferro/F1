@@ -2,7 +2,13 @@ import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
-import { DriverStanding, ConstructorStanding, JolpicaService, SeasonScheduleItem } from '../../../services/jolpica.service';
+import {
+  ConstructorStanding,
+  DriverStanding,
+  JolpicaService,
+  SeasonRoundPoints,
+  SeasonScheduleItem
+} from '../../../services/jolpica.service';
 import {
   ChampionshipSimulationResult,
   SimulatorContender,
@@ -10,24 +16,27 @@ import {
 } from '../../../models/championship-simulator';
 import {
   calculateChampionship,
+  computeConfiguredRoundPoints,
   getSeasonScoringRules,
   SeasonScoringRules
 } from '../../../utils/championship-calculator';
 import {
-  calculateFutureScenario,
-  calculateHistoricalWhatIf,
+  assignDistinctSimulatorColors,
+  buildSimulatorComparisonChart,
   FAMOUS_HISTORICAL_PIVOTS,
-  FutureScenarioMode,
   HistoricalPivot,
-  ScenarioSimulationOutcome
+  SimChartRoundTick,
+  SimulatorComparisonChart
 } from '../../../utils/what-if-scenarios';
 import { countryNameToCode, smallFlagUrl } from '../../../utils/country-flags';
 import { constructorColor } from '../../../utils/constructor-branding';
 
 export interface ContenderOption {
   label: string;
+  shortLabel: string;
   value: string;
-  color?: string;
+  constructorId: string;
+  color: string;
 }
 
 @Component({
@@ -43,6 +52,8 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   @Input() season!: number;
   @Input() driverStandings: DriverStanding[] = [];
   @Input() constructorStandings: ConstructorStanding[] = [];
+  @Input() seasonRounds: SeasonRoundPoints[] = [];
+  @Input() roundsLoading = false;
   @Input() isCurrentSeason = false;
 
   mode: 'drivers' | 'constructors' = 'drivers';
@@ -51,29 +62,28 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   rounds: SimulatorRaceRound[] = [];
   simulationResult: ChampionshipSimulationResult | null = null;
 
-  // Scenari grafici & What If
-  futureScenarioMode: FutureScenarioMode = 'trend';
-  selectedHistoricalPivot: HistoricalPivot | null = null;
+  // Grafico interattivo Reale vs Simulato
+  comparisonChart: SimulatorComparisonChart | null = null;
+  visibleContenderIds = new Set<string>();
+  hoveredSeriesId: string | null = null;
+  showRealGhostLine = true;
+  activeQuickScenarioId: string | null = null;
+
+  // Bivi storici per la stagione selezionata
   historicalPivotsForSeason: HistoricalPivot[] = [];
-  scenarioOutcome: ScenarioSimulationOutcome | null = null;
-  hoveredRoundIndex: number | null = null;
 
-  // Dimensioni SVG grafico
-  chartSvgWidth = 860;
-  chartSvgHeight = 280;
-  chartMaxPoints = 100;
-  yTicks: Array<{ y: number; val: number }> = [];
-
-  // Editor manuale avanzato
-  showManualRoundsEditor = false;
+  // Navigazione e modalità editor delle gare ('single' = dettaglio completo R selezionato, 'grid' = tutte le gare)
+  editorViewMode: 'single' | 'grid' = 'single';
+  selectedRoundNumber = 1;
+  inspectedRoundIndex = 0;
 
   // Opzioni per i selettori nei round
   contenderOptions: ContenderOption[] = [];
 
-  // Round con posizioni estese espanse (P4-P10 e Sprint completa)
+  // Round con posizioni estese espanse nella vista griglia
   expandedRoundDetails = new Set<number>();
 
-  // Filtro round da simulare per stagioni passate: 'remaining' | 'last3' | 'last5' | 'all'
+  // Filtro preset retrocompatibile
   pastSeasonPreset: 'remaining' | 'last3' | 'last5' | 'all' = 'last3';
 
   // Selettore temporaneo per aggiungere DNF nei round
@@ -86,10 +96,15 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
     if (changes['season'] && !changes['season'].firstChange) {
       await this.loadSchedule();
-    } else if (changes['driverStandings'] || changes['constructorStandings']) {
+    } else if (
+      changes['driverStandings'] ||
+      changes['constructorStandings'] ||
+      changes['seasonRounds']
+    ) {
+      this.syncRealResultsIntoRounds();
       this.updateContenderOptions();
+      this.ensureDefaultVisibleContenders();
       this.recalculate();
-      this.recalculateScenario();
     }
   }
 
@@ -99,15 +114,13 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     try {
       const scheduleItems = await this.jolpica.getSeasonSchedule(this.season);
       this.schedule = scheduleItems;
+      this.historicalPivotsForSeason = FAMOUS_HISTORICAL_PIVOTS.filter(p => p.season === this.season);
+      this.activeQuickScenarioId = null;
       this.initializeRounds();
       this.updateContenderOptions();
-
-      // Bivi storici per la stagione corrente selezionata
-      this.historicalPivotsForSeason = FAMOUS_HISTORICAL_PIVOTS.filter(p => p.season === this.season);
-      this.selectedHistoricalPivot = this.historicalPivotsForSeason[0] || null;
-
+      this. visibleContenderIds.clear();
+      this.ensureDefaultVisibleContenders();
       this.recalculate();
-      this.recalculateScenario();
     } catch {
       this.schedule = [];
       this.rounds = [];
@@ -119,8 +132,16 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   setMode(mode: 'drivers' | 'constructors'): void {
     if (this.mode === mode) return;
     this.mode = mode;
+    this.activeQuickScenarioId = null;
+    this.initializeRounds();
     this.updateContenderOptions();
+    this.visibleContenderIds.clear();
+    this.ensureDefaultVisibleContenders();
     this.recalculate();
+  }
+
+  setEditorViewMode(viewMode: 'single' | 'grid'): void {
+    this.editorViewMode = viewMode;
   }
 
   setPastSeasonPreset(preset: 'remaining' | 'last3' | 'last5' | 'all'): void {
@@ -129,105 +150,39 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     this.recalculate();
   }
 
-  setFutureScenario(scenario: FutureScenarioMode): void {
-    if (this.futureScenarioMode === scenario) return;
-    this.futureScenarioMode = scenario;
-    this.recalculateScenario();
-  }
-
-  selectHistoricalPivot(pivot: HistoricalPivot | null): void {
-    this.selectedHistoricalPivot = pivot;
-    this.recalculateScenario();
-  }
-
-  toggleManualRoundsEditor(): void {
-    this.showManualRoundsEditor = !this.showManualRoundsEditor;
-  }
-
-  recalculateScenario(): void {
-    if (!this.schedule.length || !this.driverStandings.length) {
-      this.scenarioOutcome = null;
-      return;
+  private ensureDefaultVisibleContenders(): void {
+    if (this.visibleContenderIds.size > 0) return;
+    const list = this.mode === 'drivers'
+      ? this.driverStandings.slice(0, 4).map(d => d.driverId)
+      : this.constructorStandings.slice(0, 4).map(c => c.constructorId);
+    for (const id of list) {
+      this.visibleContenderIds.add(id);
     }
+  }
 
-    if (this.isCurrentSeason) {
-      this.scenarioOutcome = calculateFutureScenario(
-        this.schedule,
-        this.driverStandings,
-        this.season,
-        this.futureScenarioMode
-      );
+  toggleChartContender(id: string): void {
+    if (this.visibleContenderIds.has(id)) {
+      if (this.visibleContenderIds.size > 1) {
+        this.visibleContenderIds.delete(id);
+        this.buildChart();
+      }
     } else {
-      this.scenarioOutcome = calculateHistoricalWhatIf(
-        this.schedule,
-        this.driverStandings,
-        this.season,
-        this.selectedHistoricalPivot
-      );
-    }
-
-    if (this.scenarioOutcome) {
-      this.computeSvgCoordinates(this.scenarioOutcome);
+      this.visibleContenderIds.add(id);
+      this.buildChart();
     }
   }
 
-  private computeSvgCoordinates(outcome: ScenarioSimulationOutcome): void {
-    const margin = { top: 25, right: 35, bottom: 35, left: 50 };
-    const plotWidth = this.chartSvgWidth - margin.left - margin.right;
-    const plotHeight = this.chartSvgHeight - margin.top - margin.bottom;
+  isContenderVisibleOnChart(id: string): boolean {
+    return this.visibleContenderIds.has(id);
+  }
 
-    const totalRounds = outcome.roundsAxis.length;
-    if (totalRounds <= 1) return;
-
-    let maxPoints = 50;
-    for (const s of outcome.series) {
-      for (const n of [...s.realNodes, ...s.projectedNodes]) {
-        if (n.cumulative > maxPoints) maxPoints = n.cumulative;
-      }
+  setChartQuickLimit(count: number): void {
+    this.visibleContenderIds.clear();
+    const list = (this.simulationResult?.standings || []).slice(0, count);
+    for (const c of list) {
+      this.visibleContenderIds.add(c.id);
     }
-    this.chartMaxPoints = Math.ceil(maxPoints / 50) * 50;
-
-    // Tacche asse Y
-    this.yTicks = [0, 0.25, 0.5, 0.75, 1].map(frac => {
-      const val = Math.round(this.chartMaxPoints * frac);
-      const y = margin.top + (1 - frac) * plotHeight;
-      return { y, val };
-    });
-
-    const getX = (roundIndex: number) => margin.left + (roundIndex / (totalRounds - 1)) * plotWidth;
-    const getY = (pts: number) => margin.top + (1 - pts / this.chartMaxPoints) * plotHeight;
-
-    for (const s of outcome.series) {
-      let realD = '';
-      let projD = '';
-
-      const allNodes = [...s.realNodes, ...s.projectedNodes].sort((a, b) => a.round - b.round);
-      allNodes.forEach((n, idx) => {
-        (n as any).x = getX(idx);
-        (n as any).y = getY(n.cumulative);
-      });
-
-      s.realNodes.forEach((n, idx) => {
-        const x = (n as any).x;
-        const y = (n as any).y;
-        realD += idx === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
-      });
-
-      if (s.projectedNodes.length > 0) {
-        const lastReal = s.realNodes[s.realNodes.length - 1];
-        if (lastReal) {
-          projD += `M ${(lastReal as any).x} ${(lastReal as any).y}`;
-        }
-        s.projectedNodes.forEach(n => {
-          const x = (n as any).x;
-          const y = (n as any).y;
-          projD += projD === '' ? `M ${x} ${y}` : ` L ${x} ${y}`;
-        });
-      }
-
-      s.realPathD = realD;
-      s.projectedPathD = projD;
-    }
+    this.buildChart();
   }
 
   private initializeRounds(): void {
@@ -237,26 +192,23 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const total = this.schedule.length;
+    const roundMap = new Map<number, SeasonRoundPoints>();
+    for (const sr of this.seasonRounds || []) {
+      roundMap.set(sr.round, sr);
+    }
 
-    this.rounds = this.schedule.map((item, index) => {
-      let isCompleted = false;
+    const rules = this.rules;
 
-      if (this.isCurrentSeason) {
-        isCompleted = item.date < todayStr;
-      } else {
-        if (this.pastSeasonPreset === 'all') {
-          isCompleted = false;
-        } else if (this.pastSeasonPreset === 'last3') {
-          isCompleted = index < total - 3;
-        } else if (this.pastSeasonPreset === 'last5') {
-          isCompleted = index < total - 5;
-        } else {
-          isCompleted = false;
-        }
-      }
+    this.rounds = this.schedule.map(item => {
+      const realData = roundMap.get(item.round);
+      const hasRealData = Boolean(
+        realData &&
+        (Object.keys(realData.driverPoints || {}).length > 0 || (realData.raceOrder && realData.raceOrder.length > 0))
+      );
 
-      return {
+      const isCompleted = hasRealData || (!this.isCurrentSeason && Boolean(this.seasonRounds?.length)) || (this.isCurrentSeason && item.date < todayStr && hasRealData);
+
+      const roundObj: SimulatorRaceRound = {
         round: item.round,
         raceName: item.raceName,
         circuitId: item.circuitId,
@@ -266,25 +218,132 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
         date: item.date,
         hasSprint: item.hasSprint,
         isCompleted,
+        isModified: false,
+        realDriverPoints: realData ? { ...realData.driverPoints } : {},
+        realConstructorPoints: realData ? { ...realData.constructorPoints } : {},
+        realRaceOrder: realData?.raceOrder ? [...realData.raceOrder] : [],
+        realConstructorRaceOrder: realData?.constructorRaceOrder ? [...realData.constructorRaceOrder] : [],
+        realSprintOrder: realData?.sprintOrder ? [...realData.sprintOrder] : [],
+        realConstructorSprintOrder: realData?.constructorSprintOrder ? [...realData.constructorSprintOrder] : [],
+        realFastestLapDriverId: realData?.fastestLapDriverId,
         racePositions: [],
         sprintPositions: [],
         dnfContenderIds: []
       };
+
+      this.populateRoundFromReal(roundObj, rules);
+      return roundObj;
     });
+
+    // Seleziona di default il primo round futuro (se stagione in corso) oppure l'ultimo round della stagione
+    const firstFuture = this.rounds.find(r => !r.isCompleted);
+    if (firstFuture) {
+      this.selectedRoundNumber = firstFuture.round;
+      this.inspectedRoundIndex = this.rounds.indexOf(firstFuture);
+    } else if (this.rounds.length > 0) {
+      this.selectedRoundNumber = this.rounds[this.rounds.length - 1].round;
+      this.inspectedRoundIndex = this.rounds.length - 1;
+    }
+  }
+
+  /**
+   * Quando seasonRounds viene caricato in modo asincrono, aggiorna i dati reali nei round non ancora modificati
+   */
+  private syncRealResultsIntoRounds(): void {
+    if (!this.rounds.length || !this.seasonRounds?.length) return;
+    const roundMap = new Map<number, SeasonRoundPoints>();
+    for (const sr of this.seasonRounds) {
+      roundMap.set(sr.round, sr);
+    }
+    const rules = this.rules;
+
+    for (const r of this.rounds) {
+      const realData = roundMap.get(r.round);
+      if (!realData) continue;
+
+      r.realDriverPoints = { ...realData.driverPoints };
+      r.realConstructorPoints = { ...realData.constructorPoints };
+      r.realRaceOrder = realData.raceOrder ? [...realData.raceOrder] : [];
+      r.realConstructorRaceOrder = realData.constructorRaceOrder ? [...realData.constructorRaceOrder] : [];
+      r.realSprintOrder = realData.sprintOrder ? [...realData.sprintOrder] : [];
+      r.realConstructorSprintOrder = realData.constructorSprintOrder ? [...realData.constructorSprintOrder] : [];
+      r.realFastestLapDriverId = realData.fastestLapDriverId;
+      r.isCompleted = true;
+
+      if (!r.isModified) {
+        this.populateRoundFromReal(r, rules);
+      }
+    }
+  }
+
+  /**
+   * Popola racePositions, sprintPositions e fastestLapDriverId di un round con l'ordine d'arrivo reale
+   */
+  private populateRoundFromReal(r: SimulatorRaceRound, rules: SeasonScoringRules): void {
+    const raceLen = rules.racePoints.length;
+    const sprintLen = rules.sprintPoints.length;
+    const sourceRaceOrder = this.mode === 'drivers' ? (r.realRaceOrder || []) : (r.realConstructorRaceOrder || []);
+    const sourceSprintOrder = this.mode === 'drivers' ? (r.realSprintOrder || []) : (r.realConstructorSprintOrder || []);
+
+    r.racePositions = [];
+    for (let i = 0; i < raceLen; i++) {
+      r.racePositions.push(sourceRaceOrder[i] || undefined);
+    }
+    r.raceWinnerId = r.racePositions[0];
+    r.raceSecondId = r.racePositions[1];
+    r.raceThirdId = r.racePositions[2];
+
+    r.sprintPositions = [];
+    if (r.hasSprint && rules.hasSprint) {
+      for (let i = 0; i < sprintLen; i++) {
+        r.sprintPositions.push(sourceSprintOrder[i] || undefined);
+      }
+    }
+    r.sprintWinnerId = r.sprintPositions[0];
+
+    if (this.mode === 'drivers') {
+      r.fastestLapDriverId = r.realFastestLapDriverId;
+    } else if (r.realFastestLapDriverId) {
+      const driver = this.driverStandings.find(d => d.driverId === r.realFastestLapDriverId);
+      r.fastestLapDriverId = driver?.constructorId;
+    } else {
+      r.fastestLapDriverId = undefined;
+    }
+
+    r.dnfContenderIds = [];
+    r.isModified = false;
   }
 
   private updateContenderOptions(): void {
     if (this.mode === 'drivers') {
-      this.contenderOptions = this.driverStandings.map(d => ({
-        label: `${d.fullName} (${d.constructorName})`,
-        value: d.driverId,
+      const items = this.driverStandings.map(d => ({
+        id: d.driverId,
+        constructorId: d.constructorId,
         color: '#' + constructorColor(d.constructorId)
       }));
+      const distinctColors = assignDistinctSimulatorColors(items, 'drivers');
+
+      this.contenderOptions = this.driverStandings.map(d => ({
+        label: `${d.fullName} (${d.constructorName})`,
+        shortLabel: d.code || d.fullName.split(' ').pop() || d.fullName,
+        value: d.driverId,
+        constructorId: d.constructorId,
+        color: distinctColors.get(d.driverId)?.color || '#' + constructorColor(d.constructorId)
+      }));
     } else {
+      const items = this.constructorStandings.map(c => ({
+        id: c.constructorId,
+        constructorId: c.constructorId,
+        color: '#' + constructorColor(c.constructorId)
+      }));
+      const distinctColors = assignDistinctSimulatorColors(items, 'constructors');
+
       this.contenderOptions = this.constructorStandings.map(c => ({
         label: c.name,
+        shortLabel: c.name,
         value: c.constructorId,
-        color: '#' + constructorColor(c.constructorId)
+        constructorId: c.constructorId,
+        color: distinctColors.get(c.constructorId)?.color || '#' + constructorColor(c.constructorId)
       }));
     }
   }
@@ -292,37 +351,123 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   recalculate(): void {
     if (!this.driverStandings.length && !this.constructorStandings.length) {
       this.simulationResult = null;
+      this.comparisonChart = null;
       return;
     }
 
     if (this.mode === 'drivers') {
+      const items = this.driverStandings.map(d => ({
+        id: d.driverId,
+        constructorId: d.constructorId
+      }));
+      const colorMap = assignDistinctSimulatorColors(items, 'drivers');
+
       const base = this.driverStandings.map(d => ({
         id: d.driverId,
         name: d.fullName,
         code: d.code,
         constructorId: d.constructorId,
         constructorName: d.constructorName,
-        color: '#' + constructorColor(d.constructorId),
+        color: colorMap.get(d.driverId)?.color || '#' + constructorColor(d.constructorId),
         currentPoints: d.points,
         currentWins: d.wins
       }));
       this.simulationResult = calculateChampionship(base, this.rounds, 'drivers', this.season);
     } else {
+      const items = this.constructorStandings.map(c => ({
+        id: c.constructorId,
+        constructorId: c.constructorId
+      }));
+      const colorMap = assignDistinctSimulatorColors(items, 'constructors');
+
       const base = this.constructorStandings.map(c => ({
         id: c.constructorId,
         name: c.name,
         code: c.name.substring(0, 3).toUpperCase(),
         constructorId: c.constructorId,
         constructorName: c.name,
-        color: '#' + constructorColor(c.constructorId),
+        color: colorMap.get(c.constructorId)?.color || '#' + constructorColor(c.constructorId),
         currentPoints: c.points,
         currentWins: c.wins
       }));
       this.simulationResult = calculateChampionship(base, this.rounds, 'constructors', this.season);
     }
+
+    this.ensureDefaultVisibleContenders();
+    this.buildChart();
   }
 
-  // Posizioni Gara estese
+  private buildChart(): void {
+    if (!this.simulationResult || !this.rounds.length) {
+      this.comparisonChart = null;
+      return;
+    }
+
+    const driverToConstructor = new Map<string, string>();
+    for (const d of this.driverStandings) {
+      driverToConstructor.set(d.driverId, d.constructorId);
+    }
+
+    const filteredContenders = this.simulationResult.standings.filter(c =>
+      this.visibleContenderIds.has(c.id)
+    );
+    const contendersToPlot = filteredContenders.length > 0
+      ? filteredContenders
+      : this.simulationResult.standings.slice(0, 3);
+
+    this.comparisonChart = buildSimulatorComparisonChart(
+      this.rounds,
+      contendersToPlot,
+      this.mode,
+      this.season,
+      driverToConstructor
+    );
+  }
+
+  // --- Selezione e navigazione Round ---
+  selectRound(roundNumber: number): void {
+    this.selectedRoundNumber = roundNumber;
+    const idx = this.rounds.findIndex(r => r.round === roundNumber);
+    if (idx !== -1) {
+      this.inspectedRoundIndex = idx;
+    }
+  }
+
+  selectRoundByIndex(idx: number): void {
+    if (idx < 0 || idx >= this.rounds.length) return;
+    this.inspectedRoundIndex = idx;
+    this.selectedRoundNumber = this.rounds[idx].round;
+  }
+
+  hoverRoundIndex(idx: number): void {
+    if (idx >= 0 && idx < this.rounds.length) {
+      this.inspectedRoundIndex = idx;
+    }
+  }
+
+  prevRound(): void {
+    const idx = this.rounds.findIndex(r => r.round === this.selectedRoundNumber);
+    if (idx > 0) {
+      this.selectRoundByIndex(idx - 1);
+    }
+  }
+
+  nextRound(): void {
+    const idx = this.rounds.findIndex(r => r.round === this.selectedRoundNumber);
+    if (idx !== -1 && idx < this.rounds.length - 1) {
+      this.selectRoundByIndex(idx + 1);
+    }
+  }
+
+  get selectedRound(): SimulatorRaceRound | undefined {
+    return this.rounds.find(r => r.round === this.selectedRoundNumber) || this.rounds[0];
+  }
+
+  get inspectedRoundTick(): SimChartRoundTick | undefined {
+    return this.comparisonChart?.rounds[this.inspectedRoundIndex];
+  }
+
+  // --- Gestione Posizioni Gara con Smart Swap ---
   getRacePosition(r: SimulatorRaceRound, index: number): string | undefined {
     if (r.racePositions && r.racePositions[index] !== undefined) {
       return r.racePositions[index];
@@ -337,22 +482,37 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     if (!r.racePositions) {
       r.racePositions = [];
     }
-    while (r.racePositions.length < this.rules.racePoints.length) {
+    const maxLen = this.rules.racePoints.length;
+    while (r.racePositions.length < maxLen) {
       r.racePositions.push(undefined);
     }
-    r.racePositions[index] = value || undefined;
-    if (index === 0) r.raceWinnerId = value || undefined;
-    if (index === 1) r.raceSecondId = value || undefined;
-    if (index === 2) r.raceThirdId = value || undefined;
 
-    if (value && r.dnfContenderIds) {
-      r.dnfContenderIds = r.dnfContenderIds.filter(id => id !== value);
+    const oldOccupant = r.racePositions[index];
+    const newOccupant = value || undefined;
+
+    // Smart Swap: in modalità Piloti, se il pilota scelto occupava già un'altra posizione a punti in questa gara,
+    // scambialo automaticamente con il pilota che era in questa posizione!
+    if (newOccupant && this.mode === 'drivers') {
+      const existingIdx = r.racePositions.findIndex((id, idx) => id === newOccupant && idx !== index);
+      if (existingIdx !== -1) {
+        r.racePositions[existingIdx] = oldOccupant;
+      }
     }
 
+    r.racePositions[index] = newOccupant;
+    r.raceWinnerId = r.racePositions[0];
+    r.raceSecondId = r.racePositions[1];
+    r.raceThirdId = r.racePositions[2];
+
+    if (newOccupant && r.dnfContenderIds) {
+      r.dnfContenderIds = r.dnfContenderIds.filter(id => id !== newOccupant);
+    }
+
+    r.isModified = true;
     this.recalculate();
   }
 
-  // Posizioni Sprint estese
+  // --- Gestione Posizioni Sprint con Smart Swap ---
   getSprintPosition(r: SimulatorRaceRound, index: number): string | undefined {
     if (r.sprintPositions && r.sprintPositions[index] !== undefined) {
       return r.sprintPositions[index];
@@ -365,20 +525,72 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     if (!r.sprintPositions) {
       r.sprintPositions = [];
     }
-    while (r.sprintPositions.length < this.rules.sprintPoints.length) {
+    const maxLen = this.rules.sprintPoints.length;
+    while (r.sprintPositions.length < maxLen) {
       r.sprintPositions.push(undefined);
     }
-    r.sprintPositions[index] = value || undefined;
-    if (index === 0) r.sprintWinnerId = value || undefined;
 
-    if (value && r.dnfContenderIds) {
-      r.dnfContenderIds = r.dnfContenderIds.filter(id => id !== value);
+    const oldOccupant = r.sprintPositions[index];
+    const newOccupant = value || undefined;
+
+    if (newOccupant && this.mode === 'drivers') {
+      const existingIdx = r.sprintPositions.findIndex((id, idx) => id === newOccupant && idx !== index);
+      if (existingIdx !== -1) {
+        r.sprintPositions[existingIdx] = oldOccupant;
+      }
     }
 
+    r.sprintPositions[index] = newOccupant;
+    r.sprintWinnerId = r.sprintPositions[0];
+
+    if (newOccupant && r.dnfContenderIds) {
+      r.dnfContenderIds = r.dnfContenderIds.filter(id => id !== newOccupant);
+    }
+
+    r.isModified = true;
     this.recalculate();
   }
 
-  // Gestione DNF / Zero Punti
+  setFastestLap(r: SimulatorRaceRound, driverId: string | undefined): void {
+    r.fastestLapDriverId = driverId || undefined;
+    r.isModified = true;
+    this.recalculate();
+  }
+
+  // --- Azioni Rapide sul Singolo Round ---
+  swapTopTwoInRound(r: SimulatorRaceRound): void {
+    const p1 = this.getRacePosition(r, 0);
+    const p2 = this.getRacePosition(r, 1);
+    if (!p1 && !p2) return;
+    this.setRacePosition(r, 0, p2);
+    this.setRacePosition(r, 1, p1);
+  }
+
+  assignLeaderWinInRound(r: SimulatorRaceRound): void {
+    const leaderId = this.mode === 'drivers'
+      ? this.driverStandings[0]?.driverId
+      : this.constructorStandings[0]?.constructorId;
+    const secondId = this.mode === 'drivers'
+      ? this.driverStandings[1]?.driverId
+      : this.constructorStandings[1]?.constructorId;
+    if (!leaderId) return;
+    this.setRacePosition(r, 0, leaderId);
+    if (secondId) this.setRacePosition(r, 1, secondId);
+  }
+
+  assignRivalWinInRound(r: SimulatorRaceRound): void {
+    const leaderId = this.mode === 'drivers'
+      ? this.driverStandings[0]?.driverId
+      : this.constructorStandings[0]?.constructorId;
+    const secondId = this.mode === 'drivers'
+      ? this.driverStandings[1]?.driverId
+      : this.constructorStandings[1]?.constructorId;
+    if (!secondId) return;
+    this.setRacePosition(r, 0, secondId);
+    if (leaderId) this.setRacePosition(r, 1, leaderId);
+  }
+
+  // --- Gestione DNF / Zero Punti (con scalata automatica posizioni) ---
   isContenderDnf(r: SimulatorRaceRound, id: string): boolean {
     return !!r.dnfContenderIds && r.dnfContenderIds.includes(id);
   }
@@ -389,18 +601,38 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     if (!r.dnfContenderIds.includes(id)) {
       r.dnfContenderIds.push(id);
     }
+
+    // Se il pilota era nei punti, rimuovilo e fai scalare di 1 posto i piloti dietro di lui!
     if (r.racePositions) {
-      r.racePositions = r.racePositions.map(p => (p === id ? undefined : p));
+      const maxLen = this.rules.racePoints.length;
+      const filtered = r.racePositions.filter(p => p && p !== id);
+      // Se è una gara già disputata con ordine reale completo oltre la P10, pesca il primo fuori dai punti che non sia DNF
+      const realOrder = this.mode === 'drivers' ? (r.realRaceOrder || []) : (r.realConstructorRaceOrder || []);
+      for (const candidate of realOrder) {
+        if (filtered.length >= maxLen) break;
+        if (candidate && candidate !== id && !r.dnfContenderIds.includes(candidate) && !filtered.includes(candidate)) {
+          filtered.push(candidate);
+        }
+      }
+      while (filtered.length < maxLen) {
+        filtered.push(undefined);
+      }
+      r.racePositions = filtered.slice(0, maxLen);
+      r.raceWinnerId = r.racePositions[0];
+      r.raceSecondId = r.racePositions[1];
+      r.raceThirdId = r.racePositions[2];
     }
+
     if (r.sprintPositions) {
       r.sprintPositions = r.sprintPositions.map(p => (p === id ? undefined : p));
+      r.sprintWinnerId = r.sprintPositions[0];
     }
-    if (r.raceWinnerId === id) r.raceWinnerId = undefined;
-    if (r.raceSecondId === id) r.raceSecondId = undefined;
-    if (r.raceThirdId === id) r.raceThirdId = undefined;
-    if (r.sprintWinnerId === id) r.sprintWinnerId = undefined;
-    if (r.fastestLapDriverId === id) r.fastestLapDriverId = undefined;
 
+    if (r.fastestLapDriverId === id) {
+      r.fastestLapDriverId = undefined;
+    }
+
+    r.isModified = true;
     this.selectedDnfForRound[r.round] = undefined;
     this.recalculate();
   }
@@ -408,36 +640,36 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   removeDnfContender(r: SimulatorRaceRound, id: string): void {
     if (!r.dnfContenderIds) return;
     r.dnfContenderIds = r.dnfContenderIds.filter(x => x !== id);
+    r.isModified = true;
     this.recalculate();
   }
 
-  getContenderName(id: string): string {
+  getContenderName(id: string | undefined): string {
+    if (!id) return 'Non assegnato';
     const opt = this.contenderOptions.find(o => o.value === id);
     return opt ? opt.label : id;
   }
 
+  getContenderShortName(id: string | undefined): string {
+    if (!id) return '—';
+    const opt = this.contenderOptions.find(o => o.value === id);
+    return opt ? opt.shortLabel : id;
+  }
+
+  getContenderColor(id: string | undefined): string {
+    if (!id) return '#64748b';
+    const opt = this.contenderOptions.find(o => o.value === id);
+    return opt ? opt.color : '#64748b';
+  }
+
   isOptionDisabled(r: SimulatorRaceRound, optValue: string, currentPosIdx: number, type: 'race' | 'sprint'): boolean {
     if (this.isContenderDnf(r, optValue)) return true;
-
-    if (type === 'race') {
-      const positions = r.racePositions || [];
-      if (this.mode === 'drivers') {
-        const foundIdx = positions.indexOf(optValue);
-        return foundIdx !== -1 && foundIdx !== currentPosIdx;
-      } else {
-        const occurrences = positions.filter((p, idx) => p === optValue && idx !== currentPosIdx).length;
-        return occurrences >= 2;
-      }
-    } else {
-      const positions = r.sprintPositions || [];
-      if (this.mode === 'drivers') {
-        const foundIdx = positions.indexOf(optValue);
-        return foundIdx !== -1 && foundIdx !== currentPosIdx;
-      } else {
-        const occurrences = positions.filter((p, idx) => p === optValue && idx !== currentPosIdx).length;
-        return occurrences >= 2;
-      }
+    if (this.mode === 'constructors') {
+      const positions = type === 'race' ? (r.racePositions || []) : (r.sprintPositions || []);
+      const occurrences = positions.filter((p, idx) => p === optValue && idx !== currentPosIdx).length;
+      return occurrences >= 2;
     }
+    return false;
   }
 
   toggleRoundExpand(roundNumber: number): void {
@@ -452,9 +684,11 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     return this.expandedRoundDetails.has(roundNumber);
   }
 
-  // Preset rapidi
-  resetSimulation(): void {
-    for (const r of this.rounds) {
+  // --- Ripristino singolo round o intera stagione ---
+  clearRound(r: SimulatorRaceRound): void {
+    if (r.isCompleted) {
+      this.populateRoundFromReal(r, this.rules);
+    } else {
       r.raceWinnerId = undefined;
       r.raceSecondId = undefined;
       r.raceThirdId = undefined;
@@ -463,94 +697,179 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       r.racePositions = [];
       r.sprintPositions = [];
       r.dnfContenderIds = [];
+      r.isModified = false;
+    }
+    this.selectedDnfForRound[r.round] = undefined;
+    this.recalculate();
+  }
+
+  resetSimulation(): void {
+    this.activeQuickScenarioId = null;
+    const rules = this.rules;
+    for (const r of this.rounds) {
+      if (r.isCompleted) {
+        this.populateRoundFromReal(r, rules);
+      } else {
+        r.raceWinnerId = undefined;
+        r.raceSecondId = undefined;
+        r.raceThirdId = undefined;
+        r.fastestLapDriverId = undefined;
+        r.sprintWinnerId = undefined;
+        r.racePositions = [];
+        r.sprintPositions = [];
+        r.dnfContenderIds = [];
+        r.isModified = false;
+      }
     }
     this.selectedDnfForRound = {};
     this.recalculate();
   }
 
+  // --- Applicazione Bivio Storico ("What If") sul vero Round della stagione ---
+  applyHistoricalPivot(pivot: HistoricalPivot): void {
+    this.resetSimulation();
+    this.activeQuickScenarioId = pivot.id;
+
+    const targetRound = this.rounds.find(r => r.round === pivot.round);
+    if (!targetRound) return;
+
+    const maxLen = this.rules.racePoints.length;
+    if (!targetRound.racePositions) targetRound.racePositions = [];
+    while (targetRound.racePositions.length < maxLen) {
+      targetRound.racePositions.push(undefined);
+    }
+
+    if (pivot.positionsOverride) {
+      for (const [posStr, driverId] of Object.entries(pivot.positionsOverride)) {
+        const posIdx = Number(posStr);
+        if (posIdx >= 0 && posIdx < maxLen) {
+          this.setRacePosition(targetRound, posIdx, driverId);
+        }
+      }
+    } else {
+      if (pivot.winnerId) this.setRacePosition(targetRound, 0, pivot.winnerId);
+      if (pivot.secondId) this.setRacePosition(targetRound, 1, pivot.secondId);
+    }
+
+    if (pivot.dnfIds?.length) {
+      for (const dnfId of pivot.dnfIds) {
+        this.addDnfContender(targetRound, dnfId);
+      }
+    }
+
+    if (pivot.fastestLapId && this.rules.hasFastestLapPoint) {
+      targetRound.fastestLapDriverId = pivot.fastestLapId;
+    }
+
+    targetRound.isModified = true;
+    this.selectRound(targetRound.round);
+    this.recalculate();
+  }
+
+  // --- Preset Scenari Stagionali (applicati sui round reali o rimanenti) ---
+  private getTargetRoundsForScenario(): SimulatorRaceRound[] {
+    const uncompleted = this.rounds.filter(r => !r.isCompleted);
+    if (uncompleted.length > 0) return uncompleted;
+    // Se tutte le gare sono già state disputate (stagione conclusa), applica sulle ultime 3 gare della stagione
+    return this.rounds.slice(Math.max(0, this.rounds.length - 3));
+  }
+
   presetAllWinsToLeader(): void {
+    this.resetSimulation();
+    this.activeQuickScenarioId = 'leader-dominance';
+
     const leader = this.mode === 'drivers'
       ? this.driverStandings[0]?.driverId
       : this.constructorStandings[0]?.constructorId;
+    const second = this.mode === 'drivers'
+      ? this.driverStandings[1]?.driverId
+      : this.constructorStandings[1]?.constructorId;
     if (!leader) return;
 
-    for (const r of this.rounds) {
-      if (!r.isCompleted) {
-        this.setRacePosition(r, 0, leader);
-        if (this.rules.hasFastestLapPoint) {
-          r.fastestLapDriverId = leader;
-        }
-        if (r.hasSprint) {
-          this.setSprintPosition(r, 0, leader);
-        }
+    const targets = this.getTargetRoundsForScenario();
+    for (const r of targets) {
+      this.setRacePosition(r, 0, leader);
+      if (second) this.setRacePosition(r, 1, second);
+      if (this.rules.hasFastestLapPoint) {
+        r.fastestLapDriverId = leader;
       }
+      if (r.hasSprint) {
+        this.setSprintPosition(r, 0, leader);
+        if (second) this.setSprintPosition(r, 1, second);
+      }
+      r.isModified = true;
+    }
+    if (targets.length > 0) {
+      this.selectRound(targets[0].round);
     }
     this.recalculate();
   }
 
   presetAllWinsToSecond(): void {
+    this.resetSimulation();
+    this.activeQuickScenarioId = 'chaser-comeback';
+
     const second = this.mode === 'drivers'
       ? this.driverStandings[1]?.driverId
       : this.constructorStandings[1]?.constructorId;
-    if (!second) return;
-
     const leader = this.mode === 'drivers'
       ? this.driverStandings[0]?.driverId
       : this.constructorStandings[0]?.constructorId;
+    if (!second) return;
 
-    for (const r of this.rounds) {
-      if (!r.isCompleted) {
-        this.setRacePosition(r, 0, second);
-        if (leader) this.setRacePosition(r, 1, leader);
-        if (this.rules.hasFastestLapPoint) {
-          r.fastestLapDriverId = second;
-        }
-        if (r.hasSprint) {
-          this.setSprintPosition(r, 0, second);
-          if (leader) this.setSprintPosition(r, 1, leader);
-        }
+    const targets = this.getTargetRoundsForScenario();
+    for (const r of targets) {
+      this.setRacePosition(r, 0, second);
+      if (leader) this.setRacePosition(r, 1, leader);
+      if (this.rules.hasFastestLapPoint) {
+        r.fastestLapDriverId = second;
       }
+      if (r.hasSprint) {
+        this.setSprintPosition(r, 0, second);
+        if (leader) this.setSprintPosition(r, 1, leader);
+      }
+      r.isModified = true;
+    }
+    if (targets.length > 0) {
+      this.selectRound(targets[0].round);
     }
     this.recalculate();
   }
 
   presetLeaderDnf(): void {
+    this.resetSimulation();
+    this.activeQuickScenarioId = 'leader-dnf';
+
     const leader = this.mode === 'drivers'
       ? this.driverStandings[0]?.driverId
       : this.constructorStandings[0]?.constructorId;
-    if (!leader) return;
-
     const second = this.mode === 'drivers'
       ? this.driverStandings[1]?.driverId
       : this.constructorStandings[1]?.constructorId;
+    if (!leader) return;
 
-    for (const r of this.rounds) {
-      if (!r.isCompleted) {
+    const targets = this.getTargetRoundsForScenario();
+    targets.forEach((r, idx) => {
+      if (idx === 0) {
+        // Ritiro a 0 punti nel round chiave
         this.addDnfContender(r, leader);
-        if (second) {
-          this.setRacePosition(r, 0, second);
-          if (this.rules.hasFastestLapPoint) {
-            r.fastestLapDriverId = second;
-          }
-          if (r.hasSprint) {
-            this.setSprintPosition(r, 0, second);
-          }
+      } else if (leader) {
+        this.setRacePosition(r, 1, leader);
+      }
+      if (second) {
+        this.setRacePosition(r, 0, second);
+        if (this.rules.hasFastestLapPoint) {
+          r.fastestLapDriverId = second;
+        }
+        if (r.hasSprint) {
+          this.setSprintPosition(r, 0, second);
         }
       }
+      r.isModified = true;
+    });
+    if (targets.length > 0) {
+      this.selectRound(targets[0].round);
     }
-    this.recalculate();
-  }
-
-  clearRound(r: SimulatorRaceRound): void {
-    r.raceWinnerId = undefined;
-    r.raceSecondId = undefined;
-    r.raceThirdId = undefined;
-    r.fastestLapDriverId = undefined;
-    r.sprintWinnerId = undefined;
-    r.racePositions = [];
-    r.sprintPositions = [];
-    r.dnfContenderIds = [];
-    this.selectedDnfForRound[r.round] = undefined;
     this.recalculate();
   }
 
@@ -563,8 +882,20 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     return this.rounds.filter(r => !r.isCompleted);
   }
 
+  get modifiedRoundsCount(): number {
+    return this.rounds.filter(r => r.isModified).length;
+  }
+
   get rules(): SeasonScoringRules {
     return getSeasonScoringRules(this.season || 2024);
+  }
+
+  get allRacePositionIndices(): number[] {
+    return this.rules.racePoints.map((_, i) => i);
+  }
+
+  get allSprintPositionIndices(): number[] {
+    return this.rules.sprintPoints.map((_, i) => i);
   }
 
   get secondaryRacePositions(): number[] {
@@ -583,5 +914,25 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       indices.push(i);
     }
     return indices;
+  }
+
+  /**
+   * Restituisce i punti calcolati nel round selezionato per un dato contendente
+   */
+  getRoundPointsForContender(r: SimulatorRaceRound, contenderId: string): { real: number; sim: number; delta: number } {
+    const realRec = this.mode === 'drivers' ? (r.realDriverPoints || {}) : (r.realConstructorPoints || {});
+    const real = r.isCompleted ? (realRec[contenderId] ?? 0) : 0;
+
+    if (r.isCompleted && !r.isModified) {
+      return { real, sim: real, delta: 0 };
+    }
+
+    const driverToConstructor = new Map<string, string>();
+    for (const d of this.driverStandings) {
+      driverToConstructor.set(d.driverId, d.constructorId);
+    }
+    const { points } = computeConfiguredRoundPoints(r, this.rules, this.mode, driverToConstructor);
+    const sim = points.get(contenderId) ?? 0;
+    return { real, sim, delta: Math.round((sim - real) * 10) / 10 };
   }
 }

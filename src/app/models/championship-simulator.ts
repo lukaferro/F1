@@ -8,9 +8,21 @@ export interface SimulatorRaceRound {
   date: string;
   hasSprint: boolean;
   isCompleted: boolean;
-  // Posizioni gara: array di ID contendente per ciascuna posizione a punti (0 = P1, 1 = P2, ...)
+  /** True se l'utente ha modificato i piazzamenti di questa gara rispetto alla realtà */
+  isModified?: boolean;
+
+  // Risultati reali registrati (per le gare già disputate)
+  realDriverPoints?: Record<string, number>;
+  realConstructorPoints?: Record<string, number>;
+  realRaceOrder?: string[];
+  realConstructorRaceOrder?: string[];
+  realSprintOrder?: string[];
+  realConstructorSprintOrder?: string[];
+  realFastestLapDriverId?: string;
+
+  // Posizioni gara simulate/attuali: array di ID contendente per ciascuna posizione a punti (0 = P1, 1 = P2, ...)
   racePositions?: (string | undefined)[];
-  // Posizioni Sprint: array di ID contendente per ciascuna posizione a punti della Sprint (0 = P1 Sprint, ...)
+  // Posizioni Sprint simulate/attuali: array di ID contendente per ciascuna posizione a punti della Sprint (0 = P1 Sprint, ...)
   sprintPositions?: (string | undefined)[];
   // Pilota autore del giro veloce
   fastestLapDriverId?: string;
@@ -42,6 +54,9 @@ export interface SimulatorContender {
   isEliminated: boolean;
   gapToLeader: number;
   position: number;
+  originalPosition?: number;
+  positionDelta?: number;
+  pointsDelta?: number;
 }
 
 export interface ChampionshipSimulationResult {
@@ -52,6 +67,9 @@ export interface ChampionshipSimulationResult {
   remainingPointsOnTable: number;
   magicNumber: number | null; // quanti punti mancano al leader per la certezza matematica del titolo
   champion: SimulatorContender | null;
+  originalChampion?: SimulatorContender | null;
+  isHistoryRewritten?: boolean;
+  modifiedRoundsCount?: number;
   contendersInContentionCount: number;
   standings: SimulatorContender[];
   nextRoundClinchScenario?: string | null;

@@ -54,13 +54,53 @@ describe('championship-calculator', () => {
     expect(result.magicNumber).toBeNull();
   });
 
+  it('rewrites history when a completed past round is modified (What If)', () => {
+    const contenders = [
+      { id: 'max_verstappen', name: 'Max Verstappen', constructorId: 'red_bull', constructorName: 'Red Bull', color: '#3671c6', currentPoints: 395.5, currentWins: 10 },
+      { id: 'hamilton', name: 'Lewis Hamilton', constructorId: 'mercedes', constructorName: 'Mercedes', color: '#27f4d2', currentPoints: 387.5, currentWins: 8 }
+    ];
+
+    // Abu Dhabi 2021 (gara già completata ma modificata dall'utente: Hamilton 1°, Verstappen 2°)
+    const rounds: SimulatorRaceRound[] = [
+      {
+        round: 22,
+        raceName: 'Abu Dhabi GP',
+        circuitId: 'yas_marina',
+        circuitName: 'Yas Marina',
+        locality: 'Abu Dhabi',
+        country: 'UAE',
+        date: '2021-12-12',
+        hasSprint: false,
+        isCompleted: true,
+        isModified: true,
+        realDriverPoints: { max_verstappen: 26, hamilton: 18 },
+        realRaceOrder: ['max_verstappen', 'hamilton'],
+        raceWinnerId: 'hamilton',
+        raceSecondId: 'max_verstappen',
+        racePositions: ['hamilton', 'max_verstappen'],
+        fastestLapDriverId: 'max_verstappen'
+      }
+    ];
+
+    const result = calculateChampionship(contenders, rounds, 'drivers', 2021);
+
+    expect(result.isHistoryRewritten).toBe(true);
+    expect(result.modifiedRoundsCount).toBe(1);
+    expect(result.champion?.id).toBe('hamilton');
+    expect(result.originalChampion?.id).toBe('max_verstappen');
+    // Hamilton guadagna +7 pt netti (25 - 18 = +7 -> 394.5), Verstappen perde -7 pt netti (19 - 26 = -7 -> 388.5)
+    expect(result.standings[0].id).toBe('hamilton');
+    expect(result.standings[0].totalPoints).toBe(394.5);
+    expect(result.standings[1].id).toBe('max_verstappen');
+    expect(result.standings[1].totalPoints).toBe(388.5);
+  });
+
   it('handles DNF / zero points simulation and prevents unclaimed points', () => {
     const contenders = [
       { id: 'verstappen', name: 'Max Verstappen', constructorId: 'red_bull', constructorName: 'Red Bull', color: '3671c6', currentPoints: 300, currentWins: 7 },
       { id: 'norris', name: 'Lando Norris', constructorId: 'mclaren', constructorName: 'McLaren', color: 'ff8000', currentPoints: 280, currentWins: 4 }
     ];
 
-    // Solo 1 gara rimanente da 26 punti max
     const rounds: SimulatorRaceRound[] = [
       {
         round: 24,
@@ -73,7 +113,6 @@ describe('championship-calculator', () => {
         hasSprint: false,
         isCompleted: false,
         raceWinnerId: 'norris',
-        // Verstappen si ritira (DNF / 0 punti)
         dnfContenderIds: ['verstappen']
       }
     ];
@@ -81,14 +120,12 @@ describe('championship-calculator', () => {
     const result = calculateChampionship(contenders, rounds, 'drivers', 2024);
 
     const champ = result.champion;
-    // Norris vince (+25 pt) -> 305 punti; Verstappen fa 0 pt -> 300 pt.
-    // Norris scavalca Verstappen e diventa Campione!
     expect(champ?.id).toBe('norris');
     expect(result.standings[0].id).toBe('norris');
     expect(result.standings[0].totalPoints).toBe(305);
     expect(result.standings[1].id).toBe('verstappen');
     expect(result.standings[1].totalPoints).toBe(300);
-    expect(result.standings[1].maxPossiblePoints).toBe(300); // 0 punti addizionali possibili per via del DNF
+    expect(result.standings[1].maxPossiblePoints).toBe(300);
   });
 
   it('awards points beyond top 3 (P4 to P10) correctly', () => {
@@ -108,7 +145,6 @@ describe('championship-calculator', () => {
         date: '2024-03-02',
         hasSprint: false,
         isCompleted: false,
-        // Leclerc P4 (+12 pt), Sainz P5 (+10 pt)
         racePositions: [undefined, undefined, undefined, 'leclerc', 'sainz']
       }
     ];
@@ -129,7 +165,6 @@ describe('championship-calculator', () => {
       { id: 'albon', name: 'Alex Albon', constructorId: 'williams', constructorName: 'Williams', color: '00a0dd', currentPoints: 10, currentWins: 0 }
     ];
 
-    // Albon fa il giro veloce ma finisce P11 (fuori dai primi 10)
     const rounds: SimulatorRaceRound[] = [
       {
         round: 1,
@@ -142,7 +177,6 @@ describe('championship-calculator', () => {
         hasSprint: false,
         isCompleted: false,
         raceWinnerId: 'verstappen',
-        // In Top 10 non c'è Albon (Albon è fuori dai primi 10)
         fastestLapDriverId: 'albon',
         racePositions: ['verstappen', undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 'albon']
       }
@@ -150,7 +184,6 @@ describe('championship-calculator', () => {
 
     const result = calculateChampionship(contenders, rounds, 'drivers', 2024);
     const albon = result.standings.find(s => s.id === 'albon')!;
-    // Albon non deve ricevere il punto perché è 11°!
     expect(albon.simulatedPoints).toBe(0);
     expect(albon.totalPoints).toBe(10);
   });
@@ -172,7 +205,7 @@ describe('championship-calculator', () => {
         hasSprint: false,
         isCompleted: false,
         raceWinnerId: 'leclerc',
-        fastestLapDriverId: 'leclerc' // assegnato, ma nel 2026 non dà punti!
+        fastestLapDriverId: 'leclerc'
       }
     ];
 
@@ -196,8 +229,6 @@ describe('championship-calculator', () => {
 
     expect(result.champion).toBeNull();
     expect(result.contendersInContentionCount).toBe(2);
-    // Verstappen ha 7 vittorie vs 3 di Norris, mancano 2 round (Norris può arrivare al max a 5 vittorie)
-    // Quindi a parità di punti Verstappen vince lo spareggio, serve solo pareggiare il max di Norris
     expect(result.magicNumber).toBeDefined();
     expect(result.nextRoundClinchScenario).toContain('Qatar GP');
   });

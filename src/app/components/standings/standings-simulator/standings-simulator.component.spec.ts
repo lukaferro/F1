@@ -13,24 +13,24 @@ describe('StandingsSimulatorComponent', () => {
       getSeasonSchedule: vi.fn().mockResolvedValue([
         {
           season: 2024,
-          round: 23,
-          raceName: 'Qatar Grand Prix',
-          circuitId: 'losail',
-          circuitName: 'Losail International Circuit',
-          locality: 'Lusail',
-          country: 'Qatar',
-          date: '2024-12-01',
-          hasSprint: true
+          round: 1,
+          raceName: 'Bahrain Grand Prix',
+          circuitId: 'bahrain',
+          circuitName: 'Bahrain International Circuit',
+          locality: 'Sakhir',
+          country: 'Bahrain',
+          date: '2024-03-02',
+          hasSprint: false
         },
         {
           season: 2024,
-          round: 24,
-          raceName: 'Abu Dhabi Grand Prix',
-          circuitId: 'yas_marina',
-          circuitName: 'Yas Marina Circuit',
-          locality: 'Abu Dhabi',
-          country: 'UAE',
-          date: '2024-12-08',
+          round: 2,
+          raceName: 'Saudi Arabian Grand Prix',
+          circuitId: 'jeddah',
+          circuitName: 'Jeddah Corniche Circuit',
+          locality: 'Jeddah',
+          country: 'Saudi Arabia',
+          date: '2024-03-09',
           hasSprint: false
         }
       ])
@@ -48,8 +48,8 @@ describe('StandingsSimulatorComponent', () => {
     component.driverStandings = [
       {
         position: 1,
-        points: 300,
-        wins: 7,
+        points: 50,
+        wins: 2,
         driverId: 'verstappen',
         code: 'VER',
         fullName: 'Max Verstappen',
@@ -60,8 +60,8 @@ describe('StandingsSimulatorComponent', () => {
       },
       {
         position: 2,
-        points: 260,
-        wins: 3,
+        points: 36,
+        wins: 0,
         driverId: 'norris',
         code: 'NOR',
         fullName: 'Lando Norris',
@@ -72,39 +72,75 @@ describe('StandingsSimulatorComponent', () => {
       }
     ];
     component.constructorStandings = [
-      { position: 1, points: 550, wins: 7, constructorId: 'mclaren', name: 'McLaren', nationality: 'British' },
-      { position: 2, points: 530, wins: 5, constructorId: 'ferrari', name: 'Ferrari', nationality: 'Italian' }
+      { position: 1, points: 86, wins: 2, constructorId: 'red_bull', name: 'Red Bull Racing', nationality: 'Austrian' },
+      { position: 2, points: 60, wins: 0, constructorId: 'mclaren', name: 'McLaren', nationality: 'British' }
+    ];
+    component.seasonRounds = [
+      {
+        round: 1,
+        raceName: 'Bahrain Grand Prix',
+        locality: 'Sakhir',
+        driverPoints: { verstappen: 25, norris: 18 },
+        constructorPoints: { red_bull: 25, mclaren: 18 },
+        raceOrder: ['verstappen', 'norris'],
+        constructorRaceOrder: ['red_bull', 'mclaren']
+      },
+      {
+        round: 2,
+        raceName: 'Saudi Arabian Grand Prix',
+        locality: 'Jeddah',
+        driverPoints: { verstappen: 25, norris: 18 },
+        constructorPoints: { red_bull: 25, mclaren: 18 },
+        raceOrder: ['verstappen', 'norris'],
+        constructorRaceOrder: ['red_bull', 'mclaren']
+      }
     ];
   });
 
-  it('initializes schedule and computes initial simulation', async () => {
+  it('initializes all rounds of the season with real race orders and builds comparison chart', async () => {
     await component.loadSchedule();
     expect(jolpicaMock.getSeasonSchedule).toHaveBeenCalledWith(2024);
     expect(component.rounds.length).toBe(2);
-    expect(component.simulationResult).not.toBeNull();
-    expect(component.simulationResult?.standings[0].id).toBe('verstappen');
+    expect(component.rounds[0].isCompleted).toBe(true);
+    expect(component.getRacePosition(component.rounds[0], 0)).toBe('verstappen');
+    expect(component.getRacePosition(component.rounds[0], 1)).toBe('norris');
+    expect(component.comparisonChart).not.toBeNull();
   });
 
-  it('switches between drivers and constructors mode', async () => {
+  it('allows editing a completed round and automatically swaps positions (Smart Swap)', async () => {
+    await component.loadSchedule();
+    const round1 = component.rounds[0];
+
+    // Mettiamo Norris al 1° posto in gara 1 -> Verstappen scivola automaticamente al 2° posto
+    component.setRacePosition(round1, 0, 'norris');
+
+    expect(round1.isModified).toBe(true);
+    expect(component.getRacePosition(round1, 0)).toBe('norris');
+    expect(component.getRacePosition(round1, 1)).toBe('verstappen');
+
+    // In gara 1 Norris guadagna +7 pt (da 18 a 25) -> 43 pt, Verstappen perde -7 pt (da 25 a 18) -> 43 pt
+    const norris = component.simulationResult?.standings.find(s => s.id === 'norris');
+    const verstappen = component.simulationResult?.standings.find(s => s.id === 'verstappen');
+    expect(norris?.totalPoints).toBe(43);
+    expect(verstappen?.totalPoints).toBe(43);
+  });
+
+  it('switches between drivers and constructors mode and re-syncs real race orders', async () => {
     await component.loadSchedule();
     component.setMode('constructors');
     expect(component.mode).toBe('constructors');
     expect(component.simulationResult?.mode).toBe('constructors');
-    expect(component.simulationResult?.standings[0].id).toBe('mclaren');
+    expect(component.getRacePosition(component.rounds[0], 0)).toBe('red_bull');
   });
 
-  it('presets all remaining wins to leader', async () => {
+  it('applies chaser comeback scenario and resets back to official reality', async () => {
     await component.loadSchedule();
-    component.presetAllWinsToLeader();
-    const leader = component.simulationResult?.standings[0];
-    expect(leader?.simulatedPoints).toBeGreaterThan(0);
-  });
+    component.presetAllWinsToSecond();
+    expect(component.modifiedRoundsCount).toBeGreaterThan(0);
 
-  it('resets simulation results', async () => {
-    await component.loadSchedule();
-    component.presetAllWinsToLeader();
     component.resetSimulation();
-    const leader = component.simulationResult?.standings[0];
-    expect(leader?.simulatedPoints).toBe(0);
+    expect(component.modifiedRoundsCount).toBe(0);
+    expect(component.simulationResult?.standings[0].id).toBe('verstappen');
+    expect(component.simulationResult?.standings[0].totalPoints).toBe(50);
   });
 });
