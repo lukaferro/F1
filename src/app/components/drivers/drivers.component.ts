@@ -11,7 +11,7 @@ import { WikipediaService } from '../../services/wikipedia.service';
 import { DriversStateService } from '../../services/drivers-state.service';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { DriverComparisonComponent } from '../driver-comparison/driver-comparison.component';
-import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
+import { currentSeasonPhotoUrl, hiResHeadshotUrl, previousSeasonPhotoUrl } from '../../utils/f1-media';
 import { TEAM_COLORS } from '../../utils/team-colors';
 import { constructorColor } from '../../utils/constructor-branding';
 import { flagUrl } from '../../utils/country-flags';
@@ -489,12 +489,15 @@ export class DriversComponent implements OnInit {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(driver.name_acronym)}&size=800&background=${teamColor}&color=ffffff&bold=true&font-size=0.33&format=svg`;
   }
 
-  // Se la foto non si carica passa alla successiva disponibile
+  // Se la foto non si carica passa alla successiva disponibile nella pipeline (anno precedente -> OpenF1 headshot -> avatar)
   onDriverImageError(event: Event, driver: Driver): void {
     const img = event.target as HTMLImageElement;
+    const prevSeason = previousSeasonPhotoUrl(driver);
     const headshot = hiResHeadshotUrl(driver.headshot_url);
     const avatar = this.avatarUrl(driver);
-    if (headshot && img.src !== headshot) {
+    if (prevSeason && img.src !== prevSeason && !img.src.includes(`/${new Date().getFullYear() - 1}/`)) {
+      img.src = prevSeason;
+    } else if (headshot && img.src !== headshot) {
       img.src = headshot;
     } else if (img.src !== avatar) {
       img.src = avatar;

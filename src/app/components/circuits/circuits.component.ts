@@ -1,8 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -55,13 +56,14 @@ const normalizeText = (value: string) =>
   templateUrl: './circuits.component.html',
   styleUrl: './circuits.component.css'
 })
-export class CircuitsComponent implements OnInit {
+export class CircuitsComponent implements OnInit, OnDestroy {
   private readonly circuitsService = inject(CircuitsService);
   private readonly granPremiState = inject(GranPremiStateService);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient, { optional: true });
   private readonly openF1 = inject(Openf1ServiceService, { optional: true });
   private readonly jolpica = inject(JolpicaService, { optional: true });
+  private recordsSub?: Subscription;
 
   currentSeasonYear = new Date().getFullYear();
 
@@ -118,7 +120,23 @@ export class CircuitsComponent implements OnInit {
     this.applyFilters();
     this.initMapAndCalendar();
     this.loadWorldGeoData();
+
+    // Stale-While-Revalidate: ascolta aggiornamenti asincroni dei giri record
+    this.recordsSub = this.circuitsService.recordsUpdated$.subscribe(() => {
+      this.circuits = this.circuitsService.getCircuits();
+      this.applyFilters();
+      this.refreshSeasonCalendar();
+      if (this.selectedCircuitOnMap) {
+        const fresh = this.circuits.find(c => c.id === this.selectedCircuitOnMap!.id);
+        if (fresh) this.selectedCircuitOnMap = fresh;
+      }
+    });
+
     void this.syncCurrentSeasonCalendar();
+  }
+
+  ngOnDestroy(): void {
+    this.recordsSub?.unsubscribe();
   }
 
   get totalSeasonKm(): number {
@@ -144,6 +162,7 @@ export class CircuitsComponent implements OnInit {
         if (gpMeetings.length > 0) {
           this.circuitsService.applyMeetings(gpMeetings);
           this.refreshSeasonCalendar();
+          void this.circuitsService.syncFastestLapRecords(this.currentSeasonYear);
           return;
         }
       }
@@ -155,8 +174,11 @@ export class CircuitsComponent implements OnInit {
           this.refreshSeasonCalendar();
         }
       }
+
+      // Pipeline Stale-While-Revalidate per i giri record
+      void this.circuitsService.syncFastestLapRecords(this.currentSeasonYear);
     } catch {
-      // Mantiene trasparente il calendario base di default
+      // Mantiene trasparente il catalogo base a 0 ms
     }
   }
 

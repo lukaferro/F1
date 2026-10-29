@@ -6,6 +6,8 @@ import { SelectModule } from 'primeng/select';
 import { ConstructorStanding, DriverStanding, JolpicaService, SeasonRoundPoints } from '../../services/jolpica.service';
 import { Driver, Openf1ServiceService } from '../../services/openf1-service';
 import { WikipediaService } from '../../services/wikipedia.service';
+import { WikidataService } from '../../services/wikidata.service';
+import { MediaPipelineService } from '../../services/media-pipeline.service';
 import { StandingsStateService, StandingsTab } from '../../services/standings-state.service';
 import { currentSeasonPhotoUrl } from '../../utils/f1-media';
 import { constructorColor, ConstructorLogo, constructorLogo } from '../../utils/constructor-branding';
@@ -55,6 +57,8 @@ export class StandingsComponent implements OnInit, OnDestroy {
   private readonly jolpica = inject(JolpicaService);
   private readonly openF1 = inject(Openf1ServiceService);
   private readonly wikipedia = inject(WikipediaService, { optional: true });
+  private readonly wikidata = inject(WikidataService, { optional: true });
+  private readonly mediaPipeline = inject(MediaPipelineService);
   private readonly stateService = inject(StandingsStateService);
 
   seasons: number[] = [];
@@ -94,6 +98,10 @@ export class StandingsComponent implements OnInit, OnDestroy {
   // Foto e loghi che non si sono caricati: al loro posto le iniziali
   private readonly failedPhotos = new Set<string>();
   private readonly failedLogos = new Set<string>();
+  // Loghi ufficiali scuderia risolti tramite Wikidata P154
+  private readonly wikiLogos = new Map<string, string>();
+  // Indice corrente di fallback per foto pilota
+  private readonly photoFallbackIndices = new Map<string, number>();
 
   async ngOnInit(): Promise<void> {
     this.tab = this.stateService.tab;
@@ -143,6 +151,7 @@ export class StandingsComponent implements OnInit, OnDestroy {
     this.hiddenSeriesIds.clear();
     this.hoveredSeriesId = null;
     this.selectedRoundIndex = null;
+    this.photoFallbackIndices.clear();
 
     // Piloti e (se il tab è aperto) costruttori partono per primi nella coda HTTP, seguiti dai risultati round-by-round
     await this.withLoading(year, () => {
@@ -210,11 +219,33 @@ export class StandingsComponent implements OnInit, OnDestroy {
         }).catch(() => {});
       }
     }
+    // Fallback automatico su Wikidata P18 per piloti senza foto da Wikipedia
+    if (this.wikidata) {
+      const missing = standings.filter(s => s.wikiTitle && !this.driverPhotos.has(s.driverId)).map(s => s.wikiTitle!);
+      if (missing.length > 0) {
+        void this.wikidata.getBatchImages(missing, 'P18').then(wikiImages => {
+          for (const s of standings) {
+            if (s.wikiTitle && wikiImages.has(s.wikiTitle) && !this.driverPhotos.has(s.driverId)) {
+              this.driverPhotos.set(s.driverId, wikiImages.get(s.wikiTitle)!);
+            }
+          }
+        });
+      }
+    }
   }
 
   private setConstructors(standings: ConstructorStanding[]): void {
     this.constructorStandings = standings;
     this.constructorRows = standings.slice(3);
+    for (const c of standings) {
+      if (!constructorLogo(c.constructorId) && !this.wikiLogos.has(c.constructorId)) {
+        void this.mediaPipeline.resolveConstructorLogo(c.constructorId, c.name).then(logoUrl => {
+          if (logoUrl) {
+            this.wikiLogos.set(c.constructorId, logoUrl);
+          }
+        });
+      }
+    }
   }
 
   // Ogni risposta controlla che la stagione sia ancora quella scelta: altrimenti non serve più
@@ -392,11 +423,40 @@ export class StandingsComponent implements OnInit, OnDestroy {
   photoFor(standing: DriverStanding): string | undefined {
     if (this.failedPhotos.has(standing.driverId) || (standing.code && this.failedPhotos.has(standing.code))) return undefined;
     const driver = this.gridDriverFor(standing);
-    if (driver) return currentSeasonPhotoUrl(driver);
+    if (driver) {
+      const chain = this.mediaPipeline.getDriverPhotoChain({
+        driverId: standing.driverId,
+        code: standing.code,
+        fullName: standing.fullName,
+        team_name: driver.team_name,
+        headshot_url: driver.headshot_url,
+        wikiTitle: standing.wikiTitle,
+        team_color: driver.team_color
+      }, this.selectedSeason ?? undefined);
+      const idx = this.photoFallbackIndices.get(standing.driverId) || 0;
+      return chain[idx] || currentSeasonPhotoUrl(driver);
+    }
     return this.driverPhotos.get(standing.driverId);
   }
 
   onPhotoError(standing: DriverStanding): void {
+    const driver = this.gridDriverFor(standing);
+    if (driver) {
+      const chain = this.mediaPipeline.getDriverPhotoChain({
+        driverId: standing.driverId,
+        code: standing.code,
+        fullName: standing.fullName,
+        team_name: driver.team_name,
+        headshot_url: driver.headshot_url,
+        wikiTitle: standing.wikiTitle,
+        team_color: driver.team_color
+      }, this.selectedSeason ?? undefined);
+      const curIdx = this.photoFallbackIndices.get(standing.driverId) || 0;
+      if (curIdx + 1 < chain.length) {
+        this.photoFallbackIndices.set(standing.driverId, curIdx + 1);
+        return;
+      }
+    }
     this.failedPhotos.add(standing.driverId);
     if (standing.code) this.failedPhotos.add(standing.code);
   }
@@ -411,7 +471,14 @@ export class StandingsComponent implements OnInit, OnDestroy {
   }
 
   logoFor(constructorId: string): ConstructorLogo | undefined {
-    return this.failedLogos.has(constructorId) ? undefined : constructorLogo(constructorId);
+    if (this.failedLogos.has(constructorId)) return undefined;
+    const local = constructorLogo(constructorId);
+    if (local) return local;
+    const wikiLogo = this.wikiLogos.get(constructorId);
+    if (wikiLogo) {
+      return { url: wikiLogo, onLight: false };
+    }
+    return undefined;
   }
 
   onLogoError(constructorId: string): void {

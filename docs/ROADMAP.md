@@ -147,7 +147,7 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-### 15. Sistema di Auto-Aggiornamento Dinamico Stagionale (Auto-Sync & Media Pipeline) 🔄
+### 15. Sistema di Auto-Aggiornamento Dinamico Stagionale (Auto-Sync & Media Pipeline) (Completato) ✅
 - **Rilevamento Automatico Calendario & Tappe**:
   - Rilevamento automatico della stagione attiva tramite OpenF1 e Jolpica all'avvio del nuovo anno, con auto-configurazione di round, orari, date e tracciati senza interventi manuali.
 - **Sincronizzazione Dinamica Classifiche, Posizioni & Roster**:

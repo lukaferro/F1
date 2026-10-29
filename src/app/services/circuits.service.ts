@@ -1,10 +1,52 @@
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 import { Circuit } from '../models/circuit';
+
+export const LAP_RECORDS_CACHE_KEY = 'f1:circuit-lap-records';
+
+export interface LapRecordUpdate {
+  circuitId: string;
+  circuitName: string;
+  oldTime?: string;
+  newTime: string;
+  driver: string;
+  year: number;
+}
+
+export function parseLapTimeToMillis(timeStr: string | undefined): number | null {
+  if (!timeStr) return null;
+  const clean = timeStr.trim();
+  const match = clean.match(/^(?:(\d+):)?(\d+)(?:\.(\d+))?$/);
+  if (!match) return null;
+  const minutes = match[1] ? Number(match[1]) : 0;
+  const seconds = Number(match[2]);
+  const millis = match[3] ? Number(match[3].padEnd(3, '0').slice(0, 3)) : 0;
+  return minutes * 60000 + seconds * 1000 + millis;
+}
+
+export function isFasterLap(candidateTime: string, existingRecordTime: string | undefined): boolean {
+  const candMs = parseLapTimeToMillis(candidateTime);
+  const existMs = parseLapTimeToMillis(existingRecordTime);
+  if (candMs === null || candMs <= 0) return false;
+  if (existMs === null || existMs <= 0) return true;
+  return candMs < existMs;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class CircuitsService {
+  private readonly http: HttpClient | null;
+
+  /** Notifica l'avvenuto aggiornamento dei giri record dei circuiti */
+  readonly recordsUpdated$ = new Subject<LapRecordUpdate[]>();
+
+  constructor(http?: HttpClient | null) {
+    this.http = http !== undefined ? http : inject(HttpClient, { optional: true });
+    this.loadCachedLapRecords();
+  }
+
   private readonly circuits: Circuit[] = [
     {
       id: 'bahrain',
@@ -800,5 +842,115 @@ export class CircuitsService {
         (nm && (cName.includes(nm) || nm.includes(cName)))
       );
     });
+  }
+
+  /**
+   * Strategia Stale-While-Revalidate: carica immediatamente dalla cache locale
+   * i giri record aggiornati precedentemente per azzerare la latenza a 0 ms.
+   */
+  private loadCachedLapRecords(): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const raw = localStorage.getItem(LAP_RECORDS_CACHE_KEY);
+      if (!raw) return;
+      const records: Record<string, { time: string; driver: string; year: number }> = JSON.parse(raw);
+      for (const [circuitId, record] of Object.entries(records)) {
+        const circuit = this.circuits.find(c => c.id === circuitId);
+        if (circuit && record?.time && record?.driver && record?.year) {
+          circuit.lap_record = { ...record };
+        }
+      }
+    } catch {
+      // In caso di errore parsing localStorage, prosegue con i valori base
+    }
+  }
+
+  /**
+   * Salva su localStorage il dizionario attuale dei giri record
+   */
+  private persistLapRecords(): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const map: Record<string, { time: string; driver: string; year: number }> = {};
+      for (const c of this.circuits) {
+        if (c.lap_record) {
+          map[c.id] = c.lap_record;
+        }
+      }
+      localStorage.setItem(LAP_RECORDS_CACHE_KEY, JSON.stringify(map));
+    } catch {
+      // Quota superata o disattivata
+    }
+  }
+
+  /**
+   * Pipeline di background Stale-While-Revalidate:
+   * Interroga Jolpica e OpenF1 per verificare se nelle gare della stagione selezionata
+   * è stato infranto il giro record della pista. In caso positivo, aggiorna il catalogo in-memory,
+   * salva su localStorage e notifica i componenti iscritti.
+   */
+  async syncFastestLapRecords(season: number = new Date().getFullYear()): Promise<{ updatedCount: number; updates: LapRecordUpdate[] }> {
+    const updates: LapRecordUpdate[] = [];
+
+    try {
+      const url = `https://api.jolpi.ca/ergast/f1/${season}/fastest/1/results.json?limit=50`;
+      let res: any;
+
+      if (this.http) {
+        res = await new Promise((resolve, reject) => {
+          this.http!.get(url).subscribe({ next: resolve, error: reject });
+        });
+      } else if (typeof fetch !== 'undefined') {
+        const response = await fetch(url);
+        res = await response.json();
+      }
+
+      const races = res?.MRData?.RaceTable?.Races || [];
+
+      for (const race of races) {
+        const result = race?.Results?.[0];
+        const fastestLap = result?.FastestLap;
+        const lapTime = fastestLap?.Time?.time;
+        if (!lapTime) continue;
+
+        const driver = result?.Driver ? `${result.Driver.givenName} ${result.Driver.familyName}` : 'Pilota Sconosciuto';
+        const year = Number(race.season) || season;
+
+        const circuit = this.findMatchingCircuit(
+          race.Circuit?.circuitId,
+          race.Circuit?.Location?.locality,
+          race.Circuit?.Location?.country,
+          race.Circuit?.circuitName
+        );
+
+        if (!circuit) continue;
+
+        const oldTime = circuit.lap_record?.time;
+        if (isFasterLap(lapTime, oldTime)) {
+          circuit.lap_record = {
+            time: lapTime,
+            driver,
+            year
+          };
+          updates.push({
+            circuitId: circuit.id,
+            circuitName: circuit.name,
+            oldTime,
+            newTime: lapTime,
+            driver,
+            year
+          });
+        }
+      }
+
+      if (updates.length > 0) {
+        this.persistLapRecords();
+        this.recordsUpdated$.next(updates);
+      }
+    } catch {
+      // In caso di errore di rete, i dati statici base a 0 ms rimangono intatti
+    }
+
+    return { updatedCount: updates.length, updates };
   }
 }
