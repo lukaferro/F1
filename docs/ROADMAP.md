@@ -158,3 +158,18 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
   - Risoluzione automatica di foto piloti, loghi scuderie e sagome circuiti tramite pattern CDN Formula 1 (`media.formula1.com`) basato sull'anno corrente.
   - Fallback dinamico su **Wikimedia Commons / Wikidata API** (proprietà `P18` immagine, `P154` logo) per recuperare l'ultima foto ufficiale ad alta risoluzione caricata dalla community.
   - Gestione fallback a cascata (immagine anno precedente → placeholder vettoriale elegante) nei periodi invernali pre-stagione prima del rilascio dei photoshoot ufficiali.
+
+---
+
+### 16. Ottimizzazione Responsive, Esperienza App (PWA) & Performance (In Corso / Da Perfezionare) ⏳
+- **Verifica & Perfezionamento Responsive Mobile**:
+  - Revisione completa dell'adattamento su schermi piccoli (smartphone e tablet in portrait/landscape) per tutte le viste: Home, Gran Premi, Circuiti, Piloti, Classifiche, Simulatori e Dettagli.
+  - Risoluzione definitiva di eventuali tagli o overflow orizzontale su tabelle, drawer e card.
+  - Ergonomia touch: target di tocco minimi, navigazione fluida tramite la barra inferiore mobile e gesture.
+- **Installabilità & Esperienza App (PWA)**:
+  - Verifica del funzionamento offline del service worker (`sw.js`) per risorse statiche e navigazione di base.
+  - Perfezionamento del manifest PWA (`manifest.webmanifest`), icone, splash screen e standalone display mode su iOS e Android.
+- **Audit & Ottimizzazione Performance**:
+  - Riduzione dei tempi di caricamento (Core Web Vitals: LCP, CLS, INP).
+  - Ottimizzazione rendering SVG (mappe mondiali, grafici telemetrici e simulatori).
+  - Pulizia cache, lazy loading delle immagini e minimizzazione del payload di rete.
