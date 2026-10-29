@@ -131,26 +131,20 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-### 14. Simulatore Punti & Calcolatore Matematico Titolo Mondiale 🧮 (Completato) ✅
-- **Tab dedicato `🧮 Simulatore Titolo` in `/classifiche`**:
-  - Simulatore interattivo sia per il **Mondiale Piloti** sia per il **Mondiale Costruttori**.
-  - **Integrazione calendario reale**: recupero dei Gran Premi e delle Sprint rimanenti della stagione da Jolpica API con rilevamento automatico dei round già disputati e selettore di scenari per le stagioni storiche (*Ultime 3 gare*, *Ultime 5 gare*, *Tutta la stagione*).
-  - **Assegnazione piazzamenti completa & Regole per Epoca**:
-    - Podio principale in risalto (🥇 P1, 🥈 P2, 🥉 P3) con punteggi dinamici per era (25-18-15 dal 2010+, 10-8-6 nel 2003-2009, 10-6-4 nel 1991-2002, ecc.).
-    - **Toggle espandibile posizioni secondarie a punti**: supporto completo fino a P10 (P4–P10) e Sprint completa (P1–P8 dal 2022+, P1–P3 nel 2021).
-    - **Simulazione Zero Punti / Ritirati (DNF)**: possibilità di marcare qualsiasi pilota o scuderia a zero punti/ritirato in un round, azzerando istantaneamente i punti potenziali non assegnati.
-    - **Giro Veloce con regolamento reale FIA**: 1 punto addizionale solo se nella Top 10 (2019–2024), senza vincolo di posizione (1950–1959), disattivato dal 2025 in poi.
-  - **Preset rapidi di simulazione**:
-    - ⚡ *Reset simulazione* (ripristina la classifica ufficiale).
-    - 🥇 *Tutte al Leader* (simula il dominio del capoclassifica).
-    - 🥈 *Rimonta Rivale* (simula le vittorie dell'inseguitore diretto).
-    - 💥 *DNF Leader (0 pt)* (simula il ritiro del capoclassifica e la vittoria dell'inseguitore).
-  - **Dashboard KPI e Calcolo Matematico Aritmetico**:
-    - **Magic Number**: calcolo dei punti esatti mancanti al leader per la certezza matematica del titolo iridato, tenendo conto del criterio di spareggio FIA ufficiale (Art. 7 per numero di vittorie).
-    - **Contendenti matematicamente in corsa vs eliminati**: badge di stato (*🏆 Campione*, *🟢 In corsa*, *🔴 Fuori*).
-    - **Banner Celebrativo Oro**: incoronazione istantanea con punti finali e vittorie non appena il titolo è aritmeticamente assegnato.
-    - **Scenario Prossimo Gran Premio**: calcolo dinamico della combinazione di punti richiesta al leader nella gara successiva per laurearsi Campione del Mondo in anticipo.
-  - **Classifica Ricalcolata Live**: tabella sticky con punti base, bonus simulati (`+X pt`), totale ricalcolato e distacco aggiornato.
+### 14. Scenari Titolo & What If (Completato)
+- **Tab dedicato `Scenari & What If` in `/classifiche`**:
+  - **Grafico SVG a Traiettorie**:
+    - Visualizzazione grafica immediata delle curve dei punti a confronto tra i principali contendenti.
+    - Linee continue per i Gran Premi disputati e linee tratteggiate luminose per le proiezioni future o le divergenze storiche.
+  - **Modalità Proiezioni Future (Stagione in corso)**:
+    - 4 scenari rapidi a 1-click: *Trend Attuale*, *Dominio Leader*, *Grande Rimonta*, *Ritiro Leader (0 pt)*.
+    - Rilevamento visivo del round esatto del clinch matematico sul tracciato grafico.
+    - Card verdetto con punti finali, distacco e condizione esatta richiesta nella prossima gara per chiudere il campionato.
+  - **Modalità Riscrivi la Storia (What If per Stagioni Storiche)**:
+    - Bivi storici celebri pre-configurati (Singapore 2008, Silverstone 2021, Cina 2007, Spa 2012, Abu Dhabi 2010, Sepang 2016, Suzuka 2006, Adelaide 1994, ecc.).
+    - Ricalcolo istantaneo del Campione del Mondo alternativo con banner "Titolo Mondiale Riscritto" e traiettoria divergente a grafico.
+  - **Configurazione Manuale Avanzata (Opzionale)**:
+    - Pannello espandibile per impostare piazzamenti specifici (P1–P10), Sprint, giri veloci con vincolo Top 10 FIA o piloti ritirati (0 pt / DNF).
 
 ---
 

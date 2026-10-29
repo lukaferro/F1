@@ -13,6 +13,14 @@ import {
   getSeasonScoringRules,
   SeasonScoringRules
 } from '../../../utils/championship-calculator';
+import {
+  calculateFutureScenario,
+  calculateHistoricalWhatIf,
+  FAMOUS_HISTORICAL_PIVOTS,
+  FutureScenarioMode,
+  HistoricalPivot,
+  ScenarioSimulationOutcome
+} from '../../../utils/what-if-scenarios';
 import { countryNameToCode, smallFlagUrl } from '../../../utils/country-flags';
 import { constructorColor } from '../../../utils/constructor-branding';
 
@@ -43,6 +51,22 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   rounds: SimulatorRaceRound[] = [];
   simulationResult: ChampionshipSimulationResult | null = null;
 
+  // Scenari grafici & What If
+  futureScenarioMode: FutureScenarioMode = 'trend';
+  selectedHistoricalPivot: HistoricalPivot | null = null;
+  historicalPivotsForSeason: HistoricalPivot[] = [];
+  scenarioOutcome: ScenarioSimulationOutcome | null = null;
+  hoveredRoundIndex: number | null = null;
+
+  // Dimensioni SVG grafico
+  chartSvgWidth = 860;
+  chartSvgHeight = 280;
+  chartMaxPoints = 100;
+  yTicks: Array<{ y: number; val: number }> = [];
+
+  // Editor manuale avanzato
+  showManualRoundsEditor = false;
+
   // Opzioni per i selettori nei round
   contenderOptions: ContenderOption[] = [];
 
@@ -65,6 +89,7 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     } else if (changes['driverStandings'] || changes['constructorStandings']) {
       this.updateContenderOptions();
       this.recalculate();
+      this.recalculateScenario();
     }
   }
 
@@ -76,7 +101,13 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       this.schedule = scheduleItems;
       this.initializeRounds();
       this.updateContenderOptions();
+
+      // Bivi storici per la stagione corrente selezionata
+      this.historicalPivotsForSeason = FAMOUS_HISTORICAL_PIVOTS.filter(p => p.season === this.season);
+      this.selectedHistoricalPivot = this.historicalPivotsForSeason[0] || null;
+
       this.recalculate();
+      this.recalculateScenario();
     } catch {
       this.schedule = [];
       this.rounds = [];
@@ -98,6 +129,107 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     this.recalculate();
   }
 
+  setFutureScenario(scenario: FutureScenarioMode): void {
+    if (this.futureScenarioMode === scenario) return;
+    this.futureScenarioMode = scenario;
+    this.recalculateScenario();
+  }
+
+  selectHistoricalPivot(pivot: HistoricalPivot | null): void {
+    this.selectedHistoricalPivot = pivot;
+    this.recalculateScenario();
+  }
+
+  toggleManualRoundsEditor(): void {
+    this.showManualRoundsEditor = !this.showManualRoundsEditor;
+  }
+
+  recalculateScenario(): void {
+    if (!this.schedule.length || !this.driverStandings.length) {
+      this.scenarioOutcome = null;
+      return;
+    }
+
+    if (this.isCurrentSeason) {
+      this.scenarioOutcome = calculateFutureScenario(
+        this.schedule,
+        this.driverStandings,
+        this.season,
+        this.futureScenarioMode
+      );
+    } else {
+      this.scenarioOutcome = calculateHistoricalWhatIf(
+        this.schedule,
+        this.driverStandings,
+        this.season,
+        this.selectedHistoricalPivot
+      );
+    }
+
+    if (this.scenarioOutcome) {
+      this.computeSvgCoordinates(this.scenarioOutcome);
+    }
+  }
+
+  private computeSvgCoordinates(outcome: ScenarioSimulationOutcome): void {
+    const margin = { top: 25, right: 35, bottom: 35, left: 50 };
+    const plotWidth = this.chartSvgWidth - margin.left - margin.right;
+    const plotHeight = this.chartSvgHeight - margin.top - margin.bottom;
+
+    const totalRounds = outcome.roundsAxis.length;
+    if (totalRounds <= 1) return;
+
+    let maxPoints = 50;
+    for (const s of outcome.series) {
+      for (const n of [...s.realNodes, ...s.projectedNodes]) {
+        if (n.cumulative > maxPoints) maxPoints = n.cumulative;
+      }
+    }
+    this.chartMaxPoints = Math.ceil(maxPoints / 50) * 50;
+
+    // Tacche asse Y
+    this.yTicks = [0, 0.25, 0.5, 0.75, 1].map(frac => {
+      const val = Math.round(this.chartMaxPoints * frac);
+      const y = margin.top + (1 - frac) * plotHeight;
+      return { y, val };
+    });
+
+    const getX = (roundIndex: number) => margin.left + (roundIndex / (totalRounds - 1)) * plotWidth;
+    const getY = (pts: number) => margin.top + (1 - pts / this.chartMaxPoints) * plotHeight;
+
+    for (const s of outcome.series) {
+      let realD = '';
+      let projD = '';
+
+      const allNodes = [...s.realNodes, ...s.projectedNodes].sort((a, b) => a.round - b.round);
+      allNodes.forEach((n, idx) => {
+        (n as any).x = getX(idx);
+        (n as any).y = getY(n.cumulative);
+      });
+
+      s.realNodes.forEach((n, idx) => {
+        const x = (n as any).x;
+        const y = (n as any).y;
+        realD += idx === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+      });
+
+      if (s.projectedNodes.length > 0) {
+        const lastReal = s.realNodes[s.realNodes.length - 1];
+        if (lastReal) {
+          projD += `M ${(lastReal as any).x} ${(lastReal as any).y}`;
+        }
+        s.projectedNodes.forEach(n => {
+          const x = (n as any).x;
+          const y = (n as any).y;
+          projD += projD === '' ? `M ${x} ${y}` : ` L ${x} ${y}`;
+        });
+      }
+
+      s.realPathD = realD;
+      s.projectedPathD = projD;
+    }
+  }
+
   private initializeRounds(): void {
     if (!this.schedule.length) {
       this.rounds = [];
@@ -111,10 +243,8 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       let isCompleted = false;
 
       if (this.isCurrentSeason) {
-        // Se la gara è già passata nel calendario
         isCompleted = item.date < todayStr;
       } else {
-        // Stagione passata: gestisci in base al preset scelto
         if (this.pastSeasonPreset === 'all') {
           isCompleted = false;
         } else if (this.pastSeasonPreset === 'last3') {
@@ -192,7 +322,7 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     }
   }
 
-  // --- Gestione posizioni Gara estese ---
+  // Posizioni Gara estese
   getRacePosition(r: SimulatorRaceRound, index: number): string | undefined {
     if (r.racePositions && r.racePositions[index] !== undefined) {
       return r.racePositions[index];
@@ -215,7 +345,6 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     if (index === 1) r.raceSecondId = value || undefined;
     if (index === 2) r.raceThirdId = value || undefined;
 
-    // Se il pilota era nei DNF e gli viene assegnata una posizione, rimuovilo da DNF
     if (value && r.dnfContenderIds) {
       r.dnfContenderIds = r.dnfContenderIds.filter(id => id !== value);
     }
@@ -223,7 +352,7 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     this.recalculate();
   }
 
-  // --- Gestione posizioni Sprint estese ---
+  // Posizioni Sprint estese
   getSprintPosition(r: SimulatorRaceRound, index: number): string | undefined {
     if (r.sprintPositions && r.sprintPositions[index] !== undefined) {
       return r.sprintPositions[index];
@@ -249,7 +378,7 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     this.recalculate();
   }
 
-  // --- Gestione DNF / Zero Punti ---
+  // Gestione DNF / Zero Punti
   isContenderDnf(r: SimulatorRaceRound, id: string): boolean {
     return !!r.dnfContenderIds && r.dnfContenderIds.includes(id);
   }
@@ -260,7 +389,6 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     if (!r.dnfContenderIds.includes(id)) {
       r.dnfContenderIds.push(id);
     }
-    // Rimuovi da eventuali posizioni assegnate
     if (r.racePositions) {
       r.racePositions = r.racePositions.map(p => (p === id ? undefined : p));
     }
@@ -288,18 +416,15 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     return opt ? opt.label : id;
   }
 
-  // Controllo disabilitazione opzioni nei selettori
   isOptionDisabled(r: SimulatorRaceRound, optValue: string, currentPosIdx: number, type: 'race' | 'sprint'): boolean {
     if (this.isContenderDnf(r, optValue)) return true;
 
     if (type === 'race') {
       const positions = r.racePositions || [];
-      // Se in drivers mode, non può occupare più di una posizione
       if (this.mode === 'drivers') {
         const foundIdx = positions.indexOf(optValue);
         return foundIdx !== -1 && foundIdx !== currentPosIdx;
       } else {
-        // In costruttori: massimo 2 vetture a punti
         const occurrences = positions.filter((p, idx) => p === optValue && idx !== currentPosIdx).length;
         return occurrences >= 2;
       }
@@ -315,7 +440,6 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     }
   }
 
-  // Toggle espansione dettagli posizioni secondarie (P4-P10)
   toggleRoundExpand(roundNumber: number): void {
     if (this.expandedRoundDetails.has(roundNumber)) {
       this.expandedRoundDetails.delete(roundNumber);
@@ -443,7 +567,6 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     return getSeasonScoringRules(this.season || 2024);
   }
 
-  // Lista indici delle posizioni secondarie a punti (da 3 a racePoints.length - 1, es. P4-P10)
   get secondaryRacePositions(): number[] {
     const pts = this.rules.racePoints;
     const indices: number[] = [];
@@ -453,7 +576,6 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     return indices;
   }
 
-  // Lista indici delle posizioni sprint secondarie (da 1 a sprintPoints.length - 1, es. P2-P8)
   get secondarySprintPositions(): number[] {
     const pts = this.rules.sprintPoints;
     const indices: number[] = [];

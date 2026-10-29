@@ -4,446 +4,426 @@
     <div class="toolbar-title-section">
       <div class="toolbar-badge">
         <span class="f1-badge">
-          <i class="pi pi-calculator"></i>
-          <span>Simulatore Ufficiale &middot; Stagione {{ season }}</span>
+          <i class="pi pi-sliders-h"></i>
+          <span>Scenari &amp; What If &middot; Stagione {{ season }}</span>
         </span>
       </div>
-      <h2 class="simulator-title">Calcolatore Matematico Titolo Mondiale</h2>
+      <h2 class="simulator-title">
+        {{ isCurrentSeason ? 'Proiezioni Titolo &amp; Scenari Futuri' : 'Riscrivi la Storia &middot; What If' }}
+      </h2>
       <p class="simulator-desc">
-        Configura i piazzamenti, le sprint, il giro veloce o i ritiri (0 punti / DNF) nei round rimanenti per calcolare in tempo reale l'assegnazione aritmetica del titolo.
+        {{ isCurrentSeason
+          ? 'Esplora le traiettorie e i possibili finali di campionato con scenari a confronto: scopri dove e quando si assegna il titolo mondiale.'
+          : 'Modifica i bivi storici e gli eventi chiave di questa stagione per scoprire come sarebbe cambiata l\'assegnazione del titolo mondiale.'
+        }}
       </p>
     </div>
 
-    <div class="toolbar-controls">
-      <!-- Toggle Piloti / Costruttori -->
-      <div class="mode-switch" role="group" aria-label="Campionato da simulare">
-        <button
-          type="button"
-          class="mode-btn"
-          [class.active]="mode === 'drivers'"
-          (click)="setMode('drivers')">
-          🏎️ Piloti
-        </button>
-        <button
-          type="button"
-          class="mode-btn"
-          [class.active]="mode === 'constructors'"
-          (click)="setMode('constructors')">
-          🏭 Costruttori
-        </button>
-      </div>
-
-      <!-- Preset stagioni passate -->
-      @if (!isCurrentSeason) {
-        <div class="preset-group">
-          <span class="preset-label">Simula gare:</span>
-          <div class="preset-chips">
-            <button
-              type="button"
-              class="chip-btn"
-              [class.active]="pastSeasonPreset === 'last3'"
-              (click)="setPastSeasonPreset('last3')">
-              Ultime 3
-            </button>
-            <button
-              type="button"
-              class="chip-btn"
-              [class.active]="pastSeasonPreset === 'last5'"
-              (click)="setPastSeasonPreset('last5')">
-              Ultime 5
-            </button>
-            <button
-              type="button"
-              class="chip-btn"
-              [class.active]="pastSeasonPreset === 'all'"
-              (click)="setPastSeasonPreset('all')">
-              Tutte
-            </button>
-          </div>
+    <!-- Barra Scenari Rapidi per Stagione in Corso -->
+    @if (isCurrentSeason) {
+      <div class="scenario-selector-bar">
+        <span class="selector-heading">Seleziona Scenario:</span>
+        <div class="scenario-chips">
+          <button
+            type="button"
+            class="scenario-chip-btn"
+            [class.active]="futureScenarioMode === 'trend'"
+            (click)="setFutureScenario('trend')">
+            <i class="pi pi-chart-line"></i>
+            <span>Trend Attuale</span>
+          </button>
+          <button
+            type="button"
+            class="scenario-chip-btn"
+            [class.active]="futureScenarioMode === 'leader-dominance'"
+            (click)="setFutureScenario('leader-dominance')">
+            <i class="pi pi-star"></i>
+            <span>Dominio Leader</span>
+          </button>
+          <button
+            type="button"
+            class="scenario-chip-btn"
+            [class.active]="futureScenarioMode === 'chaser-comeback'"
+            (click)="setFutureScenario('chaser-comeback')">
+            <i class="pi pi-bolt"></i>
+            <span>Grande Rimonta</span>
+          </button>
+          <button
+            type="button"
+            class="scenario-chip-btn danger"
+            [class.active]="futureScenarioMode === 'leader-dnf'"
+            (click)="setFutureScenario('leader-dnf')">
+            <i class="pi pi-times-circle"></i>
+            <span>Ritiro Leader (0 pt)</span>
+          </button>
         </div>
-      }
-
-      <!-- Preset rapidi simulazione -->
-      <div class="quick-actions">
-        <button type="button" class="action-btn" title="Ripristina valori originali" (click)="resetSimulation()">
-          <i class="pi pi-refresh"></i> Reset
-        </button>
-        <button type="button" class="action-btn leader" title="Assegna tutte le vittorie al leader" (click)="presetAllWinsToLeader()">
-          🥇 Tutte al Leader
-        </button>
-        <button type="button" class="action-btn chaser" title="Assegna le vittorie al secondo per testare la rimonta" (click)="presetAllWinsToSecond()">
-          🥈 Rimonta Rivale
-        </button>
-        <button type="button" class="action-btn dnf" title="Simula il ritiro del leader (0 punti) e la vittoria del rivale" (click)="presetLeaderDnf()">
-          💥 DNF Leader (0 pt)
-        </button>
       </div>
-    </div>
+    } @else {
+      <!-- Barra Bivi Storici per Stagioni Passate -->
+      <div class="historical-pivots-section">
+        <div class="pivots-header">
+          <span class="selector-heading">
+            <i class="pi pi-history"></i> Bivi Storici Chiave (What If):
+          </span>
+          <button
+            type="button"
+            class="reset-history-btn"
+            [class.active]="selectedHistoricalPivot === null"
+            (click)="selectHistoricalPivot(null)">
+            <i class="pi pi-replay"></i> Realtà Ufficiale FIA
+          </button>
+        </div>
+
+        @if (historicalPivotsForSeason.length > 0) {
+          <div class="pivots-grid">
+            @for (p of historicalPivotsForSeason; track p.id) {
+              <div
+                class="pivot-card f1-card"
+                [class.selected]="selectedHistoricalPivot?.id === p.id"
+                (click)="selectHistoricalPivot(p)">
+                <div class="pivot-meta">
+                  <span class="pivot-badge">Round {{ p.round }} &middot; {{ p.circuitName }}</span>
+                  <i class="pi" [ngClass]="selectedHistoricalPivot?.id === p.id ? 'pi-check-circle' : 'pi-circle'"></i>
+                </div>
+                <strong class="pivot-title">{{ p.title }}</strong>
+                <p class="pivot-desc">{{ p.description }}</p>
+                <div class="pivot-original">
+                  <span class="original-label">Realtà:</span> {{ p.originalOutcome }}
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="pivots-empty-note">
+            <i class="pi pi-info-circle"></i>
+            <span>Questa stagione storica non ha un bivio pre-impostato. Puoi esplorare la progressione ufficiale qui sotto o simulare le ultime gare nell'editor manuale.</span>
+          </div>
+        }
+      </div>
+    }
   </div>
 
   @if (loading) {
     <div class="loading-state">
-      <div class="skeleton" style="height: 120px; border-radius: 12px; margin-bottom: 1.5rem;"></div>
-      <div class="skeleton" style="height: 350px; border-radius: 12px;"></div>
+      <div class="skeleton" style="height: 300px; border-radius: 12px; margin-bottom: 1.5rem;"></div>
+      <div class="skeleton" style="height: 140px; border-radius: 12px;"></div>
     </div>
-  } @else if (simulationResult) {
-    <!-- Banner KPI & Clincher Scenario -->
-    <div class="kpi-section">
-      @if (simulationResult.champion; as champ) {
-        <div class="champion-banner f1-card">
-          <div class="champ-trophy">🏆</div>
-          <div class="champ-info">
-            <span class="champ-badge">CAMPIONE DEL MONDO MATEMATICO {{ season }}</span>
-            <h3 class="champ-name">{{ champ.name }}</h3>
-            <p class="champ-sub">
-              {{ champ.constructorName }} &middot; <strong>{{ champ.totalPoints }} punti</strong> e <strong>{{ champ.totalWins }} vittorie</strong>.
-              Nessun avversario può più superare questo punteggio!
+  } @else if (scenarioOutcome) {
+    <!-- Banner Verdetto / Esito dello Scenario -->
+    <div class="outcome-banner-wrap">
+      <div class="outcome-card f1-card" [class.history-changed]="scenarioOutcome.isHistoryChanged">
+        <div class="outcome-badge-row">
+          @if (scenarioOutcome.isHistoryChanged) {
+            <span class="badge-tag gold">
+              <i class="pi pi-trophy"></i> TITOLO MONDIALE RISCRITTO
+            </span>
+          } @else {
+            <span class="badge-tag">
+              <i class="pi pi-info-circle"></i> ESITO SCENARIO
+            </span>
+          }
+          <span class="scenario-name-badge">{{ scenarioOutcome.title }}</span>
+        </div>
+
+        <div class="outcome-body">
+          <div class="outcome-main-text">
+            <h3 class="champ-heading">
+              <span class="color-stripe" [style.background-color]="scenarioOutcome.winnerColor"></span>
+              {{ scenarioOutcome.winnerName }}
+            </h3>
+            <p class="champ-lead">
+              {{ scenarioOutcome.summary }}
             </p>
           </div>
-        </div>
-      } @else {
-        <div class="kpi-grid">
-          <div class="kpi-card f1-card">
-            <span class="kpi-label">Punti per il Titolo (Magic Number)</span>
-            <div class="kpi-value highlight">{{ simulationResult.magicNumber }} pt</div>
-            <span class="kpi-hint">Mancanti al leader per la certezza aritmetica</span>
-          </div>
 
-          <div class="kpi-card f1-card">
-            <span class="kpi-label">In Corsa per il Titolo</span>
-            <div class="kpi-value">{{ simulationResult.contendersInContentionCount }}</div>
-            <span class="kpi-hint">{{ mode === 'drivers' ? 'piloti' : 'scuderie' }} matematicamente in lotta</span>
-          </div>
-
-          <div class="kpi-card f1-card">
-            <span class="kpi-label">Punti Max in Palio</span>
-            <div class="kpi-value">{{ simulationResult.remainingPointsOnTable }} pt</div>
-            <span class="kpi-hint">su {{ simulationResult.remainingRoundsCount }} round ancora da disputare</span>
-          </div>
-        </div>
-
-        @if (simulationResult.nextRoundClinchScenario) {
-          <div class="scenario-banner f1-card">
-            <div class="scenario-icon">🎯</div>
-            <div class="scenario-text">
-              <strong>Scenario Prossimo Gran Premio:</strong>
-              <span>{{ simulationResult.nextRoundClinchScenario }}</span>
+          <div class="outcome-stats">
+            <div class="stat-pill">
+              <span class="stat-lbl">Punti Campione</span>
+              <strong class="stat-val">{{ scenarioOutcome.winnerPoints }} pt</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-lbl">Secondo Classificato</span>
+              <strong class="stat-val">{{ scenarioOutcome.runnerUpName }} ({{ scenarioOutcome.runnerUpPoints }} pt)</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-lbl">Vantaggio Finale</span>
+              <strong class="stat-val highlight">+{{ scenarioOutcome.gap }} pt</strong>
             </div>
           </div>
-        }
-      }
-    </div>
-
-    <!-- Contenuto principale: Griglia Gare vs Classifica Live -->
-    <div class="simulator-main-grid">
-      <!-- Colonna Sinistra: Gare da simulare -->
-      <div class="sim-column races-col">
-        <div class="section-title-wrap">
-          <h3 class="section-heading">
-            <i class="pi pi-flag"></i> Round da Simulare ({{ remainingSimulatableRounds.length }})
-          </h3>
-          <span class="section-note">Seleziona piazzamenti o ritiri (DNF) per aggiornare la classifica</span>
         </div>
 
-        @if (remainingSimulatableRounds.length === 0) {
-          <div class="empty-races f1-card">
-            <i class="pi pi-check-circle empty-icon"></i>
-            <h4>Tutti i round della stagione sono stati già disputati!</h4>
-            <p>Usa i pulsanti in alto per simulare gli ultimi round con risultati differenti.</p>
+        @if (scenarioOutcome.nextRaceClinchHint) {
+          <div class="outcome-clinch-hint">
+            <i class="pi pi-flag"></i>
+            <span><strong>Scenario Prossima Gara:</strong> {{ scenarioOutcome.nextRaceClinchHint }}</span>
           </div>
-        } @else {
-          <div class="races-list">
-            @for (r of remainingSimulatableRounds; track r.round) {
-              <div class="race-card f1-card" [class.has-results]="r.raceWinnerId || r.raceSecondId || (r.dnfContenderIds && r.dnfContenderIds.length > 0)">
-                <div class="race-header">
-                  <div class="race-meta">
-                    <span class="race-round-badge">R{{ r.round }}</span>
-                    @if (flagUrl(r.country); as flag) {
-                      <img [src]="flag" [alt]="r.country" class="race-flag" />
-                    }
-                    <div class="race-names">
-                      <strong class="race-title">{{ r.raceName }}</strong>
-                      <span class="race-circuit">{{ r.circuitName }} &middot; {{ r.locality }}</span>
-                    </div>
-                  </div>
-                  <div class="race-tags">
-                    @if (r.hasSprint) {
-                      <span class="sprint-tag"><i class="pi pi-bolt"></i> Sprint</span>
-                    }
-                    <button type="button" class="btn-clear-round" title="Pulisci questo round" (click)="clearRound(r)">
-                      <i class="pi pi-times"></i>
-                    </button>
+        }
+      </div>
+    </div>
+
+    <!-- Grafico a Traiettorie (SVG) -->
+    <div class="chart-container f1-card">
+      <div class="chart-header">
+        <div class="chart-titles">
+          <h3 class="chart-main-title">
+            <i class="pi pi-chart-line"></i>
+            {{ isCurrentSeason ? 'Traiettorie Proiettate Verso il Finale di Stagione' : 'Confronto Traiettoria Reale vs Storia Alternativa' }}
+          </h3>
+          <span class="chart-sub">
+            {{ isCurrentSeason ? 'Le linee continue indicano le gare corse; le linee tratteggiate indicano la proiezione dei punti.' : 'La linea tratteggiata indica la divergenza dei punti dal momento del bivio storico.' }}
+          </span>
+        </div>
+
+        <!-- Legenda contendenti -->
+        <div class="chart-legend">
+          @for (s of scenarioOutcome.series; track s.id) {
+            <div class="legend-item">
+              <span class="legend-dot" [style.background-color]="s.color"></span>
+              <span class="legend-name">{{ s.name }}</span>
+              <strong class="legend-pts">{{ s.projectedTotalPoints }} pt</strong>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Area Grafico SVG -->
+      <div class="svg-wrapper">
+        <svg
+          class="trajectory-svg"
+          [attr.viewBox]="'0 0 ' + chartSvgWidth + ' ' + chartSvgHeight"
+          preserveAspectRatio="xMidYMid meet">
+
+          <!-- Griglia orizzontale e tacche asse Y -->
+          @for (yt of yTicks; track yt.val) {
+            <line
+              class="chart-grid-line"
+              x1="50"
+              [attr.y1]="yt.y"
+              [attr.x2]="chartSvgWidth - 35"
+              [attr.y2]="yt.y" />
+            <text
+              class="chart-y-text"
+              x="42"
+              [attr.y]="yt.y + 4">
+              {{ yt.val }}
+            </text>
+          }
+
+          <!-- Linea verticale di separazione tra gare corse e future (se stagione corrente) -->
+          @if (isCurrentSeason) {
+            @for (r of scenarioOutcome.roundsAxis; track r.round) {
+              @if (r.isProjected && $first) {
+                <line
+                  class="chart-now-line"
+                  [attr.x1]="$any(scenarioOutcome.series[0]?.realNodes?.slice(-1)[0])?.x || 50"
+                  y1="25"
+                  [attr.x2]="$any(scenarioOutcome.series[0]?.realNodes?.slice(-1)[0])?.x || 50"
+                  [attr.y2]="chartSvgHeight - 35" />
+                <text
+                  class="chart-now-text"
+                  [attr.x]="($any(scenarioOutcome.series[0]?.realNodes?.slice(-1)[0])?.x || 50) + 4"
+                  y="20">
+                  Oggi
+                </text>
+              }
+            }
+          }
+
+          <!-- Tracciati serie -->
+          @for (s of scenarioOutcome.series; track s.id) {
+            <!-- Tratto reale (linea continua) -->
+            @if (s.realPathD) {
+              <path
+                class="chart-path real"
+                [attr.d]="s.realPathD"
+                [attr.stroke]="s.color" />
+            }
+
+            <!-- Tratto proiettato / alternativo (linea tratteggiata) -->
+            @if (s.projectedPathD) {
+              <path
+                class="chart-path projected"
+                [attr.d]="s.projectedPathD"
+                [attr.stroke]="s.color" />
+            }
+
+            <!-- Nodi reali -->
+            @for (n of s.realNodes; track n.round) {
+              <circle
+                class="chart-node real"
+                [attr.cx]="$any(n).x"
+                [attr.cy]="$any(n).y"
+                [attr.fill]="s.color"
+                r="3.5" />
+            }
+
+            <!-- Nodi proiettati / alternativi -->
+            @for (n of s.projectedNodes; track n.round) {
+              <circle
+                class="chart-node projected"
+                [attr.cx]="$any(n).x"
+                [attr.cy]="$any(n).y"
+                [attr.fill]="s.color"
+                r="4.5" />
+            }
+          }
+
+          <!-- Asse X: etichette dei round -->
+          @for (r of scenarioOutcome.roundsAxis; track r.round; let idx = $index) {
+            <text
+              class="chart-x-text"
+              [class.projected-x]="r.isProjected"
+              [attr.x]="50 + (idx / (scenarioOutcome.roundsAxis.length - 1)) * (chartSvgWidth - 85)"
+              [attr.y]="chartSvgHeight - 12">
+              R{{ r.round }}
+            </text>
+          }
+        </svg>
+      </div>
+    </div>
+
+    <!-- Toggle per editor manuale approfondito -->
+    <div class="manual-editor-toggle-row">
+      <button
+        type="button"
+        class="manual-toggle-btn"
+        (click)="toggleManualRoundsEditor()">
+        <i class="pi" [ngClass]="showManualRoundsEditor ? 'pi-chevron-up' : 'pi-sliders-v'"></i>
+        <span>{{ showManualRoundsEditor ? 'Nascondi configurazione manuale gare' : 'Personalizza singoli round a mano (Piazzamenti & DNF)' }}</span>
+      </button>
+    </div>
+
+    <!-- Sezione Manuale Avanzata (Collapsible) -->
+    @if (showManualRoundsEditor) {
+      <div class="manual-section f1-card">
+        <div class="section-title-wrap">
+          <h3 class="section-heading">
+            <i class="pi pi-cog"></i> Configurazione Manuale Avanzata dei Round
+          </h3>
+          <span class="section-note">Imposta piazzamenti specifici, giri veloci o piloti a zero punti (DNF) per un controllo chirurgico</span>
+        </div>
+
+        <div class="races-list">
+          @for (r of remainingSimulatableRounds; track r.round) {
+            <div class="race-card f1-card" [class.has-results]="r.raceWinnerId || (r.dnfContenderIds && r.dnfContenderIds.length > 0)">
+              <div class="race-header">
+                <div class="race-meta">
+                  <span class="race-round-badge">R{{ r.round }}</span>
+                  @if (flagUrl(r.country); as flag) {
+                    <img [src]="flag" [alt]="r.country" class="race-flag" />
+                  }
+                  <div class="race-names">
+                    <strong class="race-title">{{ r.raceName }}</strong>
+                    <span class="race-circuit">{{ r.circuitName }} &middot; {{ r.locality }}</span>
                   </div>
                 </div>
-
-                <!-- Selettori posizioni del Podio principale -->
-                <div class="selectors-grid">
-                  <!-- 1° Posto -->
-                  <div class="selector-field">
-                    <label class="field-label">🥇 1° Posto (+{{ rules.p1 }} pt)</label>
-                    <select
-                      class="sim-select winner-select"
-                      [ngModel]="getRacePosition(r, 0)"
-                      (ngModelChange)="setRacePosition(r, 0, $event)">
-                      <option [ngValue]="undefined">-- Non assegnato --</option>
-                      @for (opt of contenderOptions; track opt.value) {
-                        <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 0, 'race')">
-                          {{ opt.label }}
-                        </option>
-                      }
-                    </select>
-                  </div>
-
-                  <!-- 2° Posto -->
-                  <div class="selector-field">
-                    <label class="field-label">🥈 2° Posto (+{{ rules.p2 }} pt)</label>
-                    <select
-                      class="sim-select"
-                      [ngModel]="getRacePosition(r, 1)"
-                      (ngModelChange)="setRacePosition(r, 1, $event)">
-                      <option [ngValue]="undefined">-- Non assegnato --</option>
-                      @for (opt of contenderOptions; track opt.value) {
-                        <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 1, 'race')">
-                          {{ opt.label }}
-                        </option>
-                      }
-                    </select>
-                  </div>
-
-                  <!-- 3° Posto -->
-                  <div class="selector-field">
-                    <label class="field-label">🥉 3° Posto (+{{ rules.p3 }} pt)</label>
-                    <select
-                      class="sim-select"
-                      [ngModel]="getRacePosition(r, 2)"
-                      (ngModelChange)="setRacePosition(r, 2, $event)">
-                      <option [ngValue]="undefined">-- Non assegnato --</option>
-                      @for (opt of contenderOptions; track opt.value) {
-                        <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 2, 'race')">
-                          {{ opt.label }}
-                        </option>
-                      }
-                    </select>
-                  </div>
-
-                  <!-- Giro Veloce (+1 pt) -->
-                  @if (rules.hasFastestLapPoint) {
-                    <div class="selector-field">
-                      <label class="field-label">
-                        ⚡ Giro Veloce (+{{ rules.fastestLap }} pt)
-                        @if (rules.fastestLapRequiresTop10) {
-                          <span class="fl-hint" title="Regolamento FIA 2019-2024: il punto viene assegnato solo se il pilota termina nella Top 10">(Top 10)</span>
-                        }
-                      </label>
-                      <select
-                        class="sim-select"
-                        [(ngModel)]="r.fastestLapDriverId"
-                        (ngModelChange)="recalculate()">
-                        <option [ngValue]="undefined">-- Non assegnato --</option>
-                        @for (opt of contenderOptions; track opt.value) {
-                          <option [value]="opt.value" [disabled]="isContenderDnf(r, opt.value)">{{ opt.label }}</option>
-                        }
-                      </select>
-                    </div>
-                  }
-
-                  <!-- Sprint (se presente) -->
+                <div class="race-tags">
                   @if (r.hasSprint) {
-                    <div class="selector-field sprint-field">
-                      <label class="field-label">🏃 1° Sprint (+{{ rules.sprintP1 }} pt)</label>
-                      <select
-                        class="sim-select sprint-select"
-                        [ngModel]="getSprintPosition(r, 0)"
-                        (ngModelChange)="setSprintPosition(r, 0, $event)">
-                        <option [ngValue]="undefined">-- Non assegnato --</option>
-                        @for (opt of contenderOptions; track opt.value) {
-                          <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 0, 'sprint')">
-                            {{ opt.label }}
-                          </option>
-                        }
-                      </select>
-                    </div>
+                    <span class="sprint-tag">Sprint</span>
                   }
+                  <button type="button" class="btn-clear-round" title="Pulisci questo round" (click)="clearRound(r)">
+                    <i class="pi pi-times"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Podio Rapido -->
+              <div class="selectors-grid">
+                <div class="selector-field">
+                  <label class="field-label">1° Posto (+{{ rules.p1 }} pt)</label>
+                  <select
+                    class="sim-select winner-select"
+                    [ngModel]="getRacePosition(r, 0)"
+                    (ngModelChange)="setRacePosition(r, 0, $event)">
+                    <option [ngValue]="undefined">-- Non assegnato --</option>
+                    @for (opt of contenderOptions; track opt.value) {
+                      <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 0, 'race')">
+                        {{ opt.label }}
+                      </option>
+                    }
+                  </select>
                 </div>
 
-                <!-- Sezione Ritirati / Zero Punti (DNF) -->
-                <div class="dnf-section">
-                  <div class="dnf-header">
-                    <span class="dnf-title">
-                      <i class="pi pi-ban"></i> Zero Punti / Ritirato (DNF):
-                    </span>
+                <div class="selector-field">
+                  <label class="field-label">2° Posto (+{{ rules.p2 }} pt)</label>
+                  <select
+                    class="sim-select"
+                    [ngModel]="getRacePosition(r, 1)"
+                    (ngModelChange)="setRacePosition(r, 1, $event)">
+                    <option [ngValue]="undefined">-- Non assegnato --</option>
+                    @for (opt of contenderOptions; track opt.value) {
+                      <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 1, 'race')">
+                        {{ opt.label }}
+                      </option>
+                    }
+                  </select>
+                </div>
+
+                <div class="selector-field">
+                  <label class="field-label">3° Posto (+{{ rules.p3 }} pt)</label>
+                  <select
+                    class="sim-select"
+                    [ngModel]="getRacePosition(r, 2)"
+                    (ngModelChange)="setRacePosition(r, 2, $event)">
+                    <option [ngValue]="undefined">-- Non assegnato --</option>
+                    @for (opt of contenderOptions; track opt.value) {
+                      <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 2, 'race')">
+                        {{ opt.label }}
+                      </option>
+                    }
+                  </select>
+                </div>
+
+                @if (rules.hasFastestLapPoint) {
+                  <div class="selector-field">
+                    <label class="field-label">Giro Veloce (+{{ rules.fastestLap }} pt)</label>
                     <select
-                      class="dnf-add-select"
-                      [ngModel]="selectedDnfForRound[r.round]"
-                      (ngModelChange)="addDnfContender(r, $event)">
-                      <option [ngValue]="undefined">+ Aggiungi pilota o team a 0 pt...</option>
+                      class="sim-select"
+                      [(ngModel)]="r.fastestLapDriverId"
+                      (ngModelChange)="recalculate()">
+                      <option [ngValue]="undefined">-- Non assegnato --</option>
                       @for (opt of contenderOptions; track opt.value) {
-                        <option [value]="opt.value" [disabled]="isContenderDnf(r, opt.value)">
-                          {{ opt.label }}
-                        </option>
+                        <option [value]="opt.value" [disabled]="isContenderDnf(r, opt.value)">{{ opt.label }}</option>
                       }
                     </select>
                   </div>
-
-                  @if (r.dnfContenderIds && r.dnfContenderIds.length > 0) {
-                    <div class="dnf-chips-wrap">
-                      @for (dnfId of r.dnfContenderIds; track dnfId) {
-                        <span class="dnf-chip" (click)="removeDnfContender(r, dnfId)" title="Clicca per rimuovere dal DNF">
-                          <i class="pi pi-times-circle"></i>
-                          <span>{{ getContenderName(dnfId) }} (0 pt)</span>
-                          <span class="chip-remove">&times;</span>
-                        </span>
-                      }
-                    </div>
-                  }
-                </div>
-
-                <!-- Toggle espansione posizioni secondarie a punti (P4-P10 & Sprint secondarie) -->
-                @if (secondaryRacePositions.length > 0 || (r.hasSprint && secondarySprintPositions.length > 0)) {
-                  <div class="expand-bar">
-                    <button
-                      type="button"
-                      class="btn-toggle-expand"
-                      (click)="toggleRoundExpand(r.round)">
-                      <span>
-                        {{ isRoundExpanded(r.round)
-                          ? '▲ Nascondi posizioni secondarie a punti'
-                          : '▼ Espandi tutte le posizioni a punti (P4–P' + rules.racePoints.length + (r.hasSprint ? ' & Sprint P2–P' + rules.sprintPoints.length : '') + ')'
-                        }}
-                      </span>
-                    </button>
-                  </div>
-
-                  @if (isRoundExpanded(r.round)) {
-                    <div class="expanded-positions-container">
-                      <!-- Griglia P4..P10 -->
-                      <div class="secondary-title">Posizioni Gara P4–P{{ rules.racePoints.length }}</div>
-                      <div class="secondary-selectors-grid">
-                        @for (idx of secondaryRacePositions; track idx) {
-                          <div class="selector-field secondary-field">
-                            <label class="field-label">P{{ idx + 1 }} (+{{ rules.racePoints[idx] }} pt)</label>
-                            <select
-                              class="sim-select small-select"
-                              [ngModel]="getRacePosition(r, idx)"
-                              (ngModelChange)="setRacePosition(r, idx, $event)">
-                              <option [ngValue]="undefined">-- Non assegnato --</option>
-                              @for (opt of contenderOptions; track opt.value) {
-                                <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, idx, 'race')">
-                                  {{ opt.label }}
-                                </option>
-                              }
-                            </select>
-                          </div>
-                        }
-                      </div>
-
-                      <!-- Griglia Sprint secondarie (P2..P8) se presenti -->
-                      @if (r.hasSprint && secondarySprintPositions.length > 0) {
-                        <div class="secondary-title sprint-title">🏃 Sprint P2–P{{ rules.sprintPoints.length }}</div>
-                        <div class="secondary-selectors-grid">
-                          @for (sIdx of secondarySprintPositions; track sIdx) {
-                            <div class="selector-field secondary-field">
-                              <label class="field-label">Sprint P{{ sIdx + 1 }} (+{{ rules.sprintPoints[sIdx] }} pt)</label>
-                              <select
-                                class="sim-select small-select"
-                                [ngModel]="getSprintPosition(r, sIdx)"
-                                (ngModelChange)="setSprintPosition(r, sIdx, $event)">
-                                <option [ngValue]="undefined">-- Non assegnato --</option>
-                                @for (opt of contenderOptions; track opt.value) {
-                                  <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, sIdx, 'sprint')">
-                                    {{ opt.label }}
-                                  </option>
-                                }
-                              </select>
-                            </div>
-                          }
-                        </div>
-                      }
-                    </div>
-                  }
                 }
               </div>
-            }
-          </div>
-        }
-      </div>
 
-      <!-- Colonna Destra: Classifica Ricalcolata Live -->
-      <div class="sim-column standings-col">
-        <div class="section-title-wrap">
-          <h3 class="section-heading">
-            <i class="pi pi-list"></i> Classifica Ricalcolata Live
-          </h3>
-          <span class="section-note">Punti attuali + bonus simulati</span>
-        </div>
+              <!-- DNF / Zero Punti -->
+              <div class="dnf-section">
+                <div class="dnf-header">
+                  <span class="dnf-title">
+                    <i class="pi pi-ban"></i> Zero Punti / Ritiro (DNF):
+                  </span>
+                  <select
+                    class="dnf-add-select"
+                    [ngModel]="selectedDnfForRound[r.round]"
+                    (ngModelChange)="addDnfContender(r, $event)">
+                    <option [ngValue]="undefined">+ Aggiungi a 0 pt...</option>
+                    @for (opt of contenderOptions; track opt.value) {
+                      <option [value]="opt.value" [disabled]="isContenderDnf(r, opt.value)">
+                        {{ opt.label }}
+                      </option>
+                    }
+                  </select>
+                </div>
 
-        <div class="standings-table-card f1-card">
-          <div class="table-responsive">
-            <table class="sim-table">
-              <thead>
-                <tr>
-                  <th class="th-pos">Pos</th>
-                  <th class="th-name">{{ mode === 'drivers' ? 'Pilota' : 'Scuderia' }}</th>
-                  <th class="th-num">Punti Base</th>
-                  <th class="th-num">Simulati</th>
-                  <th class="th-num">Totale</th>
-                  <th class="th-num">Gap</th>
-                  <th class="th-status">Stato Titolo</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (c of simulationResult.standings; track c.id) {
-                  <tr [class.is-champion-row]="c.isChampion" [class.is-eliminated-row]="c.isEliminated">
-                    <td class="td-pos">
-                      <span class="pos-badge" [class.first]="c.position === 1">
-                        {{ c.position }}
+                @if (r.dnfContenderIds && r.dnfContenderIds.length > 0) {
+                  <div class="dnf-chips-wrap">
+                    @for (dnfId of r.dnfContenderIds; track dnfId) {
+                      <span class="dnf-chip" (click)="removeDnfContender(r, dnfId)">
+                        <span>{{ getContenderName(dnfId) }} (0 pt)</span>
+                        <span class="chip-remove">&times;</span>
                       </span>
-                    </td>
-                    <td class="td-name">
-                      <div class="contender-name-cell">
-                        <span class="team-stripe" [style.background-color]="c.color"></span>
-                        <div class="name-details">
-                          <span class="main-name">{{ c.name }}</span>
-                          @if (mode === 'drivers') {
-                            <span class="sub-team">{{ c.constructorName }}</span>
-                          }
-                        </div>
-                      </div>
-                    </td>
-                    <td class="td-num">{{ c.currentPoints }}</td>
-                    <td class="td-num sim-bonus">
-                      @if (c.simulatedPoints > 0) {
-                        <span class="badge-bonus">+{{ c.simulatedPoints }}</span>
-                      } @else {
-                        <span class="muted">-</span>
-                      }
-                    </td>
-                    <td class="td-num total-pts">
-                      <strong>{{ c.totalPoints }}</strong>
-                    </td>
-                    <td class="td-num gap-pts">
-                      @if (c.position === 1) {
-                        <span class="leader-tag">LEADER</span>
-                      } @else {
-                        <span>-{{ c.gapToLeader }}</span>
-                      }
-                    </td>
-                    <td class="td-status">
-                      @if (c.isChampion) {
-                        <span class="status-pill champion">🏆 CAMPIONE</span>
-                      } @else if (c.isEliminated) {
-                        <span class="status-pill eliminated">🔴 FUORI</span>
-                      } @else {
-                        <span class="status-pill in-contention">🟢 IN CORSA</span>
-                      }
-                    </td>
-                  </tr>
+                    }
+                  </div>
                 }
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          }
         </div>
       </div>
-    </div>
+    }
   }
 </div>
