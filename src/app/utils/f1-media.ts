@@ -1,12 +1,17 @@
 // Immagini ufficiali del sito formula1.com (tracciati e foto piloti) e loghi degli sponsor dei Gran Premi
 
-const F1_MEDIA = 'https://media.formula1.com/image/upload';
+export const F1_MEDIA = 'https://media.formula1.com/image/upload';
 
-// Stagione delle foto/mappe ad alta risoluzione pubblicate sul sito F1
-const MEDIA_SEASON = 2026;
+/** Restituisce l'anno della stagione corrente per le risorse grafiche ufficiali */
+export function getActiveMediaSeason(): number {
+  return new Date().getFullYear();
+}
+
+/** Retrocompatibilità: costante per la stagione corrente */
+export const MEDIA_SEASON = getActiveMediaSeason();
 
 // Nome del team (come restituito da OpenF1) -> cartella usata dal sito F1 per le foto dei piloti
-const TEAM_SLUGS: Record<string, string> = {
+export const TEAM_SLUGS: Record<string, string> = {
   'Alpine': 'alpine',
   'Aston Martin': 'astonmartin',
   'Audi': 'audi',
@@ -21,26 +26,36 @@ const TEAM_SLUGS: Record<string, string> = {
 };
 
 /** Mappa dettagliata del tracciato (settori, curve, zone di sorpasso) a partire dal circuit_short_name di OpenF1 */
-export function circuitMapUrl(circuitShortName: string | undefined): string | undefined {
+export function circuitMapUrl(circuitShortName: string | undefined, season: number = getActiveMediaSeason()): string | undefined {
   if (!circuitShortName) return undefined;
   const slug = circuitShortName.toLowerCase().normalize('NFD').replace(/[^a-z]/g, '');
-  return `${F1_MEDIA}/c_fit,h_704/q_auto/v1740000000/common/f1/${MEDIA_SEASON}/track/${MEDIA_SEASON}track${slug}detailed.webp`;
+  return `${F1_MEDIA}/c_fit,h_704/q_auto/v1740000000/common/f1/${season}/track/${season}track${slug}detailed.webp`;
+}
+
+/** Mappa dettagliata della stagione precedente (fallback essenziale prima del rilascio dei nuovi layout o nei test) */
+export function previousCircuitMapUrl(circuitShortName: string | undefined, season: number = getActiveMediaSeason()): string | undefined {
+  return circuitMapUrl(circuitShortName, season - 1);
 }
 
 /** Codice pilota del sito F1 (es. "lewham01") ricavato dall'headshot_url di OpenF1 */
-function driverCode(headshotUrl: string | undefined): string | undefined {
+export function driverCode(headshotUrl: string | undefined): string | undefined {
   return headshotUrl?.match(/\/(\w+)\.png\.transform/)?.[1];
 }
 
 /**
- * Foto ufficiale ad alta risoluzione della stagione corrente.
+ * Foto ufficiale ad alta risoluzione della stagione selezionata (default: corrente).
  * Va chiamata con i dati del pilota nella stagione attuale (team attuale), altrimenti il link non esiste.
  */
-export function currentSeasonPhotoUrl(driver: { team_name?: string; headshot_url?: string }): string | undefined {
+export function currentSeasonPhotoUrl(driver: { team_name?: string; headshot_url?: string }, season: number = getActiveMediaSeason()): string | undefined {
   const slug = TEAM_SLUGS[driver.team_name ?? ''];
   const code = driverCode(driver.headshot_url);
   if (!slug || !code) return undefined;
-  return `${F1_MEDIA}/c_lfill,g_north,w_440,h_520/q_auto/v1740000000/common/f1/${MEDIA_SEASON}/${slug}/${code}/${MEDIA_SEASON}${slug}${code}right.webp`;
+  return `${F1_MEDIA}/c_lfill,g_north,w_440,h_520/q_auto/v1740000000/common/f1/${season}/${slug}/${code}/${season}${slug}${code}right.webp`;
+}
+
+/** Foto ufficiale della stagione precedente (fallback essenziale nei mesi invernali pre-stagione) */
+export function previousSeasonPhotoUrl(driver: { team_name?: string; headshot_url?: string }, season: number = getActiveMediaSeason()): string | undefined {
+  return currentSeasonPhotoUrl(driver, season - 1);
 }
 
 /** L'headshot_url di OpenF1 è una miniatura (1col): chiediamo la versione più grande */

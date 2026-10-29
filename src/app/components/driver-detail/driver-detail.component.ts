@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { Openf1ServiceService, Driver } from '../../services/openf1-service';
-import { currentSeasonPhotoUrl, hiResHeadshotUrl } from '../../utils/f1-media';
+import { currentSeasonPhotoUrl, hiResHeadshotUrl, previousSeasonPhotoUrl } from '../../utils/f1-media';
 import { ApiUnavailableComponent } from '../api-unavailable/api-unavailable.component';
 import { DriverCareerComponent } from '../driver-career/driver-career.component';
 import { WikipediaBioComponent } from '../wikipedia-bio/wikipedia-bio.component';
@@ -188,11 +188,15 @@ export class DriverDetailComponent implements OnInit {
     return this.driverPhotos[key] || this.fallbackPhoto;
   }
 
-  // Se la foto non si carica passa alla successiva disponibile
+  // Se la foto non si carica passa alla successiva disponibile (anno precedente -> OpenF1 headshot -> fallback)
   onDriverImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
+    const prev = previousSeasonPhotoUrl(this.driver ?? {});
     const headshot = hiResHeadshotUrl(this.driver?.headshot_url);
-    if (headshot && img.src !== headshot) {
+    const prevYearStr = "/" + (new Date().getFullYear() - 1) + "/";
+    if (prev && img.src !== prev && !img.src.includes(prevYearStr)) {
+      img.src = prev;
+    } else if (headshot && img.src !== headshot) {
       img.src = headshot;
     } else if (img.src !== this.fallbackPhoto) {
       img.src = this.fallbackPhoto;
