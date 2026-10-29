@@ -135,13 +135,18 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 - **Tab dedicato `🧮 Simulatore Titolo` in `/classifiche`**:
   - Simulatore interattivo sia per il **Mondiale Piloti** sia per il **Mondiale Costruttori**.
   - **Integrazione calendario reale**: recupero dei Gran Premi e delle Sprint rimanenti della stagione da Jolpica API con rilevamento automatico dei round già disputati e selettore di scenari per le stagioni storiche (*Ultime 3 gare*, *Ultime 5 gare*, *Tutta la stagione*).
-  - **Selettori interattivi di piazzamento**: per ogni round simulabile, assegnazione di 1° posto (+25 pt), 2° posto (+18 pt), 3° posto (+15 pt), Giro Veloce (+1 pt) e Sprint (+8 pt).
+  - **Assegnazione piazzamenti completa & Regole per Epoca**:
+    - Podio principale in risalto (🥇 P1, 🥈 P2, 🥉 P3) con punteggi dinamici per era (25-18-15 dal 2010+, 10-8-6 nel 2003-2009, 10-6-4 nel 1991-2002, ecc.).
+    - **Toggle espandibile posizioni secondarie a punti**: supporto completo fino a P10 (P4–P10) e Sprint completa (P1–P8 dal 2022+, P1–P3 nel 2021).
+    - **Simulazione Zero Punti / Ritirati (DNF)**: possibilità di marcare qualsiasi pilota o scuderia a zero punti/ritirato in un round, azzerando istantaneamente i punti potenziali non assegnati.
+    - **Giro Veloce con regolamento reale FIA**: 1 punto addizionale solo se nella Top 10 (2019–2024), senza vincolo di posizione (1950–1959), disattivato dal 2025 in poi.
   - **Preset rapidi di simulazione**:
     - ⚡ *Reset simulazione* (ripristina la classifica ufficiale).
     - 🥇 *Tutte al Leader* (simula il dominio del capoclassifica).
     - 🥈 *Rimonta Rivale* (simula le vittorie dell'inseguitore diretto).
+    - 💥 *DNF Leader (0 pt)* (simula il ritiro del capoclassifica e la vittoria dell'inseguitore).
   - **Dashboard KPI e Calcolo Matematico Aritmetico**:
-    - **Magic Number**: calcolo dei punti esatti mancanti al leader per la certezza matematica del titolo iridato indipendente da qualsiasi risultato degli avversari.
+    - **Magic Number**: calcolo dei punti esatti mancanti al leader per la certezza matematica del titolo iridato, tenendo conto del criterio di spareggio FIA ufficiale (Art. 7 per numero di vittorie).
     - **Contendenti matematicamente in corsa vs eliminati**: badge di stato (*🏆 Campione*, *🟢 In corsa*, *🔴 Fuori*).
     - **Banner Celebrativo Oro**: incoronazione istantanea con punti finali e vittorie non appena il titolo è aritmeticamente assegnato.
     - **Scenario Prossimo Gran Premio**: calcolo dinamico della combinazione di punti richiesta al leader nella gara successiva per laurearsi Campione del Mondo in anticipo.

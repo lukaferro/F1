@@ -10,7 +10,7 @@
       </div>
       <h2 class="simulator-title">Calcolatore Matematico Titolo Mondiale</h2>
       <p class="simulator-desc">
-        Configura i piazzamenti dei Gran Premi e delle Sprint rimanenti per calcolare in tempo reale l'assegnazione aritmetica del titolo.
+        Configura i piazzamenti, le sprint, il giro veloce o i ritiri (0 punti / DNF) nei round rimanenti per calcolare in tempo reale l'assegnazione aritmetica del titolo.
       </p>
     </div>
 
@@ -73,6 +73,9 @@
         </button>
         <button type="button" class="action-btn chaser" title="Assegna le vittorie al secondo per testare la rimonta" (click)="presetAllWinsToSecond()">
           🥈 Rimonta Rivale
+        </button>
+        <button type="button" class="action-btn dnf" title="Simula il ritiro del leader (0 punti) e la vittoria del rivale" (click)="presetLeaderDnf()">
+          💥 DNF Leader (0 pt)
         </button>
       </div>
     </div>
@@ -139,7 +142,7 @@
           <h3 class="section-heading">
             <i class="pi pi-flag"></i> Round da Simulare ({{ remainingSimulatableRounds.length }})
           </h3>
-          <span class="section-note">Seleziona i piazzamenti per aggiornare la classifica</span>
+          <span class="section-note">Seleziona piazzamenti o ritiri (DNF) per aggiornare la classifica</span>
         </div>
 
         @if (remainingSimulatableRounds.length === 0) {
@@ -151,7 +154,7 @@
         } @else {
           <div class="races-list">
             @for (r of remainingSimulatableRounds; track r.round) {
-              <div class="race-card f1-card" [class.has-results]="r.raceWinnerId || r.raceSecondId">
+              <div class="race-card f1-card" [class.has-results]="r.raceWinnerId || r.raceSecondId || (r.dnfContenderIds && r.dnfContenderIds.length > 0)">
                 <div class="race-header">
                   <div class="race-meta">
                     <span class="race-round-badge">R{{ r.round }}</span>
@@ -173,18 +176,20 @@
                   </div>
                 </div>
 
-                <!-- Selettori posizioni del round -->
+                <!-- Selettori posizioni del Podio principale -->
                 <div class="selectors-grid">
                   <!-- 1° Posto -->
                   <div class="selector-field">
                     <label class="field-label">🥇 1° Posto (+{{ rules.p1 }} pt)</label>
                     <select
                       class="sim-select winner-select"
-                      [(ngModel)]="r.raceWinnerId"
-                      (ngModelChange)="recalculate()">
+                      [ngModel]="getRacePosition(r, 0)"
+                      (ngModelChange)="setRacePosition(r, 0, $event)">
                       <option [ngValue]="undefined">-- Non assegnato --</option>
                       @for (opt of contenderOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
+                        <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 0, 'race')">
+                          {{ opt.label }}
+                        </option>
                       }
                     </select>
                   </div>
@@ -194,11 +199,13 @@
                     <label class="field-label">🥈 2° Posto (+{{ rules.p2 }} pt)</label>
                     <select
                       class="sim-select"
-                      [(ngModel)]="r.raceSecondId"
-                      (ngModelChange)="recalculate()">
+                      [ngModel]="getRacePosition(r, 1)"
+                      (ngModelChange)="setRacePosition(r, 1, $event)">
                       <option [ngValue]="undefined">-- Non assegnato --</option>
                       @for (opt of contenderOptions; track opt.value) {
-                        <option [value]="opt.value" [disabled]="opt.value === r.raceWinnerId">{{ opt.label }}</option>
+                        <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 1, 'race')">
+                          {{ opt.label }}
+                        </option>
                       }
                     </select>
                   </div>
@@ -208,26 +215,33 @@
                     <label class="field-label">🥉 3° Posto (+{{ rules.p3 }} pt)</label>
                     <select
                       class="sim-select"
-                      [(ngModel)]="r.raceThirdId"
-                      (ngModelChange)="recalculate()">
+                      [ngModel]="getRacePosition(r, 2)"
+                      (ngModelChange)="setRacePosition(r, 2, $event)">
                       <option [ngValue]="undefined">-- Non assegnato --</option>
                       @for (opt of contenderOptions; track opt.value) {
-                        <option [value]="opt.value" [disabled]="opt.value === r.raceWinnerId || opt.value === r.raceSecondId">{{ opt.label }}</option>
+                        <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 2, 'race')">
+                          {{ opt.label }}
+                        </option>
                       }
                     </select>
                   </div>
 
-                  <!-- Giro Veloce (+1 pt) - solo per stagioni con regolamento punto FL (1950-1959 e 2019-2024) -->
+                  <!-- Giro Veloce (+1 pt) -->
                   @if (rules.hasFastestLapPoint) {
                     <div class="selector-field">
-                      <label class="field-label">⚡ Giro Veloce (+{{ rules.fastestLap }} pt)</label>
+                      <label class="field-label">
+                        ⚡ Giro Veloce (+{{ rules.fastestLap }} pt)
+                        @if (rules.fastestLapRequiresTop10) {
+                          <span class="fl-hint" title="Regolamento FIA 2019-2024: il punto viene assegnato solo se il pilota termina nella Top 10">(Top 10)</span>
+                        }
+                      </label>
                       <select
                         class="sim-select"
                         [(ngModel)]="r.fastestLapDriverId"
                         (ngModelChange)="recalculate()">
                         <option [ngValue]="undefined">-- Non assegnato --</option>
                         @for (opt of contenderOptions; track opt.value) {
-                          <option [value]="opt.value">{{ opt.label }}</option>
+                          <option [value]="opt.value" [disabled]="isContenderDnf(r, opt.value)">{{ opt.label }}</option>
                         }
                       </select>
                     </div>
@@ -236,19 +250,118 @@
                   <!-- Sprint (se presente) -->
                   @if (r.hasSprint) {
                     <div class="selector-field sprint-field">
-                      <label class="field-label">🏃 Vincitore Sprint (+{{ rules.sprintP1 }} pt)</label>
+                      <label class="field-label">🏃 1° Sprint (+{{ rules.sprintP1 }} pt)</label>
                       <select
                         class="sim-select sprint-select"
-                        [(ngModel)]="r.sprintWinnerId"
-                        (ngModelChange)="recalculate()">
+                        [ngModel]="getSprintPosition(r, 0)"
+                        (ngModelChange)="setSprintPosition(r, 0, $event)">
                         <option [ngValue]="undefined">-- Non assegnato --</option>
                         @for (opt of contenderOptions; track opt.value) {
-                          <option [value]="opt.value">{{ opt.label }}</option>
+                          <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, 0, 'sprint')">
+                            {{ opt.label }}
+                          </option>
                         }
                       </select>
                     </div>
                   }
                 </div>
+
+                <!-- Sezione Ritirati / Zero Punti (DNF) -->
+                <div class="dnf-section">
+                  <div class="dnf-header">
+                    <span class="dnf-title">
+                      <i class="pi pi-ban"></i> Zero Punti / Ritirato (DNF):
+                    </span>
+                    <select
+                      class="dnf-add-select"
+                      [ngModel]="selectedDnfForRound[r.round]"
+                      (ngModelChange)="addDnfContender(r, $event)">
+                      <option [ngValue]="undefined">+ Aggiungi pilota o team a 0 pt...</option>
+                      @for (opt of contenderOptions; track opt.value) {
+                        <option [value]="opt.value" [disabled]="isContenderDnf(r, opt.value)">
+                          {{ opt.label }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+
+                  @if (r.dnfContenderIds && r.dnfContenderIds.length > 0) {
+                    <div class="dnf-chips-wrap">
+                      @for (dnfId of r.dnfContenderIds; track dnfId) {
+                        <span class="dnf-chip" (click)="removeDnfContender(r, dnfId)" title="Clicca per rimuovere dal DNF">
+                          <i class="pi pi-times-circle"></i>
+                          <span>{{ getContenderName(dnfId) }} (0 pt)</span>
+                          <span class="chip-remove">&times;</span>
+                        </span>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <!-- Toggle espansione posizioni secondarie a punti (P4-P10 & Sprint secondarie) -->
+                @if (secondaryRacePositions.length > 0 || (r.hasSprint && secondarySprintPositions.length > 0)) {
+                  <div class="expand-bar">
+                    <button
+                      type="button"
+                      class="btn-toggle-expand"
+                      (click)="toggleRoundExpand(r.round)">
+                      <span>
+                        {{ isRoundExpanded(r.round)
+                          ? '▲ Nascondi posizioni secondarie a punti'
+                          : '▼ Espandi tutte le posizioni a punti (P4–P' + rules.racePoints.length + (r.hasSprint ? ' & Sprint P2–P' + rules.sprintPoints.length : '') + ')'
+                        }}
+                      </span>
+                    </button>
+                  </div>
+
+                  @if (isRoundExpanded(r.round)) {
+                    <div class="expanded-positions-container">
+                      <!-- Griglia P4..P10 -->
+                      <div class="secondary-title">Posizioni Gara P4–P{{ rules.racePoints.length }}</div>
+                      <div class="secondary-selectors-grid">
+                        @for (idx of secondaryRacePositions; track idx) {
+                          <div class="selector-field secondary-field">
+                            <label class="field-label">P{{ idx + 1 }} (+{{ rules.racePoints[idx] }} pt)</label>
+                            <select
+                              class="sim-select small-select"
+                              [ngModel]="getRacePosition(r, idx)"
+                              (ngModelChange)="setRacePosition(r, idx, $event)">
+                              <option [ngValue]="undefined">-- Non assegnato --</option>
+                              @for (opt of contenderOptions; track opt.value) {
+                                <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, idx, 'race')">
+                                  {{ opt.label }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- Griglia Sprint secondarie (P2..P8) se presenti -->
+                      @if (r.hasSprint && secondarySprintPositions.length > 0) {
+                        <div class="secondary-title sprint-title">🏃 Sprint P2–P{{ rules.sprintPoints.length }}</div>
+                        <div class="secondary-selectors-grid">
+                          @for (sIdx of secondarySprintPositions; track sIdx) {
+                            <div class="selector-field secondary-field">
+                              <label class="field-label">Sprint P{{ sIdx + 1 }} (+{{ rules.sprintPoints[sIdx] }} pt)</label>
+                              <select
+                                class="sim-select small-select"
+                                [ngModel]="getSprintPosition(r, sIdx)"
+                                (ngModelChange)="setSprintPosition(r, sIdx, $event)">
+                                <option [ngValue]="undefined">-- Non assegnato --</option>
+                                @for (opt of contenderOptions; track opt.value) {
+                                  <option [value]="opt.value" [disabled]="isOptionDisabled(r, opt.value, sIdx, 'sprint')">
+                                    {{ opt.label }}
+                                  </option>
+                                }
+                              </select>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                }
               </div>
             }
           </div>

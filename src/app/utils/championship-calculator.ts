@@ -5,11 +5,14 @@ import {
 } from '../models/championship-simulator';
 
 export interface SeasonScoringRules {
+  racePoints: number[];
+  sprintPoints: number[];
   p1: number;
   p2: number;
   p3: number;
   fastestLap: number;
   hasFastestLapPoint: boolean;
+  fastestLapRequiresTop10: boolean;
   sprintP1: number;
   sprintP2: number;
   hasSprint: boolean;
@@ -19,71 +22,76 @@ export interface SeasonScoringRules {
 
 /**
  * Restituisce le regole ufficiali di punteggio FIA in base all'anno della stagione.
- * - Punto giro veloce: assegnato nel 1950-1959 e nel 2019-2024; ABOLITO dal 2025 in poi e assente nel 1960-2018.
- * - Scala punti gara: 25-18-15 (2010+), 10-8-6 (2003-2009), 10-6-4 (1991-2002), 9-6-4 (1961-1990), ecc.
- * - Sprint: introdotta nel 2021 (3-2-1 pt), estesa dal 2022 a oggi (8-7-6-5-4-3-2-1 pt).
+ * - Zona punti gara:
+ *   - 2010+: primi 10 (25-18-15-12-10-8-6-4-2-1)
+ *   - 2003-2009: primi 8 (10-8-6-5-4-3-2-1)
+ *   - 1991-2002: primi 6 (10-6-4-3-2-1)
+ *   - 1961-1990: primi 6 (9-6-4-3-2-1)
+ *   - 1960: primi 6 (8-5-4-3-2-1)
+ *   - 1950-1959: primi 5 (8-6-4-3-2)
+ * - Punto giro veloce:
+ *   - 2025+: ABOLITO ufficialmente dalla FIA (0 pt)
+ *   - 2019-2024: 1 pt solo se il pilota finisce nella Top 10
+ *   - 1960-2018: nessun punto (0 pt)
+ *   - 1950-1959: 1 pt
+ * - Sprint:
+ *   - 2022+: primi 8 (8-7-6-5-4-3-2-1)
+ *   - 2021: primi 3 (3-2-1)
+ *   - pre-2021: nessuna Sprint
  */
 export function getSeasonScoringRules(season: number): SeasonScoringRules {
-  let p1 = 25;
-  let p2 = 18;
-  let p3 = 15;
+  let racePoints: number[];
 
   if (season >= 2010) {
-    p1 = 25;
-    p2 = 18;
-    p3 = 15;
+    racePoints = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
   } else if (season >= 2003) {
-    p1 = 10;
-    p2 = 8;
-    p3 = 6;
+    racePoints = [10, 8, 6, 5, 4, 3, 2, 1];
   } else if (season >= 1991) {
-    p1 = 10;
-    p2 = 6;
-    p3 = 4;
+    racePoints = [10, 6, 4, 3, 2, 1];
   } else if (season >= 1961) {
-    p1 = 9;
-    p2 = 6;
-    p3 = 4;
+    racePoints = [9, 6, 4, 3, 2, 1];
   } else if (season === 1960) {
-    p1 = 8;
-    p2 = 5;
-    p3 = 4;
+    racePoints = [8, 5, 4, 3, 2, 1];
   } else {
     // 1950 - 1959
-    p1 = 8;
-    p2 = 6;
-    p3 = 4;
+    racePoints = [8, 6, 4, 3, 2];
   }
 
   // Punto addizionale per il giro veloce
-  // Abolito ufficialmente dal World Motor Sport Council FIA a partire dalla stagione 2025
   const hasFastestLapPoint = (season >= 2019 && season <= 2024) || (season >= 1950 && season <= 1959);
+  const fastestLapRequiresTop10 = season >= 2019 && season <= 2024;
   const fastestLap = hasFastestLapPoint ? 1 : 0;
 
   // Regole Sprint
-  let sprintP1 = 0;
-  let sprintP2 = 0;
+  let sprintPoints: number[] = [];
   let hasSprint = false;
 
   if (season >= 2022) {
-    sprintP1 = 8;
-    sprintP2 = 7;
+    sprintPoints = [8, 7, 6, 5, 4, 3, 2, 1];
     hasSprint = true;
   } else if (season === 2021) {
-    sprintP1 = 3;
-    sprintP2 = 2;
+    sprintPoints = [3, 2, 1];
     hasSprint = true;
   }
+
+  const p1 = racePoints[0] || 0;
+  const p2 = racePoints[1] || 0;
+  const p3 = racePoints[2] || 0;
+  const sprintP1 = sprintPoints[0] || 0;
+  const sprintP2 = sprintPoints[1] || 0;
 
   const constructorMaxNormal = p1 + p2 + fastestLap;
   const constructorMaxSprint = sprintP1 + sprintP2;
 
   return {
+    racePoints,
+    sprintPoints,
     p1,
     p2,
     p3,
     fastestLap,
     hasFastestLapPoint,
+    fastestLapRequiresTop10,
     sprintP1,
     sprintP2,
     hasSprint,
@@ -106,6 +114,57 @@ export function maxRoundPoints(
   } else {
     return rules.constructorMaxNormal + (hasSprint ? rules.constructorMaxSprint : 0);
   }
+}
+
+/**
+ * Helper per estrarre e sincronizzare le posizioni di gara del round
+ */
+export function extractRoundRacePositions(
+  round: SimulatorRaceRound,
+  rules: SeasonScoringRules
+): (string | undefined)[] {
+  const count = rules.racePoints.length;
+  const list: (string | undefined)[] = [];
+
+  for (let i = 0; i < count; i++) {
+    if (round.racePositions && round.racePositions[i] !== undefined) {
+      list.push(round.racePositions[i]);
+    } else if (i === 0 && round.raceWinnerId !== undefined) {
+      list.push(round.raceWinnerId);
+    } else if (i === 1 && round.raceSecondId !== undefined) {
+      list.push(round.raceSecondId);
+    } else if (i === 2 && round.raceThirdId !== undefined) {
+      list.push(round.raceThirdId);
+    } else {
+      list.push(undefined);
+    }
+  }
+
+  return list;
+}
+
+/**
+ * Helper per estrarre e sincronizzare le posizioni della Sprint del round
+ */
+export function extractRoundSprintPositions(
+  round: SimulatorRaceRound,
+  rules: SeasonScoringRules
+): (string | undefined)[] {
+  if (!rules.hasSprint || !round.hasSprint) return [];
+  const count = rules.sprintPoints.length;
+  const list: (string | undefined)[] = [];
+
+  for (let i = 0; i < count; i++) {
+    if (round.sprintPositions && round.sprintPositions[i] !== undefined) {
+      list.push(round.sprintPositions[i]);
+    } else if (i === 0 && round.sprintWinnerId !== undefined) {
+      list.push(round.sprintWinnerId);
+    } else {
+      list.push(undefined);
+    }
+  }
+
+  return list;
 }
 
 /**
@@ -151,7 +210,7 @@ export function calculateChampionship(
     });
   }
 
-  // Costruttori: mappiamo anche da constructorId se mode === 'constructors'
+  // Mappa driverId -> constructorId
   const driverToConstructor = new Map<string, string>();
   for (const c of baseContenders) {
     driverToConstructor.set(c.id, c.constructorId);
@@ -160,99 +219,182 @@ export function calculateChampionship(
   const remainingRounds = rounds.filter(r => !r.isCompleted);
   let remainingPointsOnTable = 0;
 
-  // Calcolo punti simulati round per round
+  // Assegnazione punti simulati per ciascun round
   for (const r of remainingRounds) {
     const roundMax = maxRoundPoints(r.hasSprint, mode, season);
     remainingPointsOnTable += roundMax;
 
+    const dnfSet = new Set<string>(r.dnfContenderIds || []);
+    const racePos = extractRoundRacePositions(r, rules);
+    const sprintPos = extractRoundSprintPositions(r, rules);
+
     if (mode === 'drivers') {
-      if (r.raceWinnerId && contenderMap.has(r.raceWinnerId)) {
-        const c = contenderMap.get(r.raceWinnerId)!;
-        c.simulatedPoints += rules.p1;
-        c.simulatedWins += 1;
-      }
-      if (r.raceSecondId && contenderMap.has(r.raceSecondId)) {
-        const c = contenderMap.get(r.raceSecondId)!;
-        c.simulatedPoints += rules.p2;
-      }
-      if (r.raceThirdId && contenderMap.has(r.raceThirdId)) {
-        const c = contenderMap.get(r.raceThirdId)!;
-        c.simulatedPoints += rules.p3;
-      }
-      if (rules.hasFastestLapPoint && r.fastestLapDriverId && contenderMap.has(r.fastestLapDriverId)) {
-        const c = contenderMap.get(r.fastestLapDriverId)!;
-        c.simulatedPoints += rules.fastestLap;
-      }
-      if (r.hasSprint && r.sprintWinnerId && contenderMap.has(r.sprintWinnerId)) {
-        const c = contenderMap.get(r.sprintWinnerId)!;
-        c.simulatedPoints += rules.sprintP1;
+      // 1. Punti Gara per posizione
+      racePos.forEach((driverId, idx) => {
+        if (!driverId || dnfSet.has(driverId)) return;
+        const pts = rules.racePoints[idx] || 0;
+        if (pts > 0 && contenderMap.has(driverId)) {
+          const c = contenderMap.get(driverId)!;
+          c.simulatedPoints += pts;
+          if (idx === 0) c.simulatedWins += 1;
+        }
+      });
+
+      // 2. Punti Sprint per posizione
+      sprintPos.forEach((driverId, idx) => {
+        if (!driverId || dnfSet.has(driverId)) return;
+        const pts = rules.sprintPoints[idx] || 0;
+        if (pts > 0 && contenderMap.has(driverId)) {
+          const c = contenderMap.get(driverId)!;
+          c.simulatedPoints += pts;
+        }
+      });
+
+      // 3. Punto Giro Veloce (se previsto e se rispetta il vincolo Top 10 se richiesto)
+      if (rules.hasFastestLapPoint && r.fastestLapDriverId && !dnfSet.has(r.fastestLapDriverId)) {
+        let awardsPoint = true;
+        if (rules.fastestLapRequiresTop10) {
+          const assignedPositions = racePos.filter(id => id !== undefined);
+          // Se sono state assegnate posizioni in gara, il pilota deve trovarsi nella Top 10
+          if (assignedPositions.length > 0) {
+            const top10Drivers = racePos.slice(0, 10);
+            awardsPoint = top10Drivers.includes(r.fastestLapDriverId);
+          }
+        }
+        if (awardsPoint && contenderMap.has(r.fastestLapDriverId)) {
+          contenderMap.get(r.fastestLapDriverId)!.simulatedPoints += rules.fastestLap;
+        }
       }
     } else {
-      // Costruttori: assegna i punti della scuderia
+      // Modalità Costruttori
       const addConstructorPoints = (targetId: string | undefined, pts: number, isWin = false) => {
-        if (!targetId || pts === 0) return;
+        if (!targetId || pts <= 0) return;
         const constrId = contenderMap.has(targetId) ? targetId : driverToConstructor.get(targetId);
-        if (constrId && contenderMap.has(constrId)) {
+        if (constrId && contenderMap.has(constrId) && !dnfSet.has(constrId) && !dnfSet.has(targetId)) {
           const c = contenderMap.get(constrId)!;
           c.simulatedPoints += pts;
           if (isWin) c.simulatedWins += 1;
         }
       };
 
-      addConstructorPoints(r.raceWinnerId, rules.p1, true);
-      addConstructorPoints(r.raceSecondId, rules.p2);
-      addConstructorPoints(r.raceThirdId, rules.p3);
-      if (rules.hasFastestLapPoint) {
-        addConstructorPoints(r.fastestLapDriverId, rules.fastestLap);
-      }
-      if (r.hasSprint) {
-        addConstructorPoints(r.sprintWinnerId, rules.sprintP1);
+      // 1. Punti Gara per scuderia
+      racePos.forEach((id, idx) => {
+        addConstructorPoints(id, rules.racePoints[idx] || 0, idx === 0);
+      });
+
+      // 2. Punti Sprint per scuderia
+      sprintPos.forEach((id, idx) => {
+        addConstructorPoints(id, rules.sprintPoints[idx] || 0);
+      });
+
+      // 3. Giro veloce per scuderia
+      if (rules.hasFastestLapPoint && r.fastestLapDriverId) {
+        let awardsPoint = true;
+        if (rules.fastestLapRequiresTop10) {
+          const assignedPositions = racePos.filter(id => id !== undefined);
+          if (assignedPositions.length > 0) {
+            awardsPoint = racePos.slice(0, 10).includes(r.fastestLapDriverId);
+          }
+        }
+        if (awardsPoint) {
+          addConstructorPoints(r.fastestLapDriverId, rules.fastestLap);
+        }
       }
     }
   }
 
-  // Calcolo totali correnti e max possibili
+  // Calcolo totali e punti massimi potenziali raggiungibili (maxPossiblePoints)
   for (const c of contenderMap.values()) {
     c.totalPoints = Math.round((c.currentPoints + c.simulatedPoints) * 10) / 10;
     c.totalWins = c.currentWins + c.simulatedWins;
 
     let potentialUnclaimed = 0;
-    for (const r of remainingRounds) {
-      if (mode === 'drivers') {
-        const isAlreadyWinner = r.raceWinnerId === c.id;
-        const isAlreadySecond = r.raceSecondId === c.id;
-        const isAlreadyThird = r.raceThirdId === c.id;
-        const hasFL = rules.hasFastestLapPoint && r.fastestLapDriverId === c.id;
-        const hasSprint = r.hasSprint && r.sprintWinnerId === c.id;
 
-        if (!isAlreadyWinner) {
-          if (!r.raceWinnerId) {
-            potentialUnclaimed += rules.p1;
-          } else if (!r.raceSecondId && !isAlreadySecond && !isAlreadyThird) {
-            potentialUnclaimed += rules.p2;
-          } else if (!r.raceThirdId && !isAlreadyThird) {
-            potentialUnclaimed += rules.p3;
+    for (const r of remainingRounds) {
+      const dnfSet = new Set<string>(r.dnfContenderIds || []);
+      // Se il contendente ha subito DNF o 0 punti forzato in questo round, non può prendere punti non assegnati
+      if (dnfSet.has(c.id)) {
+        continue;
+      }
+      if (mode === 'constructors' && dnfSet.has(c.constructorId)) {
+        continue;
+      }
+
+      const racePos = extractRoundRacePositions(r, rules);
+      const sprintPos = extractRoundSprintPositions(r, rules);
+
+      if (mode === 'drivers') {
+        const alreadyInRace = racePos.includes(c.id);
+        if (!alreadyInRace) {
+          // Prende la posizione libera a punteggio più alto nella gara
+          const freeIdx = racePos.findIndex(p => !p);
+          if (freeIdx !== -1 && freeIdx < rules.racePoints.length) {
+            potentialUnclaimed += rules.racePoints[freeIdx];
           }
         }
-        if (rules.hasFastestLapPoint && !hasFL && !r.fastestLapDriverId) {
-          potentialUnclaimed += rules.fastestLap;
+
+        // Sprint
+        if (r.hasSprint && rules.hasSprint) {
+          const alreadyInSprint = sprintPos.includes(c.id);
+          if (!alreadyInSprint) {
+            const freeSprintIdx = sprintPos.findIndex(p => !p);
+            if (freeSprintIdx !== -1 && freeSprintIdx < rules.sprintPoints.length) {
+              potentialUnclaimed += rules.sprintPoints[freeSprintIdx];
+            }
+          }
         }
-        if (r.hasSprint && !hasSprint && !r.sprintWinnerId) {
-          potentialUnclaimed += rules.sprintP1;
+
+        // Giro veloce
+        if (rules.hasFastestLapPoint) {
+          if (!r.fastestLapDriverId || r.fastestLapDriverId === c.id) {
+            potentialUnclaimed += rules.fastestLap;
+          }
         }
       } else {
-        const constrWinner = r.raceWinnerId ? (contenderMap.has(r.raceWinnerId) ? r.raceWinnerId : driverToConstructor.get(r.raceWinnerId)) : undefined;
-        if (!constrWinner) {
-          potentialUnclaimed += rules.constructorMaxNormal + (r.hasSprint ? rules.constructorMaxSprint : 0);
-        } else if (constrWinner === c.id) {
-          if (!r.raceSecondId) potentialUnclaimed += rules.p2;
-          if (rules.hasFastestLapPoint && !r.fastestLapDriverId) potentialUnclaimed += rules.fastestLap;
-          if (r.hasSprint && !r.sprintWinnerId) potentialUnclaimed += rules.sprintP2;
-        } else {
-          if (!r.raceSecondId) potentialUnclaimed += rules.p2;
-          if (!r.raceThirdId) potentialUnclaimed += rules.p3;
-          if (rules.hasFastestLapPoint && !r.fastestLapDriverId) potentialUnclaimed += rules.fastestLap;
-          if (r.hasSprint) potentialUnclaimed += rules.constructorMaxSprint;
+        // Modalità Costruttori: un team può piazzare fino a 2 vetture nei punti
+        const teamCarsInRace = racePos.filter(id => {
+          if (!id) return false;
+          const constrId = contenderMap.has(id) ? id : driverToConstructor.get(id);
+          return constrId === c.id;
+        }).length;
+
+        const maxAdditionalCars = Math.max(0, 2 - teamCarsInRace);
+        let carsAdded = 0;
+
+        for (let i = 0; i < rules.racePoints.length && carsAdded < maxAdditionalCars; i++) {
+          if (!racePos[i]) {
+            potentialUnclaimed += rules.racePoints[i];
+            carsAdded++;
+          }
+        }
+
+        // Sprint per costruttore
+        if (r.hasSprint && rules.hasSprint) {
+          const teamCarsInSprint = sprintPos.filter(id => {
+            if (!id) return false;
+            const constrId = contenderMap.has(id) ? id : driverToConstructor.get(id);
+            return constrId === c.id;
+          }).length;
+
+          const maxAdditionalSprintCars = Math.max(0, 2 - teamCarsInSprint);
+          let sprintCarsAdded = 0;
+
+          for (let i = 0; i < rules.sprintPoints.length && sprintCarsAdded < maxAdditionalSprintCars; i++) {
+            if (!sprintPos[i]) {
+              potentialUnclaimed += rules.sprintPoints[i];
+              sprintCarsAdded++;
+            }
+          }
+        }
+
+        // Giro veloce per costruttore
+        if (rules.hasFastestLapPoint) {
+          const constrFl = r.fastestLapDriverId
+            ? (contenderMap.has(r.fastestLapDriverId) ? r.fastestLapDriverId : driverToConstructor.get(r.fastestLapDriverId))
+            : undefined;
+          if (!constrFl || constrFl === c.id) {
+            potentialUnclaimed += rules.fastestLap;
+          }
         }
       }
     }
@@ -260,7 +402,7 @@ export function calculateChampionship(
     c.maxPossiblePoints = Math.round((c.totalPoints + potentialUnclaimed) * 10) / 10;
   }
 
-  // Ordinamento: Punti totali, Vittorie totali, Nome
+  // Ordinamento classifica: Punti Totali, Vittorie Totali, Nome
   const sorted = Array.from(contenderMap.values()).sort((a, b) => {
     if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
     if (b.totalWins !== a.totalWins) return b.totalWins - a.totalWins;
@@ -268,13 +410,14 @@ export function calculateChampionship(
   });
 
   const leader = sorted[0];
-  let second = sorted[1];
+  const second = sorted[1];
 
   sorted.forEach((c, index) => {
     c.position = index + 1;
     c.gapToLeader = leader ? Math.round((leader.totalPoints - c.totalPoints) * 10) / 10 : 0;
   });
 
+  // Determinazione eliminati matematici tenendo conto dello spareggio FIA per vittorie
   let contendersInContentionCount = 0;
   for (const c of sorted) {
     if (c === leader) {
@@ -297,12 +440,20 @@ export function calculateChampionship(
     champion = leader;
   }
 
+  // Calcolo Magic Number preciso con regolamento spareggio
   let magicNumber: number | null = null;
   if (leader && !champion && second) {
     const diff = Math.round((second.maxPossiblePoints - leader.totalPoints) * 10) / 10;
-    magicNumber = Math.max(0, Math.ceil(diff + 1));
+    if (diff < 0) {
+      magicNumber = 0;
+    } else {
+      // Se a parità di punti il leader avrebbe comunque più vittorie del massimo possibile del secondo, gli basta pareggiare
+      const leaderGuaranteedWinsTiebreak = leader.totalWins > (second.totalWins + remainingRounds.length);
+      magicNumber = leaderGuaranteedWinsTiebreak ? Math.max(0, Math.ceil(diff)) : Math.max(0, Math.floor(diff) + 1);
+    }
   }
 
+  // Scenario Clinch per il prossimo Gran Premio
   let nextRoundClinchScenario: string | null = null;
   if (!champion && leader && second && remainingRounds.length > 0) {
     const nextRound = remainingRounds[0];
