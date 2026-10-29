@@ -101,6 +101,16 @@ app-root, body > app-root {
   padding: 2rem;
 }
 
+@media (max-width: 768px) {
+  h1 { font-size: 1.65rem; }
+  h2 { font-size: 1.35rem; }
+  h3 { font-size: 1.15rem; }
+
+  .f1-page-container {
+    padding: 1rem 0.85rem;
+  }
+}
+
 .f1-badge {
   display: inline-flex;
   align-items: center;

@@ -1,27 +1,125 @@
 <nav [class.nav-hidden]="isNavHidden" [class.nav-scrolled]="isScrolled">
   <div class="nav-left">
     <ul>
-      <li>
+      <li class="logo-item">
         <a routerLink="/" class="logo-link" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" aria-label="Home">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/New_era_F1_logo.png" alt="Logo" />
+          <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/New_era_F1_logo.png" alt="Logo F1" />
+          <span class="mobile-brand-label">PitWall</span>
         </a>
       </li>
-      <li><a routerLink="/granpremi" routerLinkActive="active" class="nav-link">Gran Premi</a></li>
-      <li><a routerLink="/circuits" routerLinkActive="active" class="nav-link">Circuiti</a></li>
-      <li><a routerLink="/drivers" routerLinkActive="active" class="nav-link">Piloti</a></li>
-      <li><a routerLink="/scuderie" routerLinkActive="active" class="nav-link">Scuderie</a></li>
-      <li><a routerLink="/classifiche" routerLinkActive="active" class="nav-link">Classifiche</a></li>
-      <li><a routerLink="/news" routerLinkActive="active" class="nav-link">News</a></li>
+      <li class="desktop-nav-item"><a routerLink="/granpremi" routerLinkActive="active" class="nav-link">Gran Premi</a></li>
+      <li class="desktop-nav-item"><a routerLink="/circuits" routerLinkActive="active" class="nav-link">Circuiti</a></li>
+      <li class="desktop-nav-item"><a routerLink="/drivers" routerLinkActive="active" class="nav-link">Piloti</a></li>
+      <li class="desktop-nav-item"><a routerLink="/scuderie" routerLinkActive="active" class="nav-link">Scuderie</a></li>
+      <li class="desktop-nav-item"><a routerLink="/classifiche" routerLinkActive="active" class="nav-link">Classifiche</a></li>
+      <li class="desktop-nav-item"><a routerLink="/news" routerLinkActive="active" class="nav-link">News</a></li>
     </ul>
   </div>
   <div class="nav-right">
-    
+    @if (!isStandaloneApp) {
+      <button
+        type="button"
+        class="install-app-btn"
+        (click)="triggerInstallApp()"
+        title="Installa F1 PitWall su telefono o computer">
+        <i class="pi pi-download"></i>
+        <span>Installa App</span>
+      </button>
+    }
   </div>
 </nav>
 
 <main class="app-content">
   <router-outlet></router-outlet>
 </main>
+
+<!-- Bottom Navigation Bar per Smartphone e schermi piccoli (stile App Nativa) -->
+<nav class="mobile-bottom-nav" aria-label="Navigazione principale mobile">
+  <a routerLink="/" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="mobile-tab-item">
+    <i class="pi pi-home"></i>
+    <span>Home</span>
+  </a>
+  <a routerLink="/granpremi" routerLinkActive="active" class="mobile-tab-item">
+    <i class="pi pi-flag"></i>
+    <span>GP</span>
+  </a>
+  <a routerLink="/circuits" routerLinkActive="active" class="mobile-tab-item">
+    <i class="pi pi-compass"></i>
+    <span>Circuiti</span>
+  </a>
+  <a routerLink="/drivers" routerLinkActive="active" class="mobile-tab-item">
+    <i class="pi pi-id-card"></i>
+    <span>Piloti</span>
+  </a>
+  <a routerLink="/scuderie" routerLinkActive="active" class="mobile-tab-item">
+    <i class="pi pi-shield"></i>
+    <span>Team</span>
+  </a>
+  <a routerLink="/classifiche" routerLinkActive="active" class="mobile-tab-item">
+    <i class="pi pi-trophy"></i>
+    <span>Classifiche</span>
+  </a>
+  <a routerLink="/news" routerLinkActive="active" class="mobile-tab-item">
+    <i class="pi pi-megaphone"></i>
+    <span>News</span>
+  </a>
+</nav>
+
+<!-- Modale istruzioni installazione PWA (per iOS Safari / Browser senza prompt diretto) -->
+@if (showInstallGuideModal) {
+  <div class="pwa-modal-backdrop" (click)="closeInstallGuide()">
+    <div class="pwa-modal-card f1-card" (click)="$event.stopPropagation()">
+      <div class="pwa-modal-header">
+        <div class="pwa-modal-title-group">
+          <span class="f1-badge">
+            <i class="pi pi-mobile"></i>
+            <span>Web App Installabile</span>
+          </span>
+          <h3>Installa F1 PitWall sul tuo dispositivo</h3>
+        </div>
+        <button type="button" class="pwa-close-btn" (click)="closeInstallGuide()" aria-label="Chiudi">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <p class="pwa-modal-intro">
+        Puoi installare questa piattaforma come applicazione a schermo intero su smartphone (Android e iPhone) o computer, senza passare dagli store:
+      </p>
+
+      <div class="pwa-steps-list">
+        <div class="pwa-step-item">
+          <div class="step-icon"><i class="pi pi-android"></i></div>
+          <div class="step-body">
+            <strong>Su Android (Chrome / Edge / Samsung)</strong>
+            <span>Tocca il menu del browser (i tre puntini in alto a destra) e seleziona <strong>"Installa applicazione"</strong> o <strong>"Aggiungi a schermata Home"</strong>.</span>
+          </div>
+        </div>
+
+        <div class="pwa-step-item">
+          <div class="step-icon"><i class="pi pi-apple"></i></div>
+          <div class="step-body">
+            <strong>Su iPhone e iPad (Safari)</strong>
+            <span>Tocca il pulsante <strong>Condividi</strong> nella barra in basso di Safari e scorri fino a <strong>"Aggiungi alla schermata Home"</strong>.</span>
+          </div>
+        </div>
+
+        <div class="pwa-step-item">
+          <div class="step-icon"><i class="pi pi-desktop"></i></div>
+          <div class="step-body">
+            <strong>Su Computer (Chrome / Edge)</strong>
+            <span>Clicca sull'icona <strong>Installa F1 PitWall</strong> presente sul lato destro della barra degli indirizzi del browser.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pwa-modal-footer">
+        <button type="button" class="f1-btn f1-btn-primary" (click)="closeInstallGuide()">
+          Ho capito
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
 @if (showBackToTop) {
   <button

@@ -11,7 +11,6 @@ import {
 } from '../../../services/jolpica.service';
 import {
   ChampionshipSimulationResult,
-  SimulatorContender,
   SimulatorRaceRound
 } from '../../../models/championship-simulator';
 import {
@@ -48,6 +47,7 @@ export interface ContenderOption {
 })
 export class StandingsSimulatorComponent implements OnInit, OnChanges {
   private readonly jolpica = inject(JolpicaService);
+  private loadSeq = 0;
 
   @Input() season!: number;
   @Input() driverStandings: DriverStanding[] = [];
@@ -68,6 +68,8 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   hoveredSeriesId: string | null = null;
   showRealGhostLine = true;
   activeQuickScenarioId: string | null = null;
+  scenarioScopeCount: 3 | 5 | 'all' = 3;
+  scenarioAppliedSummary: string | null = null;
 
   // Bivi storici per la stagione selezionata
   historicalPivotsForSeason: HistoricalPivot[] = [];
@@ -96,36 +98,62 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   async ngOnChanges(changes: SimpleChanges): Promise<void> {
     if (changes['season'] && !changes['season'].firstChange) {
       await this.loadSchedule();
-    } else if (
+      return;
+    }
+
+    if (
       changes['driverStandings'] ||
       changes['constructorStandings'] ||
-      changes['seasonRounds']
+      changes['seasonRounds'] ||
+      changes['isCurrentSeason']
     ) {
-      this.syncRealResultsIntoRounds();
-      this.updateContenderOptions();
-      this.ensureDefaultVisibleContenders();
-      this.recalculate();
+      if (this.rounds.length > 0) {
+        this.syncRealResultsIntoRounds();
+        this.updateContenderOptions();
+        this.ensureDefaultVisibleContenders();
+        this.recalculate();
+      } else if (this.schedule.length > 0) {
+        this.initializeRounds();
+        this.updateContenderOptions();
+        this.ensureDefaultVisibleContenders();
+        this.recalculate();
+      }
     }
   }
 
   async loadSchedule(): Promise<void> {
     if (!this.season) return;
+    const targetSeason = this.season;
+    const seq = ++this.loadSeq;
+
+    // Pulisce subito i round della stagione precedente per evitare qualsiasi contaminazione tra stagioni
     this.loading = true;
+    this.schedule = [];
+    this.rounds = [];
+    this.simulationResult = null;
+    this.comparisonChart = null;
+    this.activeQuickScenarioId = null;
+    this.scenarioAppliedSummary = null;
+    this.visibleContenderIds.clear();
+    this.historicalPivotsForSeason = FAMOUS_HISTORICAL_PIVOTS.filter(p => p.season === targetSeason);
+
     try {
-      const scheduleItems = await this.jolpica.getSeasonSchedule(this.season);
+      const scheduleItems = await this.jolpica.getSeasonSchedule(targetSeason);
+      if (seq !== this.loadSeq) return;
+
       this.schedule = scheduleItems;
-      this.historicalPivotsForSeason = FAMOUS_HISTORICAL_PIVOTS.filter(p => p.season === this.season);
-      this.activeQuickScenarioId = null;
       this.initializeRounds();
       this.updateContenderOptions();
-      this. visibleContenderIds.clear();
       this.ensureDefaultVisibleContenders();
       this.recalculate();
     } catch {
+      if (seq !== this.loadSeq) return;
       this.schedule = [];
       this.rounds = [];
     } finally {
-      this.loading = false;
+      if (seq === this.loadSeq) {
+        this.loading = false;
+      }
     }
   }
 
@@ -133,6 +161,7 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     if (this.mode === mode) return;
     this.mode = mode;
     this.activeQuickScenarioId = null;
+    this.scenarioAppliedSummary = null;
     this.initializeRounds();
     this.updateContenderOptions();
     this.visibleContenderIds.clear();
@@ -142,6 +171,20 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
 
   setEditorViewMode(viewMode: 'single' | 'grid'): void {
     this.editorViewMode = viewMode;
+  }
+
+  setScenarioScopeCount(scope: 3 | 5 | 'all'): void {
+    this.scenarioScopeCount = scope;
+    // Se c'è uno scenario rapido attivo, riapplicalo subito con il nuovo numero di gare
+    if (this.activeQuickScenarioId === 'leader-dominance') {
+      this.presetAllWinsToLeader();
+    } else if (this.activeQuickScenarioId === 'chaser-comeback') {
+      this.presetAllWinsToSecond();
+    } else if (this.activeQuickScenarioId === 'leader-dnf') {
+      this.presetLeaderDnf();
+    } else if (this.activeQuickScenarioId === 'swap-top-two') {
+      this.presetSwapTopTwo();
+    }
   }
 
   setPastSeasonPreset(preset: 'remaining' | 'last3' | 'last5' | 'all'): void {
@@ -191,7 +234,10 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       return;
     }
 
+    const currentYear = new Date().getFullYear();
     const todayStr = new Date().toISOString().split('T')[0];
+    const isPastSeason = !this.isCurrentSeason || this.season < currentYear;
+
     const roundMap = new Map<number, SeasonRoundPoints>();
     for (const sr of this.seasonRounds || []) {
       roundMap.set(sr.round, sr);
@@ -206,7 +252,9 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
         (Object.keys(realData.driverPoints || {}).length > 0 || (realData.raceOrder && realData.raceOrder.length > 0))
       );
 
-      const isCompleted = hasRealData || (!this.isCurrentSeason && Boolean(this.seasonRounds?.length)) || (this.isCurrentSeason && item.date < todayStr && hasRealData);
+      // In qualsiasi stagione passata (o per gare con data già trascorsa), il round è SEMPRE completato,
+      // mai considerato "gara futura mancante".
+      const isCompleted = isPastSeason || hasRealData || (Boolean(item.date) && item.date < todayStr);
 
       const roundObj: SimulatorRaceRound = {
         round: item.round,
@@ -247,7 +295,7 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
   }
 
   /**
-   * Quando seasonRounds viene caricato in modo asincrono, aggiorna i dati reali nei round non ancora modificati
+   * Quando seasonRounds viene caricato in modo asincrono, aggiorna i dati reali nei round
    */
   private syncRealResultsIntoRounds(): void {
     if (!this.rounds.length || !this.seasonRounds?.length) return;
@@ -490,8 +538,6 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     const oldOccupant = r.racePositions[index];
     const newOccupant = value || undefined;
 
-    // Smart Swap: in modalità Piloti, se il pilota scelto occupava già un'altra posizione a punti in questa gara,
-    // scambialo automaticamente con il pilota che era in questa posizione!
     if (newOccupant && this.mode === 'drivers') {
       const existingIdx = r.racePositions.findIndex((id, idx) => id === newOccupant && idx !== index);
       if (existingIdx !== -1) {
@@ -510,6 +556,45 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
 
     r.isModified = true;
     this.recalculate();
+  }
+
+  /**
+   * Promuove un pilota/team al 1° posto di una gara facendo scalare di 1 posizione chi gli stava davanti,
+   * senza mai promuovere artificialmente gli avversari che erano arrivati più indietro.
+   */
+  private promoteContenderToFirst(r: SimulatorRaceRound, winnerId: string, secondIfFuture?: string): void {
+    const maxLen = this.rules.racePoints.length;
+    if (!r.isCompleted || !r.racePositions || r.racePositions.every(p => !p)) {
+      // Gara futura senza ordine reale: imposta 1° e 2°
+      this.setRacePosition(r, 0, winnerId);
+      if (secondIfFuture && secondIfFuture !== winnerId) {
+        this.setRacePosition(r, 1, secondIfFuture);
+      }
+      return;
+    }
+
+    // Gara con ordine reale: rimuovi winnerId dalla sua posizione attuale e inseriscilo in P1 (indice 0),
+    // facendo scivolare di 1 posto tutti coloro che erano davanti a lui
+    const currentOrder = [...r.racePositions];
+    const existingIdx = currentOrder.indexOf(winnerId);
+    if (existingIdx === 0) {
+      // Era già 1°: se vogliamo che secondIfFuture sia 2° solo se era davanti, non serve cambiare P1
+      r.isModified = true;
+      return;
+    }
+
+    if (existingIdx !== -1) {
+      currentOrder.splice(existingIdx, 1);
+    }
+    currentOrder.unshift(winnerId);
+    r.racePositions = currentOrder.slice(0, maxLen);
+    r.raceWinnerId = r.racePositions[0];
+    r.raceSecondId = r.racePositions[1];
+    r.raceThirdId = r.racePositions[2];
+    if (r.dnfContenderIds) {
+      r.dnfContenderIds = r.dnfContenderIds.filter(id => id !== winnerId);
+    }
+    r.isModified = true;
   }
 
   // --- Gestione Posizioni Sprint con Smart Swap ---
@@ -562,8 +647,13 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     const p1 = this.getRacePosition(r, 0);
     const p2 = this.getRacePosition(r, 1);
     if (!p1 && !p2) return;
-    this.setRacePosition(r, 0, p2);
-    this.setRacePosition(r, 1, p1);
+    if (!r.racePositions) r.racePositions = [];
+    r.racePositions[0] = p2;
+    r.racePositions[1] = p1;
+    r.raceWinnerId = r.racePositions[0];
+    r.raceSecondId = r.racePositions[1];
+    r.isModified = true;
+    this.recalculate();
   }
 
   assignLeaderWinInRound(r: SimulatorRaceRound): void {
@@ -574,8 +664,8 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       ? this.driverStandings[1]?.driverId
       : this.constructorStandings[1]?.constructorId;
     if (!leaderId) return;
-    this.setRacePosition(r, 0, leaderId);
-    if (secondId) this.setRacePosition(r, 1, secondId);
+    this.promoteContenderToFirst(r, leaderId, secondId);
+    this.recalculate();
   }
 
   assignRivalWinInRound(r: SimulatorRaceRound): void {
@@ -586,8 +676,8 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       ? this.driverStandings[1]?.driverId
       : this.constructorStandings[1]?.constructorId;
     if (!secondId) return;
-    this.setRacePosition(r, 0, secondId);
-    if (leaderId) this.setRacePosition(r, 1, leaderId);
+    this.promoteContenderToFirst(r, secondId, leaderId);
+    this.recalculate();
   }
 
   // --- Gestione DNF / Zero Punti (con scalata automatica posizioni) ---
@@ -602,11 +692,9 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       r.dnfContenderIds.push(id);
     }
 
-    // Se il pilota era nei punti, rimuovilo e fai scalare di 1 posto i piloti dietro di lui!
     if (r.racePositions) {
       const maxLen = this.rules.racePoints.length;
       const filtered = r.racePositions.filter(p => p && p !== id);
-      // Se è una gara già disputata con ordine reale completo oltre la P10, pesca il primo fuori dai punti che non sia DNF
       const realOrder = this.mode === 'drivers' ? (r.realRaceOrder || []) : (r.realConstructorRaceOrder || []);
       for (const candidate of realOrder) {
         if (filtered.length >= maxLen) break;
@@ -705,6 +793,7 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
 
   resetSimulation(): void {
     this.activeQuickScenarioId = null;
+    this.scenarioAppliedSummary = null;
     const rules = this.rules;
     for (const r of this.rounds) {
       if (r.isCompleted) {
@@ -747,8 +836,7 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
         }
       }
     } else {
-      if (pivot.winnerId) this.setRacePosition(targetRound, 0, pivot.winnerId);
-      if (pivot.secondId) this.setRacePosition(targetRound, 1, pivot.secondId);
+      if (pivot.winnerId) this.promoteContenderToFirst(targetRound, pivot.winnerId, pivot.secondId);
     }
 
     if (pivot.dnfIds?.length) {
@@ -762,18 +850,30 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     }
 
     targetRound.isModified = true;
+    this.scenarioAppliedSummary = `Bivio storico applicato sul Round ${targetRound.round} (${targetRound.locality})`;
     this.selectRound(targetRound.round);
     this.recalculate();
   }
 
-  // --- Preset Scenari Stagionali (applicati sui round reali o rimanenti) ---
-  private getTargetRoundsForScenario(): SimulatorRaceRound[] {
-    const uncompleted = this.rounds.filter(r => !r.isCompleted);
-    if (uncompleted.length > 0) return uncompleted;
-    // Se tutte le gare sono già state disputate (stagione conclusa), applica sulle ultime 3 gare della stagione
-    return this.rounds.slice(Math.max(0, this.rounds.length - 3));
+  // --- Helper per selezionare le N gare target dello scenario ---
+  private sliceByScope(list: SimulatorRaceRound[], fromEnd = false): SimulatorRaceRound[] {
+    if (this.scenarioScopeCount === 'all') return list;
+    const count = this.scenarioScopeCount;
+    if (fromEnd) {
+      return list.slice(Math.max(0, list.length - count));
+    }
+    return list.slice(0, count);
   }
 
+  private formatRoundsSummary(label: string, modified: SimulatorRaceRound[]): string {
+    if (!modified.length) return label;
+    const codes = modified.map(r => `R${r.round}`).join(', ');
+    return `${label} su ${modified.length} ${modified.length === 1 ? 'gara' : 'gare'} (${codes})`;
+  }
+
+  /**
+   * Scenario 1: Dominio Leader (il 1° vince le gare mancanti o, a stagione conclusa, vince anche le gare in cui non aveva vinto)
+   */
   presetAllWinsToLeader(): void {
     this.resetSimulation();
     this.activeQuickScenarioId = 'leader-dominance';
@@ -786,25 +886,40 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       : this.constructorStandings[1]?.constructorId;
     if (!leader) return;
 
-    const targets = this.getTargetRoundsForScenario();
+    const uncompleted = this.rounds.filter(r => !r.isCompleted);
+    let targets: SimulatorRaceRound[];
+
+    if (uncompleted.length > 0) {
+      targets = this.sliceByScope(uncompleted, false);
+    } else {
+      // Stagione conclusa: scegli le gare in cui il leader NON è arrivato 1° (così guadagna davvero punti!)
+      const nonWonByLeader = this.rounds.filter(r => this.getRacePosition(r, 0) !== leader);
+      const pool = nonWonByLeader.length > 0 ? nonWonByLeader : this.rounds;
+      targets = this.sliceByScope(pool, true);
+    }
+
     for (const r of targets) {
-      this.setRacePosition(r, 0, leader);
-      if (second) this.setRacePosition(r, 1, second);
+      this.promoteContenderToFirst(r, leader, second);
       if (this.rules.hasFastestLapPoint) {
         r.fastestLapDriverId = leader;
       }
-      if (r.hasSprint) {
+      if (r.hasSprint && this.rules.hasSprint) {
         this.setSprintPosition(r, 0, leader);
-        if (second) this.setSprintPosition(r, 1, second);
+        if (second && !r.isCompleted) this.setSprintPosition(r, 1, second);
       }
       r.isModified = true;
     }
+
+    this.scenarioAppliedSummary = this.formatRoundsSummary('Dominio Leader applicato', targets);
     if (targets.length > 0) {
       this.selectRound(targets[0].round);
     }
     this.recalculate();
   }
 
+  /**
+   * Scenario 2: Rimonta Inseguitore (il 2° vince le gare e batte il Leader, senza mai promuovere il Leader se era più indietro)
+   */
   presetAllWinsToSecond(): void {
     this.resetSimulation();
     this.activeQuickScenarioId = 'chaser-comeback';
@@ -817,25 +932,41 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       : this.constructorStandings[0]?.constructorId;
     if (!second) return;
 
-    const targets = this.getTargetRoundsForScenario();
+    const uncompleted = this.rounds.filter(r => !r.isCompleted);
+    let targets: SimulatorRaceRound[];
+
+    if (uncompleted.length > 0) {
+      targets = this.sliceByScope(uncompleted, false);
+    } else {
+      // Stagione conclusa: prendi le gare vinte dal Leader (o in cui l'Inseguitore non ha vinto) così il 2° ribalta davvero i punti sul 1°!
+      const leaderWins = this.rounds.filter(r => this.getRacePosition(r, 0) === leader);
+      const nonSecondWins = this.rounds.filter(r => this.getRacePosition(r, 0) !== second);
+      const pool = leaderWins.length > 0 ? leaderWins : (nonSecondWins.length > 0 ? nonSecondWins : this.rounds);
+      targets = this.sliceByScope(pool, true);
+    }
+
     for (const r of targets) {
-      this.setRacePosition(r, 0, second);
-      if (leader) this.setRacePosition(r, 1, leader);
+      this.promoteContenderToFirst(r, second, leader);
       if (this.rules.hasFastestLapPoint) {
         r.fastestLapDriverId = second;
       }
-      if (r.hasSprint) {
+      if (r.hasSprint && this.rules.hasSprint) {
         this.setSprintPosition(r, 0, second);
-        if (leader) this.setSprintPosition(r, 1, leader);
+        if (leader && !r.isCompleted) this.setSprintPosition(r, 1, leader);
       }
       r.isModified = true;
     }
+
+    this.scenarioAppliedSummary = this.formatRoundsSummary('Rimonta Inseguitore applicata', targets);
     if (targets.length > 0) {
       this.selectRound(targets[0].round);
     }
     this.recalculate();
   }
 
+  /**
+   * Scenario 3: Crisi Leader (Ritiro a 0 pt DNF per il Leader su TUTTE le N gare selezionate, non una sola!)
+   */
   presetLeaderDnf(): void {
     this.resetSimulation();
     this.activeQuickScenarioId = 'leader-dnf';
@@ -848,25 +979,59 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
       : this.constructorStandings[1]?.constructorId;
     if (!leader) return;
 
-    const targets = this.getTargetRoundsForScenario();
-    targets.forEach((r, idx) => {
-      if (idx === 0) {
-        // Ritiro a 0 punti nel round chiave
-        this.addDnfContender(r, leader);
-      } else if (leader) {
-        this.setRacePosition(r, 1, leader);
-      }
+    const uncompleted = this.rounds.filter(r => !r.isCompleted);
+    let targets: SimulatorRaceRound[];
+
+    if (uncompleted.length > 0) {
+      targets = this.sliceByScope(uncompleted, false);
+    } else {
+      // Stagione conclusa: prendi le ultime N gare in cui il Leader è andato a punti
+      const leaderScoredRounds = this.rounds.filter(r => {
+        const ptsMap = this.mode === 'drivers' ? (r.realDriverPoints || {}) : (r.realConstructorPoints || {});
+        return (ptsMap[leader] ?? 0) > 0 || (r.racePositions || []).includes(leader);
+      });
+      const pool = leaderScoredRounds.length > 0 ? leaderScoredRounds : this.rounds;
+      targets = this.sliceByScope(pool, true);
+    }
+
+    for (const r of targets) {
+      // Ritiro a 0 punti (DNF) per il Leader in ciascuna delle gare target!
+      this.addDnfContender(r, leader);
       if (second) {
-        this.setRacePosition(r, 0, second);
+        this.promoteContenderToFirst(r, second);
         if (this.rules.hasFastestLapPoint) {
           r.fastestLapDriverId = second;
         }
-        if (r.hasSprint) {
+        if (r.hasSprint && this.rules.hasSprint) {
           this.setSprintPosition(r, 0, second);
         }
       }
       r.isModified = true;
-    });
+    }
+
+    this.scenarioAppliedSummary = this.formatRoundsSummary('Ritiro 0 pt Leader applicato', targets);
+    if (targets.length > 0) {
+      this.selectRound(targets[0].round);
+    }
+    this.recalculate();
+  }
+
+  /**
+   * Scenario 4: Inverti 1° e 2° posto reale nelle gare selezionate
+   */
+  presetSwapTopTwo(): void {
+    this.resetSimulation();
+    this.activeQuickScenarioId = 'swap-top-two';
+
+    const completed = this.rounds.filter(r => r.isCompleted && this.getRacePosition(r, 0) && this.getRacePosition(r, 1));
+    const pool = completed.length > 0 ? completed : this.rounds;
+    const targets = this.sliceByScope(pool, true);
+
+    for (const r of targets) {
+      this.swapTopTwoInRound(r);
+    }
+
+    this.scenarioAppliedSummary = this.formatRoundsSummary('Inversione 1°-2° applicata', targets);
     if (targets.length > 0) {
       this.selectRound(targets[0].round);
     }
@@ -884,6 +1049,10 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
 
   get modifiedRoundsCount(): number {
     return this.rounds.filter(r => r.isModified).length;
+  }
+
+  get isWaitingForRealRounds(): boolean {
+    return this.loading || (this.roundsLoading && (!this.seasonRounds || this.seasonRounds.length === 0));
   }
 
   get rules(): SeasonScoringRules {
@@ -916,9 +1085,6 @@ export class StandingsSimulatorComponent implements OnInit, OnChanges {
     return indices;
   }
 
-  /**
-   * Restituisce i punti calcolati nel round selezionato per un dato contendente
-   */
   getRoundPointsForContender(r: SimulatorRaceRound, contenderId: string): { real: number; sim: number; delta: number } {
     const realRec = this.mode === 'drivers' ? (r.realDriverPoints || {}) : (r.realConstructorPoints || {});
     const real = r.isCompleted ? (realRec[contenderId] ?? 0) : 0;

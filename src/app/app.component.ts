@@ -8,6 +8,11 @@ import { NewsStateService } from './services/news-state.service';
 import { TeamsStateService } from './services/teams-state.service';
 import { filter } from 'rxjs';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -27,10 +32,17 @@ export class AppComponent implements OnInit {
   isNavHidden = false;
   isScrolled = false;
 
+  // Stato PWA / App Installabile
+  private deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
+  isStandaloneApp = false;
+  showInstallGuideModal = false;
+
   private lastScrollTop = 0;
   private readonly scrollThreshold = 70;
 
   ngOnInit() {
+    this.checkStandaloneMode();
+
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(e => {
@@ -39,6 +51,43 @@ export class AppComponent implements OnInit {
         this.lastScrollTop = 0;
         this.syncSectionFilterState(e.urlAfterRedirects);
       });
+  }
+
+  private checkStandaloneMode(): void {
+    if (typeof window === 'undefined') return;
+    const isStandalone =
+      window.matchMedia?.('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true;
+    this.isStandaloneApp = Boolean(isStandalone);
+  }
+
+  @HostListener('window:beforeinstallprompt', ['$event'])
+  onBeforeInstallPrompt(event: Event): void {
+    event.preventDefault();
+    this.deferredInstallPrompt = event as BeforeInstallPromptEvent;
+  }
+
+  @HostListener('window:appinstalled')
+  onAppInstalled(): void {
+    this.deferredInstallPrompt = null;
+    this.isStandaloneApp = true;
+    this.showInstallGuideModal = false;
+  }
+
+  async triggerInstallApp(): Promise<void> {
+    if (this.deferredInstallPrompt) {
+      await this.deferredInstallPrompt.prompt();
+      const choice = await this.deferredInstallPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        this.deferredInstallPrompt = null;
+      }
+      return;
+    }
+    this.showInstallGuideModal = true;
+  }
+
+  closeInstallGuide(): void {
+    this.showInstallGuideModal = false;
   }
 
   /**

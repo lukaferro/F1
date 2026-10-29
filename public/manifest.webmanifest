@@ -1,0 +1,58 @@
+{
+  "name": "F1 PitWall — Telemetria, Classifiche & Storico",
+  "short_name": "F1 PitWall",
+  "description": "Piattaforma Formula 1 con telemetria live OpenF1, classifiche storiche 1950-oggi, simulatore mondiale What If, circuiti e piloti.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#111116",
+  "theme_color": "#e10600",
+  "lang": "it-IT",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Classifiche & What If",
+      "short_name": "Classifiche",
+      "url": "/classifiche",
+      "description": "Classifiche Piloti, Costruttori, Scenari & What If"
+    },
+    {
+      "name": "Gran Premi & Telemetria",
+      "short_name": "Gran Premi",
+      "url": "/granpremi",
+      "description": "Calendario GP, risultati e telemetria"
+    },
+    {
+      "name": "Piloti F1",
+      "short_name": "Piloti",
+      "url": "/drivers",
+      "description": "Griglia piloti attuale e archivio storico"
+    },
+    {
+      "name": "Circuiti & Mappa",
+      "short_name": "Circuiti",
+      "url": "/circuits",
+      "description": "Schede tracciati e mappa mondiale interattiva"
+    }
+  ]
+}

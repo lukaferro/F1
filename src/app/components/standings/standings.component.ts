@@ -144,14 +144,15 @@ export class StandingsComponent implements OnInit, OnDestroy {
     this.hoveredSeriesId = null;
     this.selectedRoundIndex = null;
 
-    // Carica in background i risultati round-by-round per il grafico evoluzione punti
-    void this.fetchSeasonRounds(year);
-
-    // Piloti e (se il tab è aperto) costruttori sono indipendenti: un errore non blocca l'altro
-    await this.withLoading(year, () => Promise.all([
-      this.fetchDrivers(year),
-      (this.tab === 'constructors' || this.tab === 'simulator') ? this.fetchConstructors(year) : Promise.resolve()
-    ]));
+    // Piloti e (se il tab è aperto) costruttori partono per primi nella coda HTTP, seguiti dai risultati round-by-round
+    await this.withLoading(year, () => {
+      const mainPromise = Promise.all([
+        this.fetchDrivers(year),
+        (this.tab === 'constructors' || this.tab === 'simulator') ? this.fetchConstructors(year) : Promise.resolve()
+      ]);
+      void this.fetchSeasonRounds(year);
+      return mainPromise;
+    });
   }
 
   async setTab(tab: StandingsTab): Promise<void> {

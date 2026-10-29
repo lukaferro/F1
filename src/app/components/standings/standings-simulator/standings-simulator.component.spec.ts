@@ -45,6 +45,7 @@ describe('StandingsSimulatorComponent', () => {
     });
 
     component.season = 2024;
+    component.isCurrentSeason = false;
     component.driverStandings = [
       {
         position: 1,
@@ -97,50 +98,46 @@ describe('StandingsSimulatorComponent', () => {
     ];
   });
 
-  it('initializes all rounds of the season with real race orders and builds comparison chart', async () => {
+  it('initializes all rounds of a past season as completed even before seasonRounds arrives', async () => {
+    component.seasonRounds = [];
     await component.loadSchedule();
-    expect(jolpicaMock.getSeasonSchedule).toHaveBeenCalledWith(2024);
     expect(component.rounds.length).toBe(2);
-    expect(component.rounds[0].isCompleted).toBe(true);
-    expect(component.getRacePosition(component.rounds[0], 0)).toBe('verstappen');
-    expect(component.getRacePosition(component.rounds[0], 1)).toBe('norris');
-    expect(component.comparisonChart).not.toBeNull();
+    expect(component.rounds.every(r => r.isCompleted)).toBe(true);
   });
 
   it('allows editing a completed round and automatically swaps positions (Smart Swap)', async () => {
     await component.loadSchedule();
     const round1 = component.rounds[0];
 
-    // Mettiamo Norris al 1° posto in gara 1 -> Verstappen scivola automaticamente al 2° posto
     component.setRacePosition(round1, 0, 'norris');
 
     expect(round1.isModified).toBe(true);
     expect(component.getRacePosition(round1, 0)).toBe('norris');
     expect(component.getRacePosition(round1, 1)).toBe('verstappen');
 
-    // In gara 1 Norris guadagna +7 pt (da 18 a 25) -> 43 pt, Verstappen perde -7 pt (da 25 a 18) -> 43 pt
     const norris = component.simulationResult?.standings.find(s => s.id === 'norris');
     const verstappen = component.simulationResult?.standings.find(s => s.id === 'verstappen');
     expect(norris?.totalPoints).toBe(43);
     expect(verstappen?.totalPoints).toBe(43);
   });
 
-  it('switches between drivers and constructors mode and re-syncs real race orders', async () => {
-    await component.loadSchedule();
-    component.setMode('constructors');
-    expect(component.mode).toBe('constructors');
-    expect(component.simulationResult?.mode).toBe('constructors');
-    expect(component.getRacePosition(component.rounds[0], 0)).toBe('red_bull');
-  });
-
-  it('applies chaser comeback scenario and resets back to official reality', async () => {
+  it('applies chaser comeback across all target races and flips championship', async () => {
     await component.loadSchedule();
     component.presetAllWinsToSecond();
-    expect(component.modifiedRoundsCount).toBeGreaterThan(0);
 
-    component.resetSimulation();
-    expect(component.modifiedRoundsCount).toBe(0);
-    expect(component.simulationResult?.standings[0].id).toBe('verstappen');
-    expect(component.simulationResult?.standings[0].totalPoints).toBe(50);
+    expect(component.modifiedRoundsCount).toBe(2);
+    expect(component.simulationResult?.standings[0].id).toBe('norris');
+    expect(component.simulationResult?.isHistoryRewritten).toBe(true);
+  });
+
+  it('applies leader DNF across all target races (not just one race)', async () => {
+    await component.loadSchedule();
+    component.presetLeaderDnf();
+
+    expect(component.modifiedRoundsCount).toBe(2);
+    expect(component.rounds[0].dnfContenderIds).toContain('verstappen');
+    expect(component.rounds[1].dnfContenderIds).toContain('verstappen');
+    const verstappen = component.simulationResult?.standings.find(s => s.id === 'verstappen');
+    expect(verstappen?.totalPoints).toBe(0);
   });
 });

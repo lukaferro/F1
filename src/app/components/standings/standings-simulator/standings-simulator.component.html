@@ -17,7 +17,7 @@
         </div>
         <h2 class="simulator-title">Simulatore Campionato &amp; Riscrivi la Storia</h2>
         <p class="simulator-desc">
-          Seleziona qualsiasi Gran Premio della stagione (dal Round 1 al finale) per modificare l'ordine d'arrivo, assegnare ritiri a zero punti o applicare uno scenario rapido e verificare l'impatto su grafico e classifica.
+          Seleziona qualsiasi Gran Premio della stagione (dal Round 1 al finale) per modificare l'ordine d'arrivo, assegnare ritiri a zero punti o applicare uno scenario rapido su più gare e verificare l'impatto su grafico e classifica.
         </p>
       </div>
 
@@ -51,35 +51,81 @@
       </div>
     </div>
 
-    <!-- Scorciatoie Scenari Stagionali -->
+    <!-- Scorciatoie Scenari Stagionali con Selettore Numero Gare -->
     <div class="scenarios-strip">
-      <span class="strip-label">Scenari Rapidi:</span>
-      <div class="scenario-buttons-row">
-        <button
-          type="button"
-          class="scenario-pill-btn"
-          [class.active]="activeQuickScenarioId === 'leader-dominance'"
-          (click)="presetAllWinsToLeader()">
-          <i class="pi pi-star"></i>
-          <span>Dominio Leader (Vittorie nel finale)</span>
-        </button>
-        <button
-          type="button"
-          class="scenario-pill-btn"
-          [class.active]="activeQuickScenarioId === 'chaser-comeback'"
-          (click)="presetAllWinsToSecond()">
-          <i class="pi pi-bolt"></i>
-          <span>Rimonta Inseguitore (1°-2° invertiti)</span>
-        </button>
-        <button
-          type="button"
-          class="scenario-pill-btn danger"
-          [class.active]="activeQuickScenarioId === 'leader-dnf'"
-          (click)="presetLeaderDnf()">
-          <i class="pi pi-times-circle"></i>
-          <span>Colpo di Scena (Ritiro 0 pt Leader)</span>
-        </button>
+      <div class="scenarios-strip-top">
+        <div class="scenarios-left-group">
+          <span class="strip-label">Scenari Rapidi:</span>
+          <div class="scenario-buttons-row">
+            <button
+              type="button"
+              class="scenario-pill-btn"
+              [class.active]="activeQuickScenarioId === 'chaser-comeback'"
+              (click)="presetAllWinsToSecond()">
+              <i class="pi pi-bolt"></i>
+              <span>Rimonta Inseguitore (2° vince sul 1°)</span>
+            </button>
+            <button
+              type="button"
+              class="scenario-pill-btn danger"
+              [class.active]="activeQuickScenarioId === 'leader-dnf'"
+              (click)="presetLeaderDnf()">
+              <i class="pi pi-times-circle"></i>
+              <span>Crisi Leader (Ritiri 0 pt + Vittorie 2°)</span>
+            </button>
+            <button
+              type="button"
+              class="scenario-pill-btn"
+              [class.active]="activeQuickScenarioId === 'leader-dominance'"
+              (click)="presetAllWinsToLeader()">
+              <i class="pi pi-star"></i>
+              <span>Dominio Leader (1° vince tutto)</span>
+            </button>
+            <button
+              type="button"
+              class="scenario-pill-btn"
+              [class.active]="activeQuickScenarioId === 'swap-top-two'"
+              (click)="presetSwapTopTwo()">
+              <i class="pi pi-arrows-h"></i>
+              <span>Inverti 1° e 2° di Gara</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="scenario-scope-group" role="group" aria-label="Numero di gare su cui applicare lo scenario">
+          <span class="scope-label">Applica su:</span>
+          <div class="scope-pills">
+            <button
+              type="button"
+              class="scope-btn"
+              [class.active]="scenarioScopeCount === 3"
+              (click)="setScenarioScopeCount(3)">
+              3 Gare
+            </button>
+            <button
+              type="button"
+              class="scope-btn"
+              [class.active]="scenarioScopeCount === 5"
+              (click)="setScenarioScopeCount(5)">
+              5 Gare
+            </button>
+            <button
+              type="button"
+              class="scope-btn"
+              [class.active]="scenarioScopeCount === 'all'"
+              (click)="setScenarioScopeCount('all')">
+              Tutte
+            </button>
+          </div>
+        </div>
       </div>
+
+      @if (scenarioAppliedSummary) {
+        <div class="scenario-feedback-row">
+          <i class="pi pi-info-circle"></i>
+          <span>{{ scenarioAppliedSummary }}</span>
+        </div>
+      }
     </div>
 
     <!-- Bivi Storici Famosi per la stagione selezionata (se presenti) -->
@@ -114,8 +160,12 @@
     }
   </div>
 
-  @if (loading) {
-    <div class="loading-state">
+  @if (isWaitingForRealRounds) {
+    <div class="loading-state" aria-busy="true">
+      <div class="loading-banner f1-card">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>Sincronizzazione risultati ufficiali gara per gara della stagione {{ season }} in corso...</span>
+      </div>
       <div class="skeleton" style="height: 110px; border-radius: 12px; margin-bottom: 1.25rem;"></div>
       <div class="skeleton" style="height: 340px; border-radius: 12px; margin-bottom: 1.25rem;"></div>
       <div class="skeleton" style="height: 420px; border-radius: 12px;"></div>
@@ -761,7 +811,6 @@
                   <th class="th-num">Reali</th>
                   <th class="th-num">Var.</th>
                   <th class="th-num">Simulati</th>
-                  <th class="th-num">Gap</th>
                   <th class="th-status">Stato</th>
                 </tr>
               </thead>
@@ -788,7 +837,7 @@
                         <div class="name-details">
                           <span class="main-name">{{ c.name }}</span>
                           @if (mode === 'drivers') {
-                            <span class="sub-team">{{ c.constructorName }} &middot; {{ c.totalWins }} vittorie</span>
+                            <span class="sub-team">{{ c.constructorName }} &middot; {{ c.totalWins }} vitt.</span>
                           } @else {
                             <span class="sub-team">{{ c.totalWins }} vittorie</span>
                           }
@@ -806,14 +855,14 @@
                       }
                     </td>
                     <td class="td-num total-pts">
-                      <strong>{{ c.totalPoints }}</strong>
-                    </td>
-                    <td class="td-num gap-pts">
-                      @if (c.position === 1) {
-                        <span class="leader-tag">LEADER</span>
-                      } @else {
-                        <span>-{{ c.gapToLeader }}</span>
-                      }
+                      <div class="sim-pts-stack">
+                        <strong>{{ c.totalPoints }}</strong>
+                        @if (c.position === 1) {
+                          <span class="leader-tag">LEADER</span>
+                        } @else {
+                          <span class="gap-pts-sub">-{{ c.gapToLeader }} pt</span>
+                        }
+                      </div>
                     </td>
                     <td class="td-status">
                       @if (c.isChampion) {
