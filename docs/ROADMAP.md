@@ -161,15 +161,17 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
 
 ---
 
-### 16. Ottimizzazione Responsive, Esperienza App (PWA) & Performance (In Corso / Da Perfezionare) ⏳
+### 16. Ottimizzazione Responsive, Esperienza App (PWA) & Performance (Completato) ✅
 - **Verifica & Perfezionamento Responsive Mobile**:
-  - Revisione completa dell'adattamento su schermi piccoli (smartphone e tablet in portrait/landscape) per tutte le viste: Home, Gran Premi, Circuiti, Piloti, Classifiche, Simulatori e Dettagli.
-  - Risoluzione definitiva di eventuali tagli o overflow orizzontale su tabelle, drawer e card.
-  - Ergonomia touch: target di tocco minimi, navigazione fluida tramite la barra inferiore mobile e gesture.
+  - Revisione completa dell'adattamento su smartphone e tablet (portrait/landscape) per tutte le viste: Home, Gran Premi, Circuiti, Piloti, Classifiche, Simulatori e Dettagli.
+  - Stacking responsive della sidebar filtri in [drivers.component.css](file:///C:/Sviluppo/Personale/F1/src/app/components/drivers/drivers.component.css) e [gran-premi.component.css](file:///C:/Sviluppo/Personale/F1/src/app/components/gran.premi/gran-premi.component.css) (`<= 960px`), sostituzione di altezze fisse con layout elastici e call-to-action sempre visibili sui dispositivi touch (`@media (hover: none)`).
+  - Risoluzione definitiva di tagli o compressioni orizzontali sulle tabelle dati tramite wrapper accessibili (`tabindex="0" role="region"`, `container-type: inline-size`) e intestazioni `thead` sticky in [standings.component.html](file:///C:/Sviluppo/Personale/F1/src/app/components/standings/standings.component.html), [hall-of-fame.component.html](file:///C:/Sviluppo/Personale/F1/src/app/components/hall-of-fame/hall-of-fame.component.html) e [historic-gran-premi-detail.component.html](file:///C:/Sviluppo/Personale/F1/src/app/components/historic-gran-premi-detail/historic-gran-premi-detail.component.html).
+  - Ergonomia touch e viewport dinamico: unità `100dvh`, tipografia fluida con `clamp()`, e target di tocco minimi (`min-height: 44px–46px`, `touch-action: manipulation`) sulla barra inferiore mobile e sui selettori.
 - **Installabilità & Esperienza App (PWA)**:
-  - Verifica del funzionamento offline del service worker (`sw.js`) per risorse statiche e navigazione di base.
-  - Perfezionamento del manifest PWA (`manifest.webmanifest`), icone, splash screen e standalone display mode su iOS e Android.
+  - Perfezionamento del Service Worker ([sw.js](file:///C:/Sviluppo/Personale/F1/public/sw.js), cache `f1-pitwall-v2`): pre-caching dell'App Shell e del dataset geografico `/data/world-geo.json`, strategia *Network-First* con fallback `/index.html` per la navigazione SPA offline, *Stale-While-Revalidate* per asset statici ed esclusione automatica di stream video `.mp4` / `Range` dalla cache.
+  - Perfezionamento di [manifest.webmanifest](file:///C:/Sviluppo/Personale/F1/public/manifest.webmanifest) con `id`, `display_override`, `orientation: "any"` e `categories`.
+  - Indicatore reattivo dello stato di rete (`Modalità Offline`) integrato nella topbar di [app.component.ts](file:///C:/Sviluppo/Personale/F1/src/app/app.component.ts) con listener `window:online` / `window:offline`.
 - **Audit & Ottimizzazione Performance**:
-  - Riduzione dei tempi di caricamento (Core Web Vitals: LCP, CLS, INP).
-  - Ottimizzazione rendering SVG (mappe mondiali, grafici telemetrici e simulatori).
-  - Pulizia cache, lazy loading delle immagini e minimizzazione del payload di rete.
+  - Code-splitting delle rotte in [app.routes.ts](file:///C:/Sviluppo/Personale/F1/src/app/app.routes.ts) (`loadComponent` lazy per tutte le viste secondarie) abbinato a `withPreloading(PreloadAllModules)` in [app.config.ts](file:///C:/Sviluppo/Personale/F1/src/app/app.config.ts).
+  - Ottimizzazione Core Web Vitals (LCP, CLS, INP): `preload="metadata"` sul video Hero in [home.component.html](file:///C:/Sviluppo/Personale/F1/src/app/components/home/home.component.html), `fetchpriority="high"` sulle immagini LCP e `loading="lazy" decoding="async"` sulle immagini sottostanti, `aspect-ratio` espliciti e `content-visibility: auto` con `contain-intrinsic-size` per sezioni off-screen e griglie di card.
+  - Gestione memoria e pulizia automatica della cache in [http-cache.ts](file:///C:/Sviluppo/Personale/F1/src/app/services/http-cache.ts) tramite limite LRU in-memory (`maxMemoryEntries`) e pruning automatico (`pruneStale`) delle voci `localStorage` scadute all'avvio.

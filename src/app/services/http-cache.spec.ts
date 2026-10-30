@@ -127,4 +127,19 @@ describe('HttpCache', () => {
     expect(localStorage.getItem('test:old')).toBeNull();
     expect(localStorage.getItem(`test:${URL_A}`)).not.toBeNull();
   });
+
+  it('prunes expired and corrupted entries via pruneStale()', () => {
+    const now = Date.now();
+    localStorage.setItem('test:expired', JSON.stringify({ savedAt: now - 100_000, data: [] }));
+    localStorage.setItem('test:corrupt', 'not-valid-json');
+    localStorage.setItem('test:fresh', JSON.stringify({ savedAt: now, data: [42] }));
+
+    const cache = createCache();
+    const removed = cache.pruneStale(50_000);
+
+    expect(removed).toBe(2);
+    expect(localStorage.getItem('test:expired')).toBeNull();
+    expect(localStorage.getItem('test:corrupt')).toBeNull();
+    expect(localStorage.getItem('test:fresh')).not.toBeNull();
+  });
 });

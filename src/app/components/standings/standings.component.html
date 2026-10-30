@@ -241,37 +241,39 @@
         </div>
 
         @if (driverStandings.length > 3) {
-          <table class="standings-table">
-            <colgroup>
-              <col style="width: 9%" /><col style="width: 37%" /><col style="width: 28%" /><col style="width: 12%" /><col style="width: 14%" />
-            </colgroup>
-            <thead>
-              <tr><th>Pos</th><th>Pilota</th><th>Team</th><th>Vittorie</th><th>Punti</th></tr>
-            </thead>
-            <tbody>
-              @for (s of driverRows; track s.driverId) {
-                <tr [style]="rowStyle(driverColor(s))" [style.--i]="$index">
-                  <td class="cell-pos">{{ s.position }}</td>
-                  <td>
-                    @if (photoFor(s); as photo) {
-                      <img [src]="photo" [alt]="" class="table-driver-photo" (error)="onPhotoError(s)" />
-                    } @else {
-                      <span class="team-dot" [style.background]="'#' + driverColor(s)"></span>
-                    }
-                    <a class="row-link" [routerLink]="driverLink(s)">{{ s.fullName }}</a>
-                  </td>
-                  <td>
-                    @if (logoFor(s.constructorId); as logo) {
-                      <img class="team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" (error)="onLogoError(s.constructorId)" />
-                    }
-                    {{ s.constructorName }}
-                  </td>
-                  <td class="cell-num">{{ s.wins }}</td>
-                  <td class="cell-num cell-points">{{ s.points }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <div class="standings-table-wrapper f1-table-scroll" tabindex="0" role="region" aria-label="Tabella classifica piloti">
+            <table class="standings-table">
+              <colgroup>
+                <col style="width: 9%" /><col style="width: 37%" /><col style="width: 28%" /><col style="width: 12%" /><col style="width: 14%" />
+              </colgroup>
+              <thead>
+                <tr><th>Pos</th><th>Pilota</th><th>Team</th><th>Vittorie</th><th>Punti</th></tr>
+              </thead>
+              <tbody>
+                @for (s of driverRows; track s.driverId) {
+                  <tr [style]="rowStyle(driverColor(s))" [style.--i]="$index">
+                    <td class="cell-pos">{{ s.position }}</td>
+                    <td>
+                      @if (photoFor(s); as photo) {
+                        <img [src]="photo" [alt]="" class="table-driver-photo" loading="lazy" decoding="async" (error)="onPhotoError(s)" />
+                      } @else {
+                        <span class="team-dot" [style.background]="'#' + driverColor(s)"></span>
+                      }
+                      <a class="row-link" [routerLink]="driverLink(s)">{{ s.fullName }}</a>
+                    </td>
+                    <td>
+                      @if (logoFor(s.constructorId); as logo) {
+                        <img class="team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" loading="lazy" decoding="async" (error)="onLogoError(s.constructorId)" />
+                      }
+                      {{ s.constructorName }}
+                    </td>
+                    <td class="cell-num">{{ s.wins }}</td>
+                    <td class="cell-num cell-points">{{ s.points }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         }
       }
     } @else {
@@ -448,32 +450,34 @@
         </div>
 
         @if (constructorStandings.length > 3) {
-          <table class="standings-table">
-            <colgroup>
-              <col style="width: 9%" /><col style="width: 45%" /><col style="width: 20%" /><col style="width: 12%" /><col style="width: 14%" />
-            </colgroup>
-            <thead>
-              <tr><th>Pos</th><th>Costruttore</th><th>Nazionalità</th><th>Vittorie</th><th>Punti</th></tr>
-            </thead>
-            <tbody>
-              @for (c of constructorRows; track c.constructorId) {
-                <tr [style]="rowStyle(colorFor(c.constructorId))" [style.--i]="$index">
-                  <td class="cell-pos">{{ c.position }}</td>
-                  <td>
-                    @if (logoFor(c.constructorId); as logo) {
-                      <img class="team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" (error)="onLogoError(c.constructorId)" />
-                    } @else {
-                      <span class="team-dot" [style.background]="'#' + colorFor(c.constructorId)"></span>
-                    }
-                    {{ c.name }}
-                  </td>
-                  <td>{{ c.nationality }}</td>
-                  <td class="cell-num">{{ c.wins }}</td>
-                  <td class="cell-num cell-points">{{ c.points }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <div class="standings-table-wrapper f1-table-scroll" tabindex="0" role="region" aria-label="Tabella classifica costruttori">
+            <table class="standings-table">
+              <colgroup>
+                <col style="width: 9%" /><col style="width: 45%" /><col style="width: 20%" /><col style="width: 12%" /><col style="width: 14%" />
+              </colgroup>
+              <thead>
+                <tr><th>Pos</th><th>Costruttore</th><th>Nazionalità</th><th>Vittorie</th><th>Punti</th></tr>
+              </thead>
+              <tbody>
+                @for (c of constructorRows; track c.constructorId) {
+                  <tr [style]="rowStyle(colorFor(c.constructorId))" [style.--i]="$index">
+                    <td class="cell-pos">{{ c.position }}</td>
+                    <td>
+                      @if (logoFor(c.constructorId); as logo) {
+                        <img class="team-logo" [class.on-light]="logo.onLight" [src]="logo.url" alt="" loading="lazy" decoding="async" (error)="onLogoError(c.constructorId)" />
+                      } @else {
+                        <span class="team-dot" [style.background]="'#' + colorFor(c.constructorId)"></span>
+                      }
+                      {{ c.name }}
+                    </td>
+                    <td>{{ c.nationality }}</td>
+                    <td class="cell-num">{{ c.wins }}</td>
+                    <td class="cell-num cell-points">{{ c.points }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         }
       }
     }

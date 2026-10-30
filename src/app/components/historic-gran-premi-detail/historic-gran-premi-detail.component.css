@@ -204,6 +204,13 @@
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px 12px 0 0;
   margin-bottom: 2rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.gp-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-button {
@@ -374,16 +381,26 @@
 
 .table-container {
   overflow-x: auto;
+  max-inline-size: 100%;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #121722;
+  container-type: inline-size;
+  -webkit-overflow-scrolling: touch;
 }
 
 .race-results-table {
   width: 100%;
+  min-width: 560px;
   border-collapse: collapse;
   text-align: left;
   font-size: 0.95rem;
+}
+
+.race-results-table thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
 }
 
 .race-results-table th {

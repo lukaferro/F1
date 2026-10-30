@@ -1,15 +1,5 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './components/home/home.component';
-import { GranPremiComponent } from './components/gran.premi/gran-premi.component';
-import { GranPremiDetailComponent } from './components/gran-premi-detail/gran-premi-detail.component';
-import { DriversComponent } from './components/drivers/drivers.component';
-import { DriverDetailComponent } from './components/driver-detail/driver-detail.component';
-import { CircuitsComponent } from './components/circuits/circuits.component';
-import { StandingsComponent } from './components/standings/standings.component';
-import { HistoricDriverDetailComponent } from './components/historic-driver-detail/historic-driver-detail.component';
-import { HistoricGranPremiDetailComponent } from './components/historic-gran-premi-detail/historic-gran-premi-detail.component';
-import { NewsComponent } from './components/news/news.component';
-import { TeamsComponent } from './components/teams/teams.component';
 
 export const routes: Routes = [
   {
@@ -18,44 +8,62 @@ export const routes: Routes = [
   },
   {
     path: 'granpremi',
-    component: GranPremiComponent,
+    loadComponent: () =>
+      import('./components/gran.premi/gran-premi.component').then(m => m.GranPremiComponent),
   },
   {
     // prima di granpremi/:id: le gare storiche hanno rotta con anno e round
     path: 'granpremi/storico/:season/:round',
-    component: HistoricGranPremiDetailComponent,
+    loadComponent: () =>
+      import('./components/historic-gran-premi-detail/historic-gran-premi-detail.component').then(
+        m => m.HistoricGranPremiDetailComponent
+      ),
   },
   {
     path: 'granpremi/:id',
-    component: GranPremiDetailComponent,
+    loadComponent: () =>
+      import('./components/gran-premi-detail/gran-premi-detail.component').then(
+        m => m.GranPremiDetailComponent
+      ),
   },
   {
     path: 'drivers',
-    component: DriversComponent,
+    loadComponent: () =>
+      import('./components/drivers/drivers.component').then(m => m.DriversComponent),
   },
   {
     // prima di drivers/:id: alcuni driverId storici sono di tre lettere (es. "ide") come le sigle
     path: 'drivers/storico/:driverId',
-    component: HistoricDriverDetailComponent,
+    loadComponent: () =>
+      import('./components/historic-driver-detail/historic-driver-detail.component').then(
+        m => m.HistoricDriverDetailComponent
+      ),
   },
   {
     path: 'drivers/:id',
-    component: DriverDetailComponent,
+    loadComponent: () =>
+      import('./components/driver-detail/driver-detail.component').then(
+        m => m.DriverDetailComponent
+      ),
   },
   {
     path: 'scuderie',
-    component: TeamsComponent,
+    loadComponent: () =>
+      import('./components/teams/teams.component').then(m => m.TeamsComponent),
   },
   {
     path: 'circuits',
-    component: CircuitsComponent,
+    loadComponent: () =>
+      import('./components/circuits/circuits.component').then(m => m.CircuitsComponent),
   },
   {
     path: 'classifiche',
-    component: StandingsComponent,
+    loadComponent: () =>
+      import('./components/standings/standings.component').then(m => m.StandingsComponent),
   },
   {
     path: 'news',
-    component: NewsComponent,
+    loadComponent: () =>
+      import('./components/news/news.component').then(m => m.NewsComponent),
   }
 ];

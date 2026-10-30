@@ -232,6 +232,14 @@
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   animation: fadeInCard 0.4s ease-out backwards;
   animation-delay: calc(var(--i, 0) * 0.04s);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 360px auto 540px;
+}
+
+@supports not (content-visibility: auto) {
+  .circuit-card {
+    contain: layout style paint;
+  }
 }
 
 @keyframes fadeInCard {

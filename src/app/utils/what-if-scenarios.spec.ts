@@ -18,8 +18,8 @@ describe('what-if-scenarios & comparison chart', () => {
   ];
 
   const dummyStandings: DriverStanding[] = [
-    { position: 1, points: 50, wins: 2, driverId: 'max_verstappen', code: 'VER', permanentNumber: '1', givenName: 'Max', familyName: 'Verstappen', fullName: 'Max Verstappen', nationality: 'Dutch', dateOfBirth: '1997-09-30', constructorId: 'red_bull', constructorName: 'Red Bull', constructors: [{ id: 'red_bull', name: 'Red Bull' }] },
-    { position: 2, points: 36, wins: 0, driverId: 'norris', code: 'NOR', permanentNumber: '4', givenName: 'Lando', familyName: 'Norris', fullName: 'Lando Norris', nationality: 'British', dateOfBirth: '1999-11-13', constructorId: 'mclaren', constructorName: 'McLaren', constructors: [{ id: 'mclaren', name: 'McLaren' }] }
+    { position: 1, points: 50, wins: 2, driverId: 'max_verstappen', code: 'VER', fullName: 'Max Verstappen', nationality: 'Dutch', constructorId: 'red_bull', constructorName: 'Red Bull', constructors: [{ id: 'red_bull', name: 'Red Bull' }] },
+    { position: 2, points: 36, wins: 0, driverId: 'norris', code: 'NOR', fullName: 'Lando Norris', nationality: 'British', constructorId: 'mclaren', constructorName: 'McLaren', constructors: [{ id: 'mclaren', name: 'McLaren' }] }
   ];
 
   it('assigns distinct high-contrast colors even to teammates on the same constructor', () => {
@@ -27,11 +27,11 @@ describe('what-if-scenarios & comparison chart', () => {
       { id: 'hamilton', constructorId: 'mercedes', constructorName: 'Mercedes', baseColor: '27f4d2' },
       { id: 'rosberg', constructorId: 'mercedes', constructorName: 'Mercedes', baseColor: '27f4d2' },
       { id: 'vettel', constructorId: 'ferrari', constructorName: 'Ferrari', baseColor: 'e8002d' }
-    ]);
+    ], 'drivers');
 
-    const hamColor = colorMap.get('hamilton');
-    const rosColor = colorMap.get('rosberg');
-    const vetColor = colorMap.get('vettel');
+    const hamColor = colorMap.get('hamilton')?.color;
+    const rosColor = colorMap.get('rosberg')?.color;
+    const vetColor = colorMap.get('vettel')?.color;
 
     expect(hamColor).toBeDefined();
     expect(rosColor).toBeDefined();
@@ -78,13 +78,18 @@ describe('what-if-scenarios & comparison chart', () => {
       }
     ];
 
-    const chart = buildSimulatorComparisonChart(rounds, contenders, 'drivers', 2024, ['norris']);
-    expect(chart.rounds.length).toBe(1);
-    expect(chart.rounds[0].isModified).toBe(true);
-    expect(chart.series.length).toBe(1);
-    expect(chart.series[0].hasDiverged).toBe(true);
-    expect(chart.series[0].nodes[0].realCumulative).toBe(18);
-    expect(chart.series[0].nodes[0].simCumulative).toBe(25);
+    const driverToTeam = new Map<string, string>([
+      ['norris', 'mclaren'],
+      ['max_verstappen', 'red_bull']
+    ]);
+    const chart = buildSimulatorComparisonChart(rounds, contenders, 'drivers', 2024, driverToTeam);
+    expect(chart).not.toBeNull();
+    expect(chart!.rounds.length).toBe(1);
+    expect(chart!.rounds[0].isModified).toBe(true);
+    expect(chart!.series.length).toBe(1);
+    expect(chart!.series[0].hasDiverged).toBe(true);
+    expect(chart!.series[0].nodes[0].realCumulative).toBe(18);
+    expect(chart!.series[0].nodes[0].simCumulative).toBe(25);
   });
 
   it('calculates future scenario for leader dominance', () => {
@@ -101,8 +106,8 @@ describe('what-if-scenarios & comparison chart', () => {
     expect(pivot2008).toBeDefined();
 
     const standings2008: DriverStanding[] = [
-      { position: 1, points: 98, wins: 5, driverId: 'hamilton', code: 'HAM', permanentNumber: '22', givenName: 'Lewis', familyName: 'Hamilton', fullName: 'Lewis Hamilton', nationality: 'British', dateOfBirth: '1985-01-07', constructorId: 'mclaren', constructorName: 'McLaren', constructors: [{ id: 'mclaren', name: 'McLaren' }] },
-      { position: 2, points: 97, wins: 6, driverId: 'massa', code: 'MAS', permanentNumber: '2', givenName: 'Felipe', familyName: 'Massa', fullName: 'Felipe Massa', nationality: 'Brazilian', dateOfBirth: '1981-04-25', constructorId: 'ferrari', constructorName: 'Ferrari', constructors: [{ id: 'ferrari', name: 'Ferrari' }] }
+      { position: 1, points: 98, wins: 5, driverId: 'hamilton', code: 'HAM', fullName: 'Lewis Hamilton', nationality: 'British', constructorId: 'mclaren', constructorName: 'McLaren', constructors: [{ id: 'mclaren', name: 'McLaren' }] },
+      { position: 2, points: 97, wins: 6, driverId: 'massa', code: 'MAS', fullName: 'Felipe Massa', nationality: 'Brazilian', constructorId: 'ferrari', constructorName: 'Ferrari', constructors: [{ id: 'ferrari', name: 'Ferrari' }] }
     ];
 
     const schedule2008: SeasonScheduleItem[] = [

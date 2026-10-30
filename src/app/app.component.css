@@ -2,6 +2,7 @@
   display: block;
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
 }
@@ -20,6 +21,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 main {
@@ -79,12 +81,14 @@ nav .nav-right {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   color: var(--text-primary);
 }
 
 nav ul li img {
   height: 1.4rem;
+  width: auto;
+  aspect-ratio: 56 / 22;
   cursor: pointer;
   display: block;
 }
@@ -136,6 +140,25 @@ nav a.nav-link.active::after {
   border-radius: 2px;
 }
 
+/* Badge Modalità Offline (PWA) */
+.offline-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.offline-status-pill i {
+  font-size: 0.78rem;
+}
+
 /* Pulsante Installa App (PWA) */
 .install-app-btn {
   display: inline-flex;
@@ -147,8 +170,10 @@ nav a.nav-link.active::after {
   font-size: 0.8rem;
   font-weight: 700;
   padding: 6px 12px;
+  min-height: 36px;
   border-radius: 999px;
   cursor: pointer;
+  touch-action: manipulation;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
@@ -219,10 +244,11 @@ nav a.nav-link.active::after {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   cursor: pointer;
+  touch-action: manipulation;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -298,6 +324,7 @@ nav a.nav-link.active::after {
   justify-content: center;
   font-size: 1.15rem;
   cursor: pointer;
+  touch-action: manipulation;
   z-index: 999;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease;
   animation: backToTopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -342,11 +369,15 @@ nav a.nav-link.active::after {
     display: inline-block;
   }
 
+  .offline-status-pill span {
+    display: none;
+  }
+
   main {
     padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
   }
 
-  /* Barra di navigazione inferiore in stile App Nativa */
+  /* Barra di navigazione inferiore in stile App Nativa con target touch ergonomici */
   .mobile-bottom-nav {
     position: fixed;
     bottom: 0;
@@ -358,7 +389,7 @@ nav a.nav-link.active::after {
     background: rgba(16, 16, 22, 0.96);
     backdrop-filter: blur(14px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.3rem 0.2rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
     height: auto;
   }
 
@@ -368,17 +399,19 @@ nav a.nav-link.active::after {
     align-items: center;
     justify-content: center;
     gap: 0.2rem;
+    min-height: 46px;
     padding: 0.25rem 0.1rem;
     color: var(--text-muted, #8e8e99);
     text-decoration: none;
     font-size: 0.64rem;
     font-weight: 600;
     border-radius: 8px;
+    touch-action: manipulation;
     transition: color 0.18s ease, background-color 0.18s ease;
   }
 
   .mobile-tab-item i {
-    font-size: 1.02rem;
+    font-size: 1.04rem;
   }
 
   .mobile-tab-item.active {
@@ -391,10 +424,10 @@ nav a.nav-link.active::after {
   }
 
   .back-to-top {
-    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(4.85rem + env(safe-area-inset-bottom, 0px));
     right: 1rem;
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
     font-size: 1rem;
   }
 }

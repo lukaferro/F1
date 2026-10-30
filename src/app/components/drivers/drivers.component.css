@@ -45,6 +45,10 @@
   margin-bottom: 1.5rem;
 }
 
+.filter-group:last-child {
+  margin-bottom: 0;
+}
+
 .filter-header {
   display: flex;
   justify-content: space-between;
@@ -80,6 +84,7 @@
 /* Contenuto principale */
 .drivers-content {
   flex: 1;
+  min-width: 0;
 }
 
 .drivers-header {
@@ -92,7 +97,7 @@
 }
 
 .header-left h1 {
-  font-size: 2.2rem;
+  font-size: clamp(1.65rem, 1.35rem + 1.2vw, 2.2rem);
   margin: 0 0 0.5rem;
   color: #ffffff;
   display: flex;
@@ -111,7 +116,7 @@
 }
 
 .header-left p {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: #cccccc;
   margin: 0;
 }
@@ -126,7 +131,9 @@
 .compare-toggle-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.55rem;
+  min-height: 44px;
   padding: 0.72rem 1.15rem;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.16);
@@ -136,6 +143,7 @@
   font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
+  touch-action: manipulation;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -162,6 +170,8 @@
 
 .search-input {
   width: 300px;
+  max-width: 100%;
+  min-height: 44px;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -208,7 +218,7 @@
 
 .drivers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 2rem;
   margin-top: 2rem;
 }
@@ -220,12 +230,26 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.driver-card:not(.skeleton-card) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px auto 520px;
+}
+
+@supports not (content-visibility: auto) {
+  .driver-card:not(.skeleton-card) {
+    contain: layout style paint;
+  }
 }
 
 .drivers-grid a.driver-card {
   text-decoration: none;
   color: inherit;
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 .driver-card:hover {
@@ -234,29 +258,33 @@
 }
 
 .driver-header {
-  padding: 1.5rem;
+  padding: 1.35rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .driver-number {
-  font-size: 2.5rem;
+  font-size: 2.35rem;
   font-weight: 900;
   text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
   letter-spacing: 2px;
 }
 
-
 .driver-body {
   padding: 1.5rem;
   background: rgba(0, 0, 0, 0.3);
-  height: 500px;
+  min-height: 460px;
+  height: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .driver-image-container {
   width: 100%;
   height: 300px;
+  aspect-ratio: 4 / 3;
   margin-bottom: 1rem;
   border-radius: 12px;
   overflow: hidden;
@@ -276,18 +304,19 @@
 
 .driver-info {
   text-align: center;
+  margin-top: auto;
 }
 
 .driver-info h3 {
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   margin: 0 0 0.5rem;
   color: #ffffff;
 }
 
 .driver-acronym {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   color: #cccccc;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   font-weight: 600;
 }
 
@@ -297,7 +326,7 @@
   justify-content: center;
   gap: 0.5rem;
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 .driver-accent {
@@ -343,24 +372,60 @@
   margin: 0;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* Responsive Tablet & Mobile */
+@media (max-width: 960px) {
   .drivers-container {
-    padding: 1rem;
+    flex-direction: column;
+    padding: 1.25rem;
+    gap: 1.5rem;
   }
 
-  .drivers-header h1 {
-    font-size: 2rem;
+  .drivers-sidebar {
+    width: 100%;
+  }
+
+  .filter-section {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .drivers-container {
+    padding: 1rem 0.85rem;
+  }
+
+  .drivers-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .header-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .compare-toggle-btn,
+  .search-container,
+  .search-input {
+    width: 100%;
   }
 
   .drivers-grid {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1.25rem;
+    margin-top: 1.25rem;
   }
 
-  .filters-section {
-    flex-direction: column;
-    align-items: stretch;
+  .driver-body {
+    min-height: 0;
+    padding: 1.15rem;
+  }
+
+  .driver-image-container {
+    height: 250px;
   }
 
   .reset-button {

@@ -3,7 +3,12 @@
     <ul>
       <li class="logo-item">
         <a routerLink="/" class="logo-link" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" aria-label="Home">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/New_era_F1_logo.png" alt="Logo F1" />
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/f/f2/New_era_F1_logo.png"
+            alt="Logo F1"
+            width="56"
+            height="22"
+            fetchpriority="high" />
           <span class="mobile-brand-label">PitWall</span>
         </a>
       </li>
@@ -16,6 +21,12 @@
     </ul>
   </div>
   <div class="nav-right">
+    @if (isOffline) {
+      <span class="offline-status-pill" role="status" aria-live="polite" title="Connessione assente: consultazione dati salvati in cache locale">
+        <i class="pi pi-wifi"></i>
+        <span>Modalità Offline</span>
+      </span>
+    }
     @if (!isStandaloneApp) {
       <button
         type="button"

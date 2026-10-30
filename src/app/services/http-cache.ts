@@ -17,6 +17,7 @@ export interface HttpCacheOptions {
   windowMs: number;                  // ...in questa finestra di tempo
   ttlFor: (url: string) => number;   // per quanto tempo una risposta resta valida
   maxCachedChars?: number;           // risposte più grandi restano solo in memoria
+  maxMemoryEntries?: number;         // numero massimo di risposte trattenute in RAM (LRU)
   retryDelaysMs?: number[];          // attese tra i tentativi dopo un 429
 }
 
@@ -27,6 +28,7 @@ export class HttpCache {
   readonly status: WritableSignal<ApiStatus> = signal<ApiStatus>('ok');
 
   private readonly maxCachedChars: number;
+  private readonly maxMemoryEntries: number;
   private readonly retryDelaysMs: number[];
 
   // Cache in memoria (evita di rileggere e decodificare il localStorage a ogni chiamata)
@@ -38,6 +40,7 @@ export class HttpCache {
 
   constructor(private readonly http: HttpClient, private readonly options: HttpCacheOptions) {
     this.maxCachedChars = options.maxCachedChars ?? 400_000;
+    this.maxMemoryEntries = options.maxMemoryEntries ?? 150;
     this.retryDelaysMs = options.retryDelaysMs ?? [2000, 8000, 20000];
   }
 
@@ -61,11 +64,32 @@ export class HttpCache {
     }
   }
 
+  /**
+   * Pulisce dal localStorage e dalla memoria le voci più vecchie di maxAgeMs
+   * (default: 14 giorni) o corrotte, liberando spazio su disco.
+   */
+  pruneStale(maxAgeMs = 14 * 24 * 60 * 60 * 1000): number {
+    let removed = 0;
+    const cutoff = Date.now() - maxAgeMs;
+    try {
+      const keys = Object.keys(localStorage).filter(k => k.startsWith(this.options.prefix));
+      for (const k of keys) {
+        const entry = this.readCache(k);
+        if (!entry || typeof entry.savedAt !== 'number' || entry.savedAt < cutoff) {
+          localStorage.removeItem(k);
+          this.memoryCache.delete(k);
+          removed++;
+        }
+      }
+    } catch { /* ignorato */ }
+    return removed;
+  }
+
   private async load<T>(url: string): Promise<T> {
     const key = this.options.prefix + url;
     const cached = (this.memoryCache.get(key) ?? this.readCache<T>(key)) as { savedAt: number; data: T } | null;
     if (cached && Date.now() - cached.savedAt < this.options.ttlFor(url)) {
-      this.memoryCache.set(key, cached);
+      this.setMemoryEntry(key, cached);
       return cached.data;
     }
 
@@ -125,6 +149,18 @@ export class HttpCache {
     }
   }
 
+  private setMemoryEntry(key: string, entry: { savedAt: number; data: unknown }): void {
+    if (this.memoryCache.has(key)) {
+      this.memoryCache.delete(key);
+    } else if (this.memoryCache.size >= this.maxMemoryEntries) {
+      const oldestKey = this.memoryCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.memoryCache.delete(oldestKey);
+      }
+    }
+    this.memoryCache.set(key, entry);
+  }
+
   private readCache<T>(key: string): { savedAt: number; data: T } | null {
     try {
       const raw = localStorage.getItem(key);
@@ -136,7 +172,7 @@ export class HttpCache {
 
   private writeCache(key: string, data: unknown): void {
     const entry = { savedAt: Date.now(), data };
-    this.memoryCache.set(key, entry);
+    this.setMemoryEntry(key, entry);
 
     const json = JSON.stringify(entry);
     if (json.length > this.maxCachedChars) return;

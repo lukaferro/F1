@@ -78,6 +78,22 @@ describe('AppComponent', () => {
     expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
   });
 
+  it('should update offline status badge when window offline/online events fire', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    window.dispatchEvent(new Event('offline'));
+    fixture.detectChanges();
+    expect(component.isOffline).toBe(true);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.offline-status-pill')).toBeTruthy();
+
+    window.dispatchEvent(new Event('online'));
+    fixture.detectChanges();
+    expect(component.isOffline).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.offline-status-pill')).toBeNull();
+  });
+
   it('should preserve section filters when navigating to detail within the same section and reset them when switching section', async () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();

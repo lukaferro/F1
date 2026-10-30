@@ -194,14 +194,24 @@
 
 .hof-table-wrapper {
   overflow-x: auto;
+  max-inline-size: 100%;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  container-type: inline-size;
+  -webkit-overflow-scrolling: touch;
 }
 
 .hof-table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   background: rgba(20, 20, 20, 0.7);
+}
+
+.hof-table thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
 }
 
 .hof-table th {

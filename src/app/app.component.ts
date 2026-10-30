@@ -32,16 +32,18 @@ export class AppComponent implements OnInit {
   isNavHidden = false;
   isScrolled = false;
 
-  // Stato PWA / App Installabile
+  // Stato PWA / App Installabile & Connettività Offline
   private deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
   isStandaloneApp = false;
   showInstallGuideModal = false;
+  isOffline = false;
 
   private lastScrollTop = 0;
   private readonly scrollThreshold = 70;
 
   ngOnInit() {
     this.checkStandaloneMode();
+    this.checkOnlineStatus();
 
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
@@ -59,6 +61,21 @@ export class AppComponent implements OnInit {
       window.matchMedia?.('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true;
     this.isStandaloneApp = Boolean(isStandalone);
+  }
+
+  private checkOnlineStatus(): void {
+    if (typeof navigator === 'undefined') return;
+    this.isOffline = navigator.onLine === false;
+  }
+
+  @HostListener('window:online')
+  onOnline(): void {
+    this.isOffline = false;
+  }
+
+  @HostListener('window:offline')
+  onOffline(): void {
+    this.isOffline = true;
   }
 
   @HostListener('window:beforeinstallprompt', ['$event'])

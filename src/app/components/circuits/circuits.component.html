@@ -138,11 +138,13 @@
                   [src]="circuit.image_url"
                   [alt]="circuit.name"
                   class="circuit-image"
-                  loading="lazy"
+                  [attr.fetchpriority]="$index === 0 ? 'high' : null"
+                  [attr.loading]="$index < 3 ? null : 'lazy'"
+                  decoding="async"
                 />
                 <div class="circuit-badge">
                   <span class="round-chip" *ngIf="circuit.round_number">R{{ circuit.round_number < 10 ? '0' + circuit.round_number : circuit.round_number }}</span>
-                  <img [src]="getFlag(circuit.country_code)" [alt]="circuit.country" class="country-flag" />
+                  <img [src]="getFlag(circuit.country_code)" [alt]="circuit.country" class="country-flag" loading="lazy" decoding="async" />
                   <span>{{ circuit.country }}</span>
                 </div>
               </div>

@@ -8,7 +8,7 @@
         <div class="filter-header">
           <label class="filter-label">Anno</label>
           @if (selectedYear) {
-            <button class="reset-filter" (click)="resetFilters()">
+            <button class="reset-filter" (click)="resetFilters()" aria-label="Rimuovi filtro anno">
               <i class="pi pi-times"></i>
             </button>
           }
@@ -62,6 +62,7 @@
             [(ngModel)]="searchQuery"
             (ngModelChange)="onSearch()"
             placeholder="Cerca pilota..."
+            aria-label="Cerca pilota"
             class="search-input" />
         </span>
       </div>
@@ -112,13 +113,20 @@
                   <div></div>
                 }
                 @if (card.flag) {
-                  <img [src]="card.flag" [alt]="card.name" class="card-flag" />
+                  <img [src]="card.flag" [alt]="card.name" class="card-flag" width="32" height="22" loading="lazy" />
                 }
               </div>
               <div class="driver-body">
                 <div class="driver-image-container">
                   @if (card.photo) {
-                    <img [src]="card.photo" (error)="card.photo = undefined" [alt]="card.name" class="driver-image" />
+                    <img
+                      [src]="card.photo"
+                      (error)="card.photo = undefined"
+                      [alt]="card.name"
+                      class="driver-image"
+                      decoding="async"
+                      [attr.fetchpriority]="$index === 0 ? 'high' : null"
+                      [attr.loading]="$index < 4 ? null : 'lazy'" />
                   } @else {
                     <div class="portrait-initials" [style.background]="'#' + card.color" aria-hidden="true">{{ card.initials }}</div>
                   }
@@ -148,7 +156,14 @@
               </div>
               <div class="driver-body">
                 <div class="driver-image-container">
-                  <img [src]="getDriverImage(driver)" (error)="onDriverImageError($event, driver)" [alt]="driver.full_name" class="driver-image" />
+                  <img
+                    [src]="getDriverImage(driver)"
+                    (error)="onDriverImageError($event, driver)"
+                    [alt]="driver.full_name"
+                    class="driver-image"
+                    decoding="async"
+                    [attr.fetchpriority]="$index === 0 ? 'high' : null"
+                    [attr.loading]="$index < 4 ? null : 'lazy'" />
                 </div>
                 <div class="driver-info">
                   <h3>
