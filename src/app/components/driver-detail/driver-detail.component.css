@@ -1,5 +1,5 @@
 .driver-detail {
-  max-width: 1200px;
+  max-width: var(--container-max-width, 1440px);
   margin: 0 auto;
   padding: 2rem;
 }

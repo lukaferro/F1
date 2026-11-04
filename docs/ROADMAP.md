@@ -175,3 +175,17 @@ Questo documento tiene traccia delle funzionalità pianificate e del loro stato 
   - Code-splitting delle rotte in [app.routes.ts](file:///C:/Sviluppo/Personale/F1/src/app/app.routes.ts) (`loadComponent` lazy per tutte le viste secondarie) abbinato a `withPreloading(PreloadAllModules)` in [app.config.ts](file:///C:/Sviluppo/Personale/F1/src/app/app.config.ts).
   - Ottimizzazione Core Web Vitals (LCP, CLS, INP): `preload="metadata"` sul video Hero in [home.component.html](file:///C:/Sviluppo/Personale/F1/src/app/components/home/home.component.html), `fetchpriority="high"` sulle immagini LCP e `loading="lazy" decoding="async"` sulle immagini sottostanti, `aspect-ratio` espliciti e `content-visibility: auto` con `contain-intrinsic-size` per sezioni off-screen e griglie di card.
   - Gestione memoria e pulizia automatica della cache in [http-cache.ts](file:///C:/Sviluppo/Personale/F1/src/app/services/http-cache.ts) tramite limite LRU in-memory (`maxMemoryEntries`) e pruning automatico (`pruneStale`) delle voci `localStorage` scadute all'avvio.
+
+---
+
+## Prossimi Passi (In Programma) ⏳
+
+### 17. Perfezionamento Visualizzazione Mobile & Touch (Tutte le Pagine, Tabelle & Mappa)
+- **Tabelle su Smartphone (Tutte le pagine)**:
+  - Consolidamento layout a 2 righe e zero-scroll per tutte le schermate dati: Classifiche, Risultati Gara / Qualifiche, Gomme, Pit Stop, Meteo, Sorpassi, Albo d'Oro e Carriera.
+  - Prevenire qualsiasi overflow o perdita di contesto mantenendo sempre leggibili contemporaneamente pilota, team, tempi/distacchi e punti senza necessità di scorrimento orizzontale.
+- **Mappa Geografica Circuiti su Mobile (`/circuits`)**:
+  - Ottimizzazione dell'esperienza touch e interazione sulla mappa SVG del mondo su schermi piccoli (gesture zoom/pinch, pan fluido senza bloccare lo scrolling verticale della pagina).
+  - Riorganizzazione drawer dettagli circuito e controlli delle macro-aree geografiche per schermi verticali compatti.
+- **Raffinamento Generale Mobile**:
+  - Verifica della resa su smartphone di tutte le pagine (Home, Piloti, Scuderie, News, Dettagli GP e Simulatori) per garantire un'esperienza nativa e uniforme senza elementi tagliati o disallineati.

@@ -36,6 +36,9 @@
 
 .footer-logo img {
   height: 22px;
+  width: auto;
+  aspect-ratio: 494 / 124;
+  object-fit: contain;
   display: block;
 }
 

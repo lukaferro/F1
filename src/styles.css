@@ -33,7 +33,13 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-pill: 999px;
-  --container-max-width: 1200px;
+  --container-max-width: 1440px;
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --container-max-width: 1560px;
+  }
 }
 
 *, *::before, *::after {

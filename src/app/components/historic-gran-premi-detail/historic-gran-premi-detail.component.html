@@ -161,6 +161,15 @@
                       <a [routerLink]="driverLink(row.driverId, row.code)" class="driver-link">
                         {{ row.fullName }}
                       </a>
+                      <div class="driver-mobile-sub">
+                        <span class="team-badge-mini" [style.--team-color]="'#' + driverColor(row.constructorId)">
+                          <span class="team-indicator"></span>
+                          {{ row.constructorName }}
+                        </span>
+                        @if (row.laps) {
+                          <span class="laps-sub">&middot; {{ row.laps }} giri</span>
+                        }
+                      </div>
                     </td>
                     <td class="col-team">
                       <span class="team-badge" [style.--team-color]="'#' + driverColor(row.constructorId)">

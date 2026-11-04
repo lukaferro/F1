@@ -86,9 +86,10 @@ nav .nav-right {
 }
 
 nav ul li img {
-  height: 1.4rem;
+  height: 1.45rem;
   width: auto;
-  aspect-ratio: 56 / 22;
+  aspect-ratio: 494 / 124;
+  object-fit: contain;
   cursor: pointer;
   display: block;
 }

@@ -1,5 +1,5 @@
 .detail-container {
-  max-width: 1200px;
+  max-width: var(--container-max-width, 1440px);
   margin: 0 auto;
   padding: 2rem;
 }
@@ -302,6 +302,14 @@ h2::after {
   gap: 0.75rem;
 }
 
+.driver-mobile-sub {
+  display: none;
+}
+
+.gap-mobile-sub {
+  display: none;
+}
+
 .driver-number {
   display: inline-flex;
   align-items: center;
@@ -397,7 +405,7 @@ h2::after {
   padding: 5rem 0;
   text-align: center;
   min-height: 50vh;
-  max-width: 1200px;
+  max-width: var(--container-max-width, 1440px);
   margin: 0 auto;
 }
 
@@ -442,6 +450,114 @@ h2::after {
 
   .info-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Tabelle sessioni responsive per smartphone */
+  :host ::ng-deep .results-table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  :host ::ng-deep .results-table .p-datatable-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+  }
+
+  :host ::ng-deep .results-table .p-datatable-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+  }
+
+  :host ::ng-deep .results-table .header-row .col-team,
+  :host ::ng-deep .results-table .result-row .cell-team,
+  :host ::ng-deep .results-table .header-row .col-laps,
+  :host ::ng-deep .results-table .result-row .cell-laps,
+  :host ::ng-deep .results-table .header-row .col-gap,
+  :host ::ng-deep .results-table .result-row .cell-gap {
+    display: none !important;
+  }
+
+  .driver-mobile-sub {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.2rem;
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+  }
+
+  .gap-mobile-sub {
+    display: block;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-top: 0.15rem;
+  }
+
+  :host ::ng-deep .results-table .p-datatable-thead > tr > th,
+  :host ::ng-deep .results-table .p-datatable-tbody > tr > td {
+    padding: 0.6rem 0.35rem !important;
+  }
+
+  :host ::ng-deep .results-table .col-pos,
+  :host ::ng-deep .results-table .cell-pos {
+    width: 32px !important;
+    min-width: 32px !important;
+    font-size: 0.95rem !important;
+    padding-left: 0.2rem !important;
+    padding-right: 0.2rem !important;
+    text-align: center !important;
+  }
+
+  .driver-info {
+    gap: 0.45rem;
+  }
+
+  .driver-number {
+    width: 24px;
+    height: 24px;
+    font-size: 0.76rem;
+  }
+
+  .driver-name {
+    font-size: 0.88rem;
+    max-width: 130px;
+  }
+
+  :host ::ng-deep .results-table .col-pts,
+  :host ::ng-deep .results-table .cell-pts {
+    width: 44px !important;
+    min-width: 44px !important;
+    text-align: center !important;
+    font-size: 0.9rem !important;
+  }
+
+  :host ::ng-deep .results-table .col-time,
+  :host ::ng-deep .results-table .cell-time {
+    width: 82px !important;
+    min-width: 76px !important;
+    font-size: 0.8rem !important;
+    text-align: right !important;
+    padding-right: 0.5rem !important;
+  }
+
+  :host ::ng-deep .results-table .col-qual,
+  :host ::ng-deep .results-table .cell-qual {
+    font-size: 0.76rem !important;
+    padding: 0.5rem 0.25rem !important;
+    text-align: right !important;
+  }
+
+  /* Tabelle compatte: stints, pits, weather */
+  :host ::ng-deep .compact-table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  :host ::ng-deep .compact-table .p-datatable-thead > tr > th,
+  :host ::ng-deep .compact-table .p-datatable-tbody > tr > td {
+    padding: 0.55rem 0.35rem !important;
+    font-size: 0.8rem !important;
   }
 }
 
@@ -653,6 +769,14 @@ h2::after {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.driver-mobile-sub {
+  display: none;
+}
+
+.gap-mobile-sub {
+  display: none;
 }
 
 .driver-number {
@@ -998,6 +1122,18 @@ Stili per i tab di PrimeNG
   background: rgba(0, 0, 0, 0.2);
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 992px) {
+  .session-tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .tab-button {
+    padding: 0.7rem 1.15rem;
+  }
 }
 
 .tab-button {

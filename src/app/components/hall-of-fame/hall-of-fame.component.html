@@ -119,6 +119,19 @@
                   }
                   <a class="hof-driver-link" [routerLink]="driverLink(entry)">{{ entry.driverName }}</a>
                 </div>
+                <div class="hof-mobile-sub">
+                  @if (entry.constructorName) {
+                    <div class="hof-sub-line">
+                      <span class="hof-team-dot mini" [style.background]="'#' + colorFor(entry.constructorId)"></span>
+                      <span>{{ entry.constructorName }}</span>
+                    </div>
+                  } @else if (entry.driverTeamName) {
+                    <div class="hof-sub-line">
+                      <span class="hof-team-dot mini" [style.background]="'#' + colorFor(entry.driverTeamId)"></span>
+                      <span>{{ entry.driverTeamName }}</span>
+                    </div>
+                  }
+                </div>
               </td>
               <td class="col-driver-team">
                 <div class="team-cell">

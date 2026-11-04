@@ -1,5 +1,5 @@
 .standings-container {
-  max-width: 1200px;
+  max-width: var(--container-max-width, 1440px);
   margin: 0 auto;
   padding: 2rem;
 }
@@ -59,6 +59,13 @@
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+}
+
+@media (min-width: 992px) {
+  .standings-tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
 }
 
 .standings-tabs::-webkit-scrollbar {
@@ -284,13 +291,112 @@ a.podium-name:hover,
   font-weight: 600;
 }
 
+.short-label {
+  display: none;
+}
+
+.driver-mobile-sub,
+.constructor-mobile-sub {
+  display: none;
+}
+
+.driver-primary-line,
+.constructor-primary-line {
+  display: flex;
+  align-items: center;
+}
+
+.team-logo-mini {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.team-dot.mini {
+  width: 7px;
+  height: 7px;
+  margin-right: 0.3rem;
+}
+
 @media (max-width: 768px) {
   .standings-container {
-    padding: 1rem;
+    padding: 1rem 0.75rem;
   }
 
   .season-filter {
     width: 100%;
+  }
+
+  .standings-table {
+    min-width: 0 !important;
+    width: 100% !important;
+    table-layout: auto;
+  }
+
+  .desktop-colgroup,
+  .col-team,
+  .cell-team,
+  .col-nat,
+  .cell-nat {
+    display: none !important;
+  }
+
+  .full-label {
+    display: none;
+  }
+
+  .short-label {
+    display: inline;
+  }
+
+  .driver-mobile-sub,
+  .constructor-mobile-sub {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .standings-table th,
+  .standings-table td {
+    padding: 0.65rem 0.4rem;
+  }
+
+  .col-pos,
+  .cell-pos {
+    width: 32px;
+    min-width: 32px;
+    padding-left: 0.25rem !important;
+    padding-right: 0.2rem !important;
+    font-size: 0.95rem;
+  }
+
+  .col-wins,
+  .cell-wins {
+    width: 44px;
+    min-width: 44px;
+    text-align: right;
+  }
+
+  .col-points,
+  .cell-points {
+    width: 58px;
+    min-width: 58px;
+    text-align: right;
+    padding-right: 0.5rem !important;
+  }
+
+  .table-driver-photo {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.4rem;
+  }
+
+  .row-link {
+    font-size: 0.88rem;
   }
 
   .podium {

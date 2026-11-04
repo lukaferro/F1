@@ -277,6 +277,15 @@
   transition: color 0.2s ease;
 }
 
+.hof-mobile-sub {
+  display: none;
+}
+
+.hof-team-dot.mini {
+  width: 7px;
+  height: 7px;
+}
+
 .hof-driver-link:hover {
   color: #ff4444;
 }
@@ -343,5 +352,59 @@
 @media (max-width: 900px) {
   .hof-leaderboards {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .hof-table {
+    min-width: 0 !important;
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+
+  .col-driver-team,
+  .col-constructor {
+    display: none !important;
+  }
+
+  .hof-mobile-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-top: 0.25rem;
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+  }
+
+  .hof-sub-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .hof-table th,
+  .hof-table td {
+    padding: 0.65rem 0.4rem !important;
+  }
+
+  .col-year {
+    width: 60px !important;
+    min-width: 50px !important;
+    padding-left: 0.35rem !important;
+  }
+
+  .year-pill {
+    font-size: 0.84rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .col-action {
+    width: 80px !important;
+    min-width: 70px !important;
+  }
+
+  .hof-season-btn {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.76rem;
   }
 }

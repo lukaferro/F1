@@ -182,67 +182,78 @@
                             <ng-template pTemplate="header">
                               <!-- Qualifying header: show Q1/Q2/Q3 -->
                               @if (getSessionName(session).toLowerCase().includes('qual')) {
-                                <tr>
-                                  <th style="width: 8%;">Pos</th>
-                                  <th style="width: 29%;">Pilota</th>
-                                  <th style="width: 21%;">Team</th>
-                                  <th style="width: 14%;">Q1</th>
-                                  <th style="width: 14%;">Q2</th>
-                                  <th style="width: 14%;">Q3</th>
+                                <tr class="header-row">
+                                  <th class="col-pos">Pos</th>
+                                  <th class="col-driver">Pilota</th>
+                                  <th class="col-team">Team</th>
+                                  <th class="col-qual col-q1">Q1</th>
+                                  <th class="col-qual col-q2">Q2</th>
+                                  <th class="col-qual col-q3">Q3</th>
                                   @if (getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')) {
-                                    <th style="width: 80px;">Punti</th>
+                                    <th class="col-pts">Punti</th>
                                   }
                                 </tr>
                               }
                               <!-- Default header for non-qualifying sessions -->
                               @if (!getSessionName(session).toLowerCase().includes('qual')) {
-                                <tr>
-                                  <th style="width: 9%;">Pos</th>
-                                  <th style="width: 27%;">Pilota</th>
-                                  <th style="width: 16%;">Team</th>
-                                  <th style="width: 8%;">Giri</th>
-                                  <th style="width: 14%;">Gap</th>
-                                  <th style="width: 17%;" title="Tempo totale o stato (DNF, DNS, DSQ)">Tempo</th>
+                                <tr class="header-row">
+                                  <th class="col-pos">Pos</th>
+                                  <th class="col-driver">Pilota</th>
+                                  <th class="col-team">Team</th>
+                                  <th class="col-laps">Giri</th>
+                                  <th class="col-gap">Gap</th>
+                                  <th class="col-time" title="Tempo totale o stato (DNF, DNS, DSQ)">Tempo</th>
                                   @if (getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')) {
-                                    <th style="width: 9%;">Punti</th>
+                                    <th class="col-pts">Punti</th>
                                   }
                                 </tr>
                               }
                             </ng-template>
                             <ng-template pTemplate="body" let-result>
-                              <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(result.driver_number))">
-                                <td style="text-align: center; font-weight: bold; font-size: 1.1rem; white-space: nowrap;">
+                              <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(result.driver_number))" class="result-row">
+                                <td class="cell-pos" style="text-align: center; font-weight: bold; font-size: 1.1rem; white-space: nowrap;">
                                   {{ result.dnf ? 'DNF' : (result.dns ? 'DNS' : (result.dsq ? 'DSQ' : (result.position ?? '-'))) }}
                                 </td>
-                                <td>
+                                <td class="cell-driver">
                                   <div class="driver-info">
                                     <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(result.driver_number)" [style.color]="'#000'">{{ result.driver_number }}</span>
                                     <span class="driver-name">{{ getDriverName(result.driver_number) }}</span>
                                   </div>
+                                  <div class="driver-mobile-sub">
+                                    <span class="driver-team-sub">{{ getDriverTeam(result.driver_number) }}</span>
+                                    @if (!getSessionName(session).toLowerCase().includes('qual') && result.number_of_laps) {
+                                      <span class="driver-laps-sub">&middot; {{ result.number_of_laps }} giri</span>
+                                    }
+                                  </div>
                                 </td>
-                                <td style="font-weight: 500;">{{ getDriverTeam(result.driver_number) }}</td>
+                                <td class="cell-team" style="font-weight: 500;">{{ getDriverTeam(result.driver_number) }}</td>
                                 <!-- Qualifying columns: reading arrays if present -->
                                 @if (getSessionName(session).toLowerCase().includes('qual')) {
-                                  <td style="font-weight: 500;">{{ getQualDuration(result, 0) }}</td>
+                                  <td class="cell-qual cell-q1" style="font-weight: 500;">{{ getQualDuration(result, 0) }}</td>
                                 }
                                 @if (getSessionName(session).toLowerCase().includes('qual')) {
-                                  <td style="font-weight: 500;">{{ getQualDuration(result, 1) }}</td>
+                                  <td class="cell-qual cell-q2" style="font-weight: 500;">{{ getQualDuration(result, 1) }}</td>
                                 }
                                 @if (getSessionName(session).toLowerCase().includes('qual')) {
-                                  <td style="font-weight: 500;">{{ getQualDuration(result, 2) }}</td>
+                                  <td class="cell-qual cell-q3" style="font-weight: 500;">{{ getQualDuration(result, 2) }}</td>
                                 }
                                 <!-- Non-qualifying columns -->
                                 @if (!getSessionName(session).toLowerCase().includes('qual')) {
-                                  <td style="text-align: center; font-weight: 500;">{{ result.number_of_laps || '-' }}</td>
+                                  <td class="cell-laps" style="text-align: center; font-weight: 500;">{{ result.number_of_laps || '-' }}</td>
                                 }
                                 @if (!getSessionName(session).toLowerCase().includes('qual')) {
-                                  <td style="font-weight: 500;">{{ formatGapForDisplay(result) }}</td>
+                                  <td class="cell-gap" style="font-weight: 500;">{{ formatGapForDisplay(result) }}</td>
                                 }
                                 @if (!getSessionName(session).toLowerCase().includes('qual')) {
-                                  <td style="font-weight: 500; white-space: nowrap;">{{ formatPrimaryDuration(result) }}</td>
+                                  <td class="cell-time" style="font-weight: 500; white-space: nowrap;">
+                                    <div class="time-primary">{{ formatPrimaryDuration(result) }}</div>
+                                    @if (formatGapForDisplay(result) !== '-') {
+                                      <div class="gap-mobile-sub">{{ formatGapForDisplay(result) }}</div>
+                                    }
+                                  </td>
                                 }
                                 @if (getSessionName(session).toLowerCase().includes('race') || getSessionName(session).toLowerCase().includes('sprint')) {
-                                  <td style="text-align: center; font-weight: bold;">{{ result.points || '-' }}</td>
+                                  <td class="cell-pts" style="text-align: center; font-weight: bold;">{{ result.points || '-' }}</td>
                                 }
                               </tr>
                             </ng-template>
