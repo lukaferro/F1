@@ -374,6 +374,21 @@ export class StandingsComponent implements OnInit, OnDestroy {
     this.selectedRoundIndex = idx;
   }
 
+  stepRoundIndex(delta: number): void {
+    if (!this.seasonRounds.length) return;
+    const max = this.seasonRounds.length - 1;
+    const next = Math.max(0, Math.min(max, this.activeRoundIndex + delta));
+    this.selectedRoundIndex = next;
+  }
+
+  onRoundSlider(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const idx = Number(input.value);
+    if (Number.isFinite(idx)) {
+      this.selectedRoundIndex = idx;
+    }
+  }
+
   private async loadCurrentGrid(): Promise<void> {
     try {
       for (const d of await this.openF1.getLatestDrivers()) {

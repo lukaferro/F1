@@ -94,7 +94,8 @@
 
   @if (chart; as c) {
     <h3 class="chart-title">Posizione finale</h3>
-    <svg class="position-chart" [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height" role="img" [attr.aria-label]="c.label">
+    <div class="position-chart-scroll">
+      <svg class="position-chart" [class.wide-career-chart]="c.points.length > 8" [attr.viewBox]="'0 0 ' + c.width + ' ' + c.height" role="img" [attr.aria-label]="c.label">
       @for (t of c.yTicks; track t.label) {
         <line class="grid-line" [attr.x1]="40" [attr.x2]="c.width - 16" [attr.y1]="t.y" [attr.y2]="t.y" />
         <text class="axis-label" x="32" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
@@ -111,7 +112,8 @@
       @for (l of c.xLabels; track l.label) {
         <text class="axis-label x-label" [class.minor]="l.minor" [attr.x]="l.x" [attr.y]="c.height - 8" [attr.text-anchor]="$first ? 'start' : $last ? 'end' : 'middle'">{{ l.label }}</text>
       }
-    </svg>
+      </svg>
+    </div>
   }
 
   <div class="seasons-header">

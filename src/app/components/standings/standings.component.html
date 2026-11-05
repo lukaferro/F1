@@ -214,6 +214,40 @@
               </svg>
             </div>
 
+            <!-- Controllo Touch Round per Smartphone -->
+            @if (chart.rounds.length > 1) {
+              <div class="round-touch-scrubber">
+                <button
+                  type="button"
+                  class="round-step-btn"
+                  [disabled]="activeRoundIndex <= 0"
+                  (click)="stepRoundIndex(-1)"
+                  aria-label="Round precedente">
+                  <i class="pi pi-chevron-left"></i>
+                  <span>Round -1</span>
+                </button>
+                <div class="round-slider-wrap">
+                  <input
+                    type="range"
+                    class="round-range-slider"
+                    min="0"
+                    [max]="chart.rounds.length - 1"
+                    [value]="activeRoundIndex"
+                    (input)="onRoundSlider($event)"
+                    aria-label="Seleziona round del campionato" />
+                </div>
+                <button
+                  type="button"
+                  class="round-step-btn"
+                  [disabled]="activeRoundIndex >= chart.rounds.length - 1"
+                  (click)="stepRoundIndex(1)"
+                  aria-label="Round successivo">
+                  <span>Round +1</span>
+                  <i class="pi pi-chevron-right"></i>
+                </button>
+              </div>
+            }
+
             @if (activeRoundInfo; as rInfo) {
               <div class="round-inspector">
                 <div class="inspector-meta">
@@ -438,6 +472,40 @@
                 }
               </svg>
             </div>
+
+            <!-- Controllo Touch Round per Smartphone -->
+            @if (chart.rounds.length > 1) {
+              <div class="round-touch-scrubber">
+                <button
+                  type="button"
+                  class="round-step-btn"
+                  [disabled]="activeRoundIndex <= 0"
+                  (click)="stepRoundIndex(-1)"
+                  aria-label="Round precedente">
+                  <i class="pi pi-chevron-left"></i>
+                  <span>Round -1</span>
+                </button>
+                <div class="round-slider-wrap">
+                  <input
+                    type="range"
+                    class="round-range-slider"
+                    min="0"
+                    [max]="chart.rounds.length - 1"
+                    [value]="activeRoundIndex"
+                    (input)="onRoundSlider($event)"
+                    aria-label="Seleziona round del campionato costruttori" />
+                </div>
+                <button
+                  type="button"
+                  class="round-step-btn"
+                  [disabled]="activeRoundIndex >= chart.rounds.length - 1"
+                  (click)="stepRoundIndex(1)"
+                  aria-label="Round successivo">
+                  <span>Round +1</span>
+                  <i class="pi pi-chevron-right"></i>
+                </button>
+              </div>
+            }
 
             @if (activeRoundInfo; as rInfo) {
               <div class="round-inspector">

@@ -1,15 +1,26 @@
-<nav [class.nav-hidden]="isNavHidden" [class.nav-scrolled]="isScrolled">
+<nav [class.nav-hidden]="isNavHidden && !isMobileMenuOpen" [class.nav-scrolled]="isScrolled">
   <div class="nav-left">
+    <button
+      type="button"
+      class="burger-menu-btn"
+      [class.open]="isMobileMenuOpen"
+      (click)="toggleMobileMenu()"
+      [attr.aria-expanded]="isMobileMenuOpen"
+      aria-controls="mobile-drawer-menu"
+      aria-label="Apri menu di navigazione">
+      <span class="burger-line"></span>
+      <span class="burger-line"></span>
+      <span class="burger-line"></span>
+    </button>
+
     <ul>
       <li class="logo-item">
-        <a routerLink="/" class="logo-link" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" aria-label="Home">
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/f/f2/New_era_F1_logo.png"
-            alt="Logo F1"
-            width="88"
-            height="22"
-            fetchpriority="high" />
-          <span class="mobile-brand-label">PitWall</span>
+        <a routerLink="/" class="logo-link" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" (click)="closeMobileMenu()" aria-label="PitWall Home">
+          <svg class="brand-mark-svg" viewBox="0 0 44 26" width="34" height="20" aria-hidden="true">
+            <path d="M4 20 L14 6 H30 L20 20 Z" fill="#e10600" />
+            <path d="M23 20 L33 6 H40 L30 20 Z" fill="#ffffff" />
+          </svg>
+          <span class="brand-wordmark">PIT<span class="brand-accent">WALL</span></span>
         </a>
       </li>
       <li class="desktop-nav-item"><a routerLink="/granpremi" routerLinkActive="active" class="nav-link">Gran Premi</a></li>
@@ -32,7 +43,7 @@
         type="button"
         class="install-app-btn"
         (click)="triggerInstallApp()"
-        title="Installa F1 PitWall su telefono o computer">
+        title="Installa PitWall su telefono o computer">
         <i class="pi pi-download"></i>
         <span>Installa App</span>
       </button>
@@ -40,41 +51,82 @@
   </div>
 </nav>
 
+<!-- Drawer Menu Mobile (sostituisce la vecchia barra inferiore) -->
+@if (isMobileMenuOpen) {
+  <div class="mobile-drawer-backdrop" (click)="closeMobileMenu()">
+    <aside
+      id="mobile-drawer-menu"
+      class="mobile-drawer"
+      role="dialog"
+      aria-label="Menu di navigazione"
+      (click)="$event.stopPropagation()">
+      <div class="mobile-drawer-header">
+        <a routerLink="/" class="logo-link" (click)="closeMobileMenu()">
+          <svg class="brand-mark-svg" viewBox="0 0 44 26" width="32" height="19" aria-hidden="true">
+            <path d="M4 20 L14 6 H30 L20 20 Z" fill="#e10600" />
+            <path d="M23 20 L33 6 H40 L30 20 Z" fill="#ffffff" />
+          </svg>
+          <span class="brand-wordmark">PIT<span class="brand-accent">WALL</span></span>
+        </a>
+        <button type="button" class="drawer-close-btn" (click)="closeMobileMenu()" aria-label="Chiudi menu">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <nav class="mobile-drawer-links" aria-label="Navigazione principale mobile">
+        <a routerLink="/" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="drawer-nav-item" (click)="closeMobileMenu()">
+          <i class="pi pi-home"></i>
+          <span>Home</span>
+          <i class="pi pi-angle-right drawer-arrow"></i>
+        </a>
+        <a routerLink="/granpremi" routerLinkActive="active" class="drawer-nav-item" (click)="closeMobileMenu()">
+          <i class="pi pi-flag"></i>
+          <span>Gran Premi</span>
+          <i class="pi pi-angle-right drawer-arrow"></i>
+        </a>
+        <a routerLink="/circuits" routerLinkActive="active" class="drawer-nav-item" (click)="closeMobileMenu()">
+          <i class="pi pi-compass"></i>
+          <span>Circuiti & Calendario</span>
+          <i class="pi pi-angle-right drawer-arrow"></i>
+        </a>
+        <a routerLink="/drivers" routerLinkActive="active" class="drawer-nav-item" (click)="closeMobileMenu()">
+          <i class="pi pi-id-card"></i>
+          <span>Piloti</span>
+          <i class="pi pi-angle-right drawer-arrow"></i>
+        </a>
+        <a routerLink="/scuderie" routerLinkActive="active" class="drawer-nav-item" (click)="closeMobileMenu()">
+          <i class="pi pi-shield"></i>
+          <span>Scuderie</span>
+          <i class="pi pi-angle-right drawer-arrow"></i>
+        </a>
+        <a routerLink="/classifiche" routerLinkActive="active" class="drawer-nav-item" (click)="closeMobileMenu()">
+          <i class="pi pi-trophy"></i>
+          <span>Classifiche & Simulatore</span>
+          <i class="pi pi-angle-right drawer-arrow"></i>
+        </a>
+        <a routerLink="/news" routerLinkActive="active" class="drawer-nav-item" (click)="closeMobileMenu()">
+          <i class="pi pi-megaphone"></i>
+          <span>News</span>
+          <i class="pi pi-angle-right drawer-arrow"></i>
+        </a>
+      </nav>
+
+      <div class="mobile-drawer-footer">
+        @if (!isStandaloneApp) {
+          <button type="button" class="drawer-install-btn" (click)="closeMobileMenu(); triggerInstallApp()">
+            <i class="pi pi-download"></i>
+            <span>Installa Web App</span>
+          </button>
+        }
+        <span class="drawer-meta-note">PitWall Telemetry &amp; History Hub (1950–Oggi)</span>
+      </div>
+    </aside>
+  </div>
+}
+
 <main class="app-content">
   <router-outlet></router-outlet>
 </main>
-
-<!-- Bottom Navigation Bar per Smartphone e schermi piccoli (stile App Nativa) -->
-<nav class="mobile-bottom-nav" aria-label="Navigazione principale mobile">
-  <a routerLink="/" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" class="mobile-tab-item">
-    <i class="pi pi-home"></i>
-    <span>Home</span>
-  </a>
-  <a routerLink="/granpremi" routerLinkActive="active" class="mobile-tab-item">
-    <i class="pi pi-flag"></i>
-    <span>GP</span>
-  </a>
-  <a routerLink="/circuits" routerLinkActive="active" class="mobile-tab-item">
-    <i class="pi pi-compass"></i>
-    <span>Circuiti</span>
-  </a>
-  <a routerLink="/drivers" routerLinkActive="active" class="mobile-tab-item">
-    <i class="pi pi-id-card"></i>
-    <span>Piloti</span>
-  </a>
-  <a routerLink="/scuderie" routerLinkActive="active" class="mobile-tab-item">
-    <i class="pi pi-shield"></i>
-    <span>Team</span>
-  </a>
-  <a routerLink="/classifiche" routerLinkActive="active" class="mobile-tab-item">
-    <i class="pi pi-trophy"></i>
-    <span>Classifiche</span>
-  </a>
-  <a routerLink="/news" routerLinkActive="active" class="mobile-tab-item">
-    <i class="pi pi-megaphone"></i>
-    <span>News</span>
-  </a>
-</nav>
 
 <!-- Modale istruzioni installazione PWA (per iOS Safari / Browser senza prompt diretto) -->
 @if (showInstallGuideModal) {

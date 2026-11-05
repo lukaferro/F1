@@ -305,10 +305,63 @@
             (click)="onSelectMacroRegion('world')"
             title="Reimposta visuale globale">
             <i class="pi pi-refresh"></i>
-            <span>Reset Zoom</span>
+            <span>Vista Mondo</span>
           </button>
         </div>
       </div>
+
+      <!-- Navigatore Rapido Touch dei Circuiti (ottimizzato per smartphone senza dover mirare ai pin piccoli) -->
+      @if (mapNavigableCircuits.length > 0) {
+        <div class="map-touch-navigator" aria-label="Selettore rapido circuito sulla mappa">
+          <div class="map-stepper-row">
+            <button
+              type="button"
+              class="map-step-btn"
+              (click)="stepMapCircuit(-1)"
+              aria-label="Circuito precedente">
+              <i class="pi pi-chevron-left"></i>
+              <span>Prec.</span>
+            </button>
+
+            <div class="map-active-circuit-indicator">
+              @if (selectedCircuitOnMap) {
+                <span class="active-round-tag">
+                  R{{ selectedCircuitOnMap.round_number && selectedCircuitOnMap.round_number < 10 ? '0' + selectedCircuitOnMap.round_number : selectedCircuitOnMap.round_number }}
+                </span>
+                <img [src]="getFlag(selectedCircuitOnMap.country_code)" [alt]="selectedCircuitOnMap.country" class="country-flag-mini" />
+                <span class="active-circuit-name">{{ selectedCircuitOnMap.location || selectedCircuitOnMap.name }}</span>
+                <span class="active-circuit-pos">({{ currentMapCircuitIndex + 1 }}/{{ mapNavigableCircuits.length }})</span>
+              } @else {
+                <span class="active-circuit-name">Tocca un round per esplorare</span>
+              }
+            </div>
+
+            <button
+              type="button"
+              class="map-step-btn"
+              (click)="stepMapCircuit(1)"
+              aria-label="Circuito successivo">
+              <span>Succ.</span>
+              <i class="pi pi-chevron-right"></i>
+            </button>
+          </div>
+
+          <div class="map-round-strip" role="listbox" aria-label="Elenco tappe sulla mappa">
+            @for (c of mapNavigableCircuits; track c.id) {
+              <button
+                type="button"
+                class="map-round-chip"
+                [class.active]="selectedCircuitOnMap?.id === c.id"
+                (click)="selectCircuitFromNavigator(c)"
+                role="option"
+                [attr.aria-selected]="selectedCircuitOnMap?.id === c.id">
+                <span class="chip-round">R{{ c.round_number && c.round_number < 10 ? '0' + c.round_number : c.round_number }}</span>
+                <span class="chip-city">{{ c.location }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      }
 
       <!-- Canvas SVG Mappa Mondiale -->
       <div class="map-viewport-wrapper">

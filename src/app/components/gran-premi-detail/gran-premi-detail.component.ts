@@ -79,6 +79,7 @@ export interface SessionTelemetryState {
   telemetryLapA: TelemetryLapWindow | null;
   telemetryLapB: TelemetryLapWindow | null;
   customLapNumber: number | null;
+  mobileChannel?: 'speed' | 'throttle' | 'brake' | 'gear' | 'all';
 }
 
 export type RaceControlFilter = 'all' | 'red_flag' | 'safety_car' | 'vsc' | 'penalty' | 'drs';
@@ -1211,7 +1212,8 @@ export class GranPremiDetailComponent implements OnInit {
         activeTelemetryIndex: 50,
         telemetryLapA: null,
         telemetryLapB: null,
-        customLapNumber: null
+        customLapNumber: null,
+        mobileChannel: 'speed'
       };
     }
 
@@ -1272,6 +1274,48 @@ export class GranPremiDetailComponent implements OnInit {
     if (!state || !state.telemetryChart) return;
     if (sampleIndex >= 0 && sampleIndex < state.telemetryChart.samples.length) {
       state.activeTelemetryIndex = sampleIndex;
+    }
+  }
+
+  stepComparisonLap(sessionKey: number, delta: number): void {
+    const state = this.telemetryState[sessionKey];
+    if (!state?.lapChart?.rows.length) return;
+    const max = state.lapChart.rows.length - 1;
+    state.activeLapIndex = Math.max(0, Math.min(max, state.activeLapIndex + delta));
+  }
+
+  onComparisonLapSlider(sessionKey: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const idx = Number(input.value);
+    if (Number.isFinite(idx)) {
+      this.selectComparisonLap(sessionKey, idx);
+    }
+  }
+
+  stepTelemetrySample(sessionKey: number, delta: number): void {
+    const state = this.telemetryState[sessionKey];
+    if (!state?.telemetryChart?.samples.length) return;
+    const max = state.telemetryChart.samples.length - 1;
+    state.activeTelemetryIndex = Math.max(0, Math.min(max, state.activeTelemetryIndex + delta));
+  }
+
+  onTelemetrySampleSlider(sessionKey: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const idx = Number(input.value);
+    if (Number.isFinite(idx)) {
+      this.selectTelemetrySample(sessionKey, idx);
+    }
+  }
+
+  setMobileTelemetryChannel(sessionKey: number, channel: 'speed' | 'throttle' | 'brake' | 'gear' | 'all'): void {
+    const state = this.telemetryState[sessionKey];
+    if (state) {
+      state.mobileChannel = channel;
+    }
+  }
+
+  private dummyEndTelemetryTouchHelpers(): void {
+    if (false) {
     }
   }
 

@@ -542,6 +542,43 @@
                                 </svg>
                               </div>
 
+                              <!-- Controllo Touch Rapido per selezione Giro (ottimizzato per smartphone) -->
+                              <div class="touch-scrubber-bar">
+                                <button
+                                  type="button"
+                                  class="touch-step-btn"
+                                  [disabled]="telState.activeLapIndex <= 0"
+                                  (click)="stepComparisonLap(session.session_key, -1)"
+                                  aria-label="Giro precedente">
+                                  <i class="pi pi-chevron-left"></i>
+                                  <span>Giro -1</span>
+                                </button>
+
+                                <div class="touch-slider-wrap">
+                                  <span class="touch-slider-label">
+                                    Scorri Giro: <strong>G{{ getActiveLapRow(session.session_key)?.lapNumber || 1 }}</strong> / {{ lapChart.totalLaps }}
+                                  </span>
+                                  <input
+                                    type="range"
+                                    class="touch-range-slider"
+                                    min="0"
+                                    [max]="lapChart.rows.length - 1"
+                                    [value]="telState.activeLapIndex"
+                                    (input)="onComparisonLapSlider(session.session_key, $event)"
+                                    aria-label="Seleziona giro da ispezionare" />
+                                </div>
+
+                                <button
+                                  type="button"
+                                  class="touch-step-btn"
+                                  [disabled]="telState.activeLapIndex >= lapChart.rows.length - 1"
+                                  (click)="stepComparisonLap(session.session_key, 1)"
+                                  aria-label="Giro successivo">
+                                  <span>Giro +1</span>
+                                  <i class="pi pi-chevron-right"></i>
+                                </button>
+                              </div>
+
                               <!-- Ispettore Giro selezionato -->
                               @if (getActiveLapRow(session.session_key); as activeLap) {
                                 <div class="lap-inspector-box">
@@ -702,6 +739,40 @@
                                       </span>
                                     </div>
 
+                                    <!-- Slider Touch 0% - 100% Tracciato -->
+                                    <div class="touch-scrubber-bar compact-scrubber">
+                                      <button
+                                        type="button"
+                                        class="touch-step-btn"
+                                        [disabled]="telState.activeTelemetryIndex <= 0"
+                                        (click)="stepTelemetrySample(session.session_key, -2)"
+                                        aria-label="Indietro lungo il tracciato">
+                                        <i class="pi pi-chevron-left"></i>
+                                        <span>-2%</span>
+                                      </button>
+
+                                      <div class="touch-slider-wrap">
+                                        <input
+                                          type="range"
+                                          class="touch-range-slider"
+                                          min="0"
+                                          [max]="telChart.samples.length - 1"
+                                          [value]="telState.activeTelemetryIndex"
+                                          (input)="onTelemetrySampleSlider(session.session_key, $event)"
+                                          aria-label="Scorri lungo la percentuale del tracciato (0% - 100%)" />
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        class="touch-step-btn"
+                                        [disabled]="telState.activeTelemetryIndex >= telChart.samples.length - 1"
+                                        (click)="stepTelemetrySample(session.session_key, 2)"
+                                        aria-label="Avanti lungo il tracciato">
+                                        <span>+2%</span>
+                                        <i class="pi pi-chevron-right"></i>
+                                      </button>
+                                    </div>
+
                                     <div class="live-inspector-grid">
                                       <div class="live-driver-row" [style.--driver-accent]="telChart.driverA.colorHex">
                                         <strong class="live-drv-name">{{ telChart.driverA.shortName }}</strong>
@@ -726,8 +797,47 @@
                                   </div>
                                 }
 
+                                <!-- Selettore Canale Telemetrico Mobile (1 grafico grande alla volta su smartphone) -->
+                                <div class="mobile-channel-tabs" role="tablist" aria-label="Seleziona canale telemetrico">
+                                  <button
+                                    type="button"
+                                    class="mobile-channel-tab"
+                                    [class.active]="(telState.mobileChannel || 'speed') === 'speed'"
+                                    (click)="setMobileTelemetryChannel(session.session_key, 'speed')">
+                                    Velocità
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="mobile-channel-tab"
+                                    [class.active]="telState.mobileChannel === 'throttle'"
+                                    (click)="setMobileTelemetryChannel(session.session_key, 'throttle')">
+                                    Gas %
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="mobile-channel-tab"
+                                    [class.active]="telState.mobileChannel === 'brake'"
+                                    (click)="setMobileTelemetryChannel(session.session_key, 'brake')">
+                                    Freno %
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="mobile-channel-tab"
+                                    [class.active]="telState.mobileChannel === 'gear'"
+                                    (click)="setMobileTelemetryChannel(session.session_key, 'gear')">
+                                    Marce &amp; DRS
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="mobile-channel-tab"
+                                    [class.active]="telState.mobileChannel === 'all'"
+                                    (click)="setMobileTelemetryChannel(session.session_key, 'all')">
+                                    Tutti (4)
+                                  </button>
+                                </div>
+
                                 <!-- Canale 1: VELOCITÀ (km/h) -->
-                                <div class="telemetry-channel-block">
+                                <div class="telemetry-channel-block" [class.mobile-channel-hidden]="(telState.mobileChannel || 'speed') !== 'speed' && telState.mobileChannel !== 'all'">
                                   <div class="channel-label-row">
                                     <span class="channel-title">1. Velocità (km/h)</span>
                                     <span class="channel-hint">0% → 100% del giro</span>
@@ -762,7 +872,7 @@
                                 </div>
 
                                 <!-- Canale 2: ACCELERATORE (%) -->
-                                <div class="telemetry-channel-block">
+                                <div class="telemetry-channel-block" [class.mobile-channel-hidden]="telState.mobileChannel !== 'throttle' && telState.mobileChannel !== 'all'">
                                   <div class="channel-label-row">
                                     <span class="channel-title">2. Acceleratore (%)</span>
                                   </div>
@@ -796,7 +906,7 @@
                                 </div>
 
                                 <!-- Canale 3: FRENO (ON / %) -->
-                                <div class="telemetry-channel-block">
+                                <div class="telemetry-channel-block" [class.mobile-channel-hidden]="telState.mobileChannel !== 'brake' && telState.mobileChannel !== 'all'">
                                   <div class="channel-label-row">
                                     <span class="channel-title">3. Freno (%)</span>
                                   </div>
@@ -830,7 +940,7 @@
                                 </div>
 
                                 <!-- Canale 4: MARCIA (1ª-8ª) & DRS -->
-                                <div class="telemetry-channel-block">
+                                <div class="telemetry-channel-block" [class.mobile-channel-hidden]="telState.mobileChannel !== 'gear' && telState.mobileChannel !== 'all'">
                                   <div class="channel-label-row">
                                     <span class="channel-title">4. Marcia (1ª–8ª) &amp; Zone attivazione DRS</span>
                                     <span class="channel-hint">Barre superiori = DRS Aperto</span>
@@ -961,8 +1071,16 @@
                                     @for (seg of driverStint.segments; track seg) {
                                       <div class="tyre-segment" [ngClass]="seg.compound"
                                         [style.width.%]="seg.widthPct" [title]="seg.tooltip">
-                                        {{ seg.widthPct >= 14 ? (seg.short + ' · ' + seg.laps + 'g') : (seg.widthPct >= 4 ? seg.short : '') }}
+                                        <span class="stint-bar-full-lbl">{{ seg.widthPct >= 16 ? (seg.short + ' · ' + seg.laps + 'g') : (seg.widthPct >= 6 ? seg.short : '') }}</span>
+                                        <span class="stint-bar-mobile-lbl">{{ seg.widthPct >= 9 ? seg.short : '' }}</span>
                                       </div>
+                                    }
+                                  </div>
+                                  <div class="stint-pills-row">
+                                    @for (seg of driverStint.segments; track seg) {
+                                      <span class="stint-detail-pill" [ngClass]="seg.compound">
+                                        <strong>{{ seg.short }}</strong> {{ seg.laps }}g
+                                      </span>
                                     }
                                   </div>
                                 </td>

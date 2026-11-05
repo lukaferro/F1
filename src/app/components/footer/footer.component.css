@@ -32,14 +32,25 @@
 .footer-logo {
   display: inline-flex;
   align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
 }
 
-.footer-logo img {
-  height: 22px;
-  width: auto;
-  aspect-ratio: 494 / 124;
-  object-fit: contain;
+.footer-brand-svg {
   display: block;
+  flex-shrink: 0;
+}
+
+.footer-brand-wordmark {
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  font-style: italic;
+}
+
+.footer-brand-accent {
+  color: var(--f1-red, #e10600);
 }
 
 .footer-tagline {

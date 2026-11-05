@@ -341,9 +341,17 @@
     font-size: 0.78rem;
     line-height: 1.25;
   }
-  /* Font bilanciato per il grafico posizioni su mobile */
+  /* Font bilanciato e scorrimento fluido per il grafico posizioni su mobile */
+  .position-chart-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+  }
+  .position-chart.wide-career-chart {
+    min-width: 480px;
+  }
   .position-chart .axis-label {
-    font-size: 15px;
+    font-size: 13px;
   }
   .position-chart .x-label.minor {
     display: none;

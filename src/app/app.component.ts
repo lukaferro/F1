@@ -31,6 +31,7 @@ export class AppComponent implements OnInit {
   showBackToTop = false;
   isNavHidden = false;
   isScrolled = false;
+  isMobileMenuOpen = false;
 
   // Stato PWA / App Installabile & Connettività Offline
   private deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
@@ -49,10 +50,29 @@ export class AppComponent implements OnInit {
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(e => {
         this.isNavHidden = false;
+        this.isMobileMenuOpen = false;
         this.showBackToTop = false;
         this.lastScrollTop = 0;
         this.syncSectionFilterState(e.urlAfterRedirects);
       });
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    if (this.isMobileMenuOpen) {
+      this.isNavHidden = false;
+    }
+  }
+
+  closeMobileMenu(): void {
+    this.isMobileMenuOpen = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.isMobileMenuOpen) {
+      this.isMobileMenuOpen = false;
+    }
   }
 
   private checkStandaloneMode(): void {
@@ -142,6 +162,12 @@ export class AppComponent implements OnInit {
 
     this.showBackToTop = currentScroll > 300;
     this.isScrolled = currentScroll > 10;
+
+    if (this.isMobileMenuOpen) {
+      this.isNavHidden = false;
+      this.lastScrollTop = currentScroll;
+      return;
+    }
 
     if (currentScroll <= this.scrollThreshold) {
       this.isNavHidden = false;

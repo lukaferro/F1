@@ -1894,3 +1894,67 @@
     font-size: 0.64rem;
   }
 }
+
+/* Controllo Touch Round Simulatore */
+.sim-touch-scrubber {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sim-step-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.42rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+
+.sim-step-btn:hover:not(:disabled) {
+  background: rgba(225, 6, 0, 0.22);
+  border-color: rgba(225, 6, 0, 0.55);
+}
+
+.sim-step-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.sim-slider-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.sim-range-slider {
+  width: 100%;
+  accent-color: #e10600;
+  height: 6px;
+  cursor: pointer;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .svg-chart-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sim-progression-svg {
+    min-width: 480px;
+  }
+}

@@ -254,6 +254,21 @@ export class CircuitsComponent implements OnInit, OnDestroy {
     return this.seasonCalendar;
   }
 
+  get mapNavigableCircuits(): Circuit[] {
+    if (this.selectedMacroRegion === 'world') {
+      return this.seasonCalendar;
+    }
+    const regional = this.seasonCalendar.filter(c => c.macro_region === this.selectedMacroRegion);
+    return regional.length > 0 ? regional : this.seasonCalendar;
+  }
+
+  get currentMapCircuitIndex(): number {
+    const list = this.mapNavigableCircuits;
+    if (!this.selectedCircuitOnMap || list.length === 0) return 0;
+    const idx = list.findIndex(c => c.id === this.selectedCircuitOnMap!.id);
+    return idx >= 0 ? idx : 0;
+  }
+
   // --- Mappa Geografica Interattiva ---
 
   onSelectMacroRegion(regionId: MacroRegionId): void {
@@ -263,6 +278,13 @@ export class CircuitsComponent implements OnInit, OnDestroy {
       this.mapViewBox = regionInfo.viewBox;
     }
     this.flightPathD = generateFlightPath(this.seasonCalendar, this.isGlobalView);
+
+    if (regionId !== 'world') {
+      const inRegion = this.seasonCalendar.filter(c => c.macro_region === regionId);
+      if (inRegion.length > 0 && (!this.selectedCircuitOnMap || this.selectedCircuitOnMap.macro_region !== regionId)) {
+        this.selectedCircuitOnMap = inRegion[0];
+      }
+    }
   }
 
   getSvgCoords(circuit: Circuit): CircuitDisplayPoint {
@@ -271,6 +293,23 @@ export class CircuitsComponent implements OnInit, OnDestroy {
 
   selectCircuitOnMap(circuit: Circuit): void {
     this.selectedCircuitOnMap = circuit;
+  }
+
+  selectCircuitFromNavigator(circuit: Circuit): void {
+    this.selectedCircuitOnMap = circuit;
+    if (typeof window !== 'undefined' && window.innerWidth <= 768 && circuit.macro_region) {
+      const regionInfo = MACRO_REGIONS.find(r => r.id === circuit.macro_region);
+      if (regionInfo) {
+        this.mapViewBox = regionInfo.viewBox;
+      }
+    }
+  }
+
+  stepMapCircuit(delta: number): void {
+    const list = this.mapNavigableCircuits;
+    if (list.length === 0) return;
+    const nextIdx = (this.currentMapCircuitIndex + delta + list.length) % list.length;
+    this.selectCircuitFromNavigator(list[nextIdx]);
   }
 
   closeMapInspector(): void {
