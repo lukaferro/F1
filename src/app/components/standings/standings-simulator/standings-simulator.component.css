@@ -1725,33 +1725,172 @@
   .season-rounds-navigator,
   .single-round-editor,
   .standings-table-card {
-    padding: 0.95rem;
+    padding: 0.9rem 0.8rem;
+  }
+
+  .toolbar-title-section {
+    min-width: 0;
   }
 
   .simulator-title {
-    font-size: 1.2rem;
-  }
-
-  .verdict-title {
     font-size: 1.18rem;
   }
 
+  .simulator-desc {
+    font-size: 0.82rem;
+  }
+
+  .toolbar-mode-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .scenario-buttons-row,
+  .contender-pills-bar,
+  .sr-quick-actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 100%;
+    padding-bottom: 0.15rem;
+  }
+
+  .scenario-buttons-row::-webkit-scrollbar,
+  .contender-pills-bar::-webkit-scrollbar,
+  .sr-quick-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scenario-pill-btn,
+  .contender-chart-pill,
+  .sr-action-chip {
+    flex-shrink: 0;
+  }
+
+  .pivots-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .verdict-banner {
+    padding: 1rem 0.9rem;
+    gap: 0.9rem;
+  }
+
+  .verdict-main {
+    min-width: 0;
+  }
+
+  .verdict-title {
+    font-size: 1.15rem;
+  }
+
+  .verdict-text {
+    font-size: 0.82rem;
+  }
+
+  .verdict-comparison-boxes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.55rem;
+  }
+
+  .comp-box {
+    min-width: 0;
+    padding: 0.55rem 0.7rem;
+  }
+
+  .comp-name {
+    font-size: 0.85rem;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .kpi-card {
+    padding: 0.85rem;
+  }
+
+  .kpi-card:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .kpi-value {
+    font-size: 1.3rem;
+  }
+
+  .view-mode-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .view-mode-btn {
+    justify-content: center;
+    text-align: center;
+    font-size: 0.72rem;
+    padding: 6px 6px;
+  }
+
   .sr-header {
-    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .sr-title-center {
+    order: -1;
+    width: 100%;
+  }
+
+  .sr-nav-btn {
+    flex: 1;
+    justify-content: center;
   }
 
   .all-positions-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .pos-slot-card {
+    padding: 0.45rem 0.55rem;
+  }
+
+  .sim-select {
+    font-size: 0.76rem;
+    padding: 5px 6px;
+  }
+
+  .dnf-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dnf-add-select {
+    width: 100%;
+    padding: 6px 8px;
   }
 }
 
 @media (max-width: 520px) {
-  .all-positions-grid {
-    grid-template-columns: 1fr;
+  .sim-table th.th-status,
+  .sim-table td.td-status {
+    display: none;
   }
 
-  .sim-table th:nth-child(3),
-  .sim-table td:nth-child(3) {
-    display: none;
+  .sim-table th,
+  .sim-table td {
+    padding: 0.45rem 0.25rem;
+  }
+
+  .main-name {
+    font-size: 0.76rem;
+  }
+
+  .sub-team {
+    font-size: 0.64rem;
   }
 }

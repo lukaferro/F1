@@ -12,7 +12,8 @@
         (click)="setViewMode('cards')"
         aria-pressed="{{ viewMode === 'cards' }}">
         <i class="pi pi-th-large"></i>
-        <span>Schede Circuiti ({{ circuits.length }})</span>
+        <span class="mode-label-full">Schede Circuiti ({{ circuits.length }})</span>
+        <span class="mode-label-short">Schede ({{ circuits.length }})</span>
       </button>
 
       <button
@@ -22,7 +23,8 @@
         (click)="setViewMode('map')"
         aria-pressed="{{ viewMode === 'map' }}">
         <i class="pi pi-globe"></i>
-        <span>Mappa Geografica</span>
+        <span class="mode-label-full">Mappa Geografica</span>
+        <span class="mode-label-short">Mappa</span>
       </button>
 
       <button
@@ -32,7 +34,8 @@
         (click)="setViewMode('calendar')"
         aria-pressed="{{ viewMode === 'calendar' }}">
         <i class="pi pi-calendar"></i>
-        <span>Calendario & Macro-Aree</span>
+        <span class="mode-label-full">Calendario & Macro-Aree</span>
+        <span class="mode-label-short">Calendario</span>
       </button>
     </nav>
   </div>

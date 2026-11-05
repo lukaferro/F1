@@ -109,24 +109,26 @@ h2::after {
 .circuit-container {
   display: flex;
   gap: 2rem;
-  background: #f5f5f5;
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .circuit-image {
   flex: 1;
   min-height: 300px;
-  background: #e0e0e0;
+  background: rgba(255, 255, 255, 0.04);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem;
 }
 
 .circuit-map {
   max-width: 100%;
-  max-height: 300px;
+  max-height: 280px;
   object-fit: contain;
 }
 
@@ -138,10 +140,11 @@ h2::after {
 .circuit-info h3 {
   font-size: 1.5rem;
   margin: 0 0 0.5rem;
+  color: #ffffff;
 }
 
 .circuit-location {
-  color: #666;
+  color: #a1a1aa;
   margin-bottom: 1.5rem;
 }
 
@@ -155,6 +158,7 @@ h2::after {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  color: #e4e4e7;
 }
 
 .meta-item i {
@@ -168,12 +172,14 @@ h2::after {
 }
 
 .info-card {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1.35rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   display: flex;
   gap: 1rem;
+  color: #ffffff;
 }
 
 .sponsor-section {
@@ -362,17 +368,20 @@ h2::after {
 }
 
 .sidebar-card {
-  background: #ffffff;
-  border-radius: 8px;
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
   padding: 1.5rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: #ffffff;
 }
 
 .sidebar-card h3 {
   font-size: 1.3rem;
-  margin: 0 0 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #f0f0f0;
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .detail-list {
@@ -384,17 +393,24 @@ h2::after {
 .detail-list li {
   display: flex;
   justify-content: space-between;
+  gap: 0.75rem;
   padding: 0.75rem 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .detail-label {
-  font-weight: bold;
-  color: #666;
+  font-weight: 600;
+  color: #a1a1aa;
 }
 
 .detail-value {
-  color: #333;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: right;
+}
+
+.th-short {
+  display: none;
 }
 
 .loading-container {
@@ -434,36 +450,166 @@ h2::after {
 }
 
 @media (max-width: 768px) {
+  .detail-container {
+    padding: 0.9rem 0.75rem;
+  }
+
+  .detail-header {
+    margin-bottom: 1.25rem;
+  }
+
   .header-content {
     flex-direction: column;
     text-align: center;
-    gap: 1rem;
+    gap: 0.85rem;
+    padding: 1.25rem 1rem;
+  }
+
+  .country-flag {
+    width: 84px;
   }
 
   .gp-title {
-    font-size: 2rem;
+    font-size: clamp(1.35rem, 5.5vw, 1.85rem);
+    line-height: 1.2;
   }
 
   .gp-subtitle {
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .circuit-section,
+  .info-section {
+    margin-bottom: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    margin-bottom: 1.15rem;
+  }
+
+  .circuit-image {
+    min-height: 180px;
+    padding: 0.75rem;
+  }
+
+  .circuit-map {
+    max-height: 170px;
+  }
+
+  .circuit-info {
+    padding: 1.15rem;
+  }
+
+  .circuit-info h3 {
+    font-size: 1.25rem;
+  }
+
+  .circuit-location {
+    margin-bottom: 1rem;
   }
 
   .info-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .info-card {
+    padding: 0.9rem;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .info-card:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .info-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.05rem;
+  }
+
+  .info-content h3 {
+    font-size: 0.85rem;
+    color: #a1a1aa;
+    margin-bottom: 0.25rem;
+  }
+
+  .info-content p {
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .sponsor-section {
+    margin: 1.75rem 0;
+  }
+
+  .sponsor-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.25rem 1rem;
+    gap: 1rem;
+  }
+
+  .sponsor-media {
+    width: 96px;
+    height: 96px;
+    padding: 0.85rem;
+  }
+
+  .sponsor-name {
+    font-size: 1.4rem;
+  }
+
+  .session-header {
+    padding: 0.9rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .session-left {
+    font-size: 0.95rem;
+  }
+
+  .session-time {
+    font-size: 0.8rem;
+  }
+
+  .session-body {
+    padding: 0.85rem 0.6rem;
+    min-height: 300px;
+  }
+
+  .session-tabs {
+    padding: 0.6rem 0.6rem 0;
+    gap: 0.3rem;
+  }
+
+  .tab-button {
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
   }
 
   /* Tabelle sessioni responsive per smartphone */
-  :host ::ng-deep .results-table {
+  :host ::ng-deep .results-table,
+  :host ::ng-deep .compact-table {
     min-width: 0 !important;
     width: 100% !important;
   }
 
-  :host ::ng-deep .results-table .p-datatable-wrapper {
+  :host ::ng-deep .results-table .p-datatable-wrapper,
+  :host ::ng-deep .compact-table .p-datatable-wrapper {
     overflow-x: auto;
     border-radius: 8px;
+    margin: 0 !important;
   }
 
-  :host ::ng-deep .results-table .p-datatable-table {
+  :host ::ng-deep .results-table .p-datatable-table,
+  :host ::ng-deep .compact-table .p-datatable-table {
     width: 100% !important;
     min-width: 0 !important;
     table-layout: auto !important;
@@ -474,90 +620,176 @@ h2::after {
   :host ::ng-deep .results-table .header-row .col-laps,
   :host ::ng-deep .results-table .result-row .cell-laps,
   :host ::ng-deep .results-table .header-row .col-gap,
-  :host ::ng-deep .results-table .result-row .cell-gap {
+  :host ::ng-deep .results-table .result-row .cell-gap,
+  :host ::ng-deep .stints-table .header-row .col-team,
+  :host ::ng-deep .stints-table .result-row .cell-team,
+  :host ::ng-deep .pits-table .header-row .col-team,
+  :host ::ng-deep .pits-table .result-row .cell-team,
+  :host ::ng-deep .pits-table .header-row .col-time,
+  :host ::ng-deep .pits-table .result-row .cell-time {
     display: none !important;
+  }
+
+  .th-full {
+    display: none;
+  }
+
+  .th-short {
+    display: inline;
   }
 
   .driver-mobile-sub {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.2rem;
-    font-size: 0.74rem;
-    color: var(--text-secondary);
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.18rem;
+    font-size: 0.72rem;
+    color: #a1a1aa;
   }
 
   .gap-mobile-sub {
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: #94a3b8;
     margin-top: 0.15rem;
   }
 
   :host ::ng-deep .results-table .p-datatable-thead > tr > th,
-  :host ::ng-deep .results-table .p-datatable-tbody > tr > td {
-    padding: 0.6rem 0.35rem !important;
+  :host ::ng-deep .results-table .p-datatable-tbody > tr > td,
+  :host ::ng-deep .compact-table .p-datatable-thead > tr > th,
+  :host ::ng-deep .compact-table .p-datatable-tbody > tr > td {
+    padding: 0.55rem 0.35rem !important;
+    font-size: 0.8rem !important;
   }
 
   :host ::ng-deep .results-table .col-pos,
-  :host ::ng-deep .results-table .cell-pos {
-    width: 32px !important;
-    min-width: 32px !important;
-    font-size: 0.95rem !important;
+  :host ::ng-deep .results-table .cell-pos,
+  :host ::ng-deep .stints-table .col-pos,
+  :host ::ng-deep .stints-table .cell-pos {
+    width: 30px !important;
+    min-width: 30px !important;
+    font-size: 0.88rem !important;
     padding-left: 0.2rem !important;
     padding-right: 0.2rem !important;
     text-align: center !important;
   }
 
   .driver-info {
-    gap: 0.45rem;
+    gap: 0.4rem;
   }
 
   .driver-number {
     width: 24px;
     height: 24px;
-    font-size: 0.76rem;
+    font-size: 0.74rem;
+    flex-shrink: 0;
   }
 
   .driver-name {
-    font-size: 0.88rem;
-    max-width: 130px;
+    font-size: 0.84rem;
+    max-width: 118px;
   }
 
   :host ::ng-deep .results-table .col-pts,
   :host ::ng-deep .results-table .cell-pts {
-    width: 44px !important;
-    min-width: 44px !important;
+    width: 40px !important;
+    min-width: 40px !important;
     text-align: center !important;
-    font-size: 0.9rem !important;
+    font-size: 0.85rem !important;
   }
 
   :host ::ng-deep .results-table .col-time,
   :host ::ng-deep .results-table .cell-time {
     width: 82px !important;
-    min-width: 76px !important;
-    font-size: 0.8rem !important;
+    min-width: 74px !important;
+    font-size: 0.78rem !important;
     text-align: right !important;
-    padding-right: 0.5rem !important;
+    padding-right: 0.4rem !important;
   }
 
   :host ::ng-deep .results-table .col-qual,
   :host ::ng-deep .results-table .cell-qual {
-    font-size: 0.76rem !important;
-    padding: 0.5rem 0.25rem !important;
+    font-size: 0.73rem !important;
+    padding: 0.5rem 0.2rem !important;
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Stints table mobile layout */
+  :host ::ng-deep .stints-table .col-driver,
+  :host ::ng-deep .stints-table .cell-driver {
+    width: 34% !important;
+  }
+
+  :host ::ng-deep .stints-table .col-stops,
+  :host ::ng-deep .stints-table .cell-stops {
+    width: 18% !important;
+  }
+
+  :host ::ng-deep .stints-table .col-strategy,
+  :host ::ng-deep .stints-table .cell-strategy {
+    width: 40% !important;
+  }
+
+  .stops-badge {
+    font-size: 0.75rem;
+  }
+
+  .stops-laps {
+    font-size: 0.66rem;
+  }
+
+  /* Pits table mobile layout */
+  :host ::ng-deep .pits-table .col-driver,
+  :host ::ng-deep .pits-table .cell-driver {
+    width: 52% !important;
+  }
+
+  :host ::ng-deep .pits-table .col-lap,
+  :host ::ng-deep .pits-table .cell-lap {
+    width: 16% !important;
+    text-align: center !important;
+  }
+
+  :host ::ng-deep .pits-table .col-duration,
+  :host ::ng-deep .pits-table .cell-duration {
+    width: 32% !important;
     text-align: right !important;
   }
 
-  /* Tabelle compatte: stints, pits, weather */
-  :host ::ng-deep .compact-table {
-    min-width: 0 !important;
-    width: 100% !important;
+  /* Overtakes table mobile layout */
+  .overtake-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.28rem;
   }
 
-  :host ::ng-deep .compact-table .p-datatable-thead > tr > th,
-  :host ::ng-deep .compact-table .p-datatable-tbody > tr > td {
-    padding: 0.55rem 0.35rem !important;
-    font-size: 0.8rem !important;
+  .overtake-info .pi-arrow-right {
+    display: none;
+  }
+
+  .overtaken-driver::before {
+    content: "↳ su ";
+    font-size: 0.72rem;
+    color: #ef4444;
+    font-weight: 700;
+    margin-right: 0.15rem;
+  }
+
+  :host ::ng-deep .overtakes-table .col-ov-time,
+  :host ::ng-deep .overtakes-table .cell-ov-time {
+    width: 66px !important;
+    font-size: 0.74rem !important;
+    white-space: nowrap;
+  }
+
+  :host ::ng-deep .overtakes-table .col-ov-pos,
+  :host ::ng-deep .overtakes-table .cell-ov-pos {
+    width: 44px !important;
+    text-align: center !important;
+    font-weight: 700;
   }
 }
 
@@ -2489,6 +2721,136 @@ Stili per i tab di PrimeNG
 }
 
 @media (max-width: 768px) {
+  .stint-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .stint-kpi-card {
+    padding: 0.75rem 0.9rem;
+  }
+
+  .tyre-legend {
+    gap: 0.65rem;
+    padding: 0.65rem 0.2rem;
+    font-size: 0.78rem;
+  }
+
+  .tyre-legend-hint {
+    width: 100%;
+    margin-left: 0;
+    font-size: 0.74rem;
+  }
+
+  .telemetry-selectors-bar {
+    flex-direction: column;
+    padding: 0.75rem 0.85rem;
+    gap: 0.65rem;
+  }
+
+  .telemetry-driver-picker {
+    flex: 1 1 auto;
+  }
+
+  .telemetry-swap-btn {
+    flex-direction: row;
+    align-self: center;
+    padding: 0.35rem 1rem;
+    gap: 0.4rem;
+  }
+
+  .telemetry-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .telemetry-kpi-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .telemetry-kpi-grid.compact .stint-kpi-val {
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+
+  .telemetry-chart-card {
+    padding: 0.85rem 0.65rem;
+    gap: 0.75rem;
+  }
+
+  .telemetry-card-title {
+    font-size: 0.98rem;
+  }
+
+  .telemetry-card-subtitle {
+    font-size: 0.78rem;
+  }
+
+  .telemetry-legend-bar {
+    padding: 0.45rem 0.6rem;
+    gap: 0.5rem;
+  }
+
+  .telemetry-drivers-legend,
+  .telemetry-tyre-legend {
+    gap: 0.6rem;
+    font-size: 0.76rem;
+  }
+
+  .lap-inspector-box {
+    padding: 0.75rem;
+  }
+
+  .lap-inspector-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .inspect-lap-telemetry-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .lap-inspector-drivers,
+  .live-inspector-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .telemetry-live-inspector {
+    padding: 0.7rem 0.75rem;
+  }
+
+  .live-driver-row {
+    gap: 0.45rem;
+    font-size: 0.75rem;
+    padding: 0.45rem 0.6rem;
+  }
+
+  .rc-filter-bar,
+  .radio-control-bar {
+    padding: 0.8rem 0.85rem;
+  }
+
+  .rc-filter-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.2rem;
+  }
+
+  .rc-filter-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rc-chip {
+    flex-shrink: 0;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.76rem;
+  }
+
   .radio-cards-grid {
     grid-template-columns: 1fr;
   }
@@ -2497,6 +2859,19 @@ Stili per i tab di PrimeNG
   .radio-control-bar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .rc-search-wrap {
+    flex: 1 1 auto;
+  }
+
+  .rc-driver-select-wrap {
+    width: 100%;
+  }
+
+  .rc-driver-select {
+    flex: 1;
+    min-width: 0;
   }
 
   .radio-sort-btn {

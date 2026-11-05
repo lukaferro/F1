@@ -925,27 +925,30 @@
                           </div>
                         }
                         @if (groupedStints[session.session_key]?.length) {
-                          <p-table [value]="groupedStints[session.session_key]" styleClass="compact-table">
+                          <p-table [value]="groupedStints[session.session_key]" styleClass="compact-table stints-table">
                             <ng-template pTemplate="header">
-                              <tr>
-                                <th style="width: 7%;">Pos</th>
-                                <th style="width: 22%;">Pilota</th>
-                                <th style="width: 15%;">Team</th>
-                                <th style="width: 14%;">Soste</th>
-                                <th style="width: 42%;">Strategia gomme &amp; Stint</th>
+                              <tr class="header-row">
+                                <th class="col-pos" style="width: 7%;">Pos</th>
+                                <th class="col-driver" style="width: 22%;">Pilota</th>
+                                <th class="col-team" style="width: 15%;">Team</th>
+                                <th class="col-stops" style="width: 14%;">Soste</th>
+                                <th class="col-strategy" style="width: 42%;">Strategia gomme &amp; Stint</th>
                               </tr>
                             </ng-template>
                             <ng-template pTemplate="body" let-driverStint>
-                              <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(driverStint.driver_number))">
-                                <td style="text-align: center; font-weight: bold; white-space: nowrap;">{{ driverStint.positionLabel }}</td>
-                                <td>
+                              <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(driverStint.driver_number))" class="result-row">
+                                <td class="cell-pos" style="text-align: center; font-weight: bold; white-space: nowrap;">{{ driverStint.positionLabel }}</td>
+                                <td class="cell-driver">
                                   <div class="driver-info">
                                     <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(driverStint.driver_number)" [style.color]="'#000'">{{ driverStint.driver_number }}</span>
                                     <span class="driver-name">{{ getDriverName(driverStint.driver_number) }}</span>
                                   </div>
+                                  <div class="driver-mobile-sub">
+                                    <span class="driver-team-sub">{{ getDriverTeam(driverStint.driver_number) }}</span>
+                                  </div>
                                 </td>
-                                <td>{{ getDriverTeam(driverStint.driver_number) }}</td>
-                                <td>
+                                <td class="cell-team">{{ getDriverTeam(driverStint.driver_number) }}</td>
+                                <td class="cell-stops">
                                   <div class="stops-cell">
                                     <span class="stops-badge">{{ driverStint.stopsCount }} {{ driverStint.stopsCount === 1 ? 'sosta' : 'soste' }}</span>
                                     @if (driverStint.stopsCount > 0) {
@@ -953,7 +956,7 @@
                                     }
                                   </div>
                                 </td>
-                                <td>
+                                <td class="cell-strategy">
                                   <div class="tyre-bar">
                                     @for (seg of driverStint.segments; track seg) {
                                       <div class="tyre-segment" [ngClass]="seg.compound"
@@ -1231,13 +1234,13 @@
                           <p class="tab-status">Dati meteo non disponibili per questa sessione.</p>
                         }
                         @if (filteredWeather[session.session_key]?.length) {
-                          <p-table [value]="filteredWeather[session.session_key]" styleClass="compact-table">
+                          <p-table [value]="filteredWeather[session.session_key]" styleClass="compact-table weather-table">
                             <ng-template pTemplate="header">
                               <tr>
-                                <th style="width: 20%;">Orario</th>
-                                <th style="width: 20%;">Temp. Aria</th>
-                                <th style="width: 20%;">Temp. Pista</th>
-                                <th style="width: 20%;">Umidità</th>
+                                <th style="width: 20%;"><span class="th-full">Orario</span><span class="th-short">Ora</span></th>
+                                <th style="width: 20%;"><span class="th-full">Temp. Aria</span><span class="th-short">Aria</span></th>
+                                <th style="width: 20%;"><span class="th-full">Temp. Pista</span><span class="th-short">Pista</span></th>
+                                <th style="width: 20%;"><span class="th-full">Umidità</span><span class="th-short">Umid.</span></th>
                                 <th style="width: 20%;">Vento</th>
                               </tr>
                             </ng-template>
@@ -1271,35 +1274,41 @@
                           </div>
                         }
                         @if (pits[session.session_key]?.length) {
-                          <p-table [value]="pits[session.session_key]" styleClass="compact-table">
+                          <p-table [value]="pits[session.session_key]" styleClass="compact-table pits-table">
                             <ng-template pTemplate="header">
-                              <tr>
-                                <th style="width: 32%;">Pilota</th>
-                                <th style="width: 24%;">Team</th>
-                                <th style="width: 12%;">Giro</th>
-                                <th style="width: 17%;">Durata</th>
-                                <th style="width: 15%;">Orario</th>
+                              <tr class="header-row">
+                                <th class="col-driver" style="width: 32%;">Pilota</th>
+                                <th class="col-team" style="width: 24%;">Team</th>
+                                <th class="col-lap" style="width: 12%;">Giro</th>
+                                <th class="col-duration" style="width: 17%;">Durata</th>
+                                <th class="col-time" style="width: 15%;">Orario</th>
                               </tr>
                             </ng-template>
                             <ng-template pTemplate="body" let-pit>
-                              <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(pit.driver_number))">
-                                <td>
+                              <tr [ngStyle]="getTeamRowStyle(getDriverTeamColor(pit.driver_number))" class="result-row">
+                                <td class="cell-driver">
                                   <div class="driver-info">
                                     <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(pit.driver_number)" [style.color]="'#000'">{{ pit.driver_number }}</span>
                                     <span class="driver-name">{{ getDriverName(pit.driver_number) }}</span>
                                   </div>
+                                  <div class="driver-mobile-sub">
+                                    <span class="driver-team-sub">{{ getDriverTeam(pit.driver_number) }}</span>
+                                  </div>
                                 </td>
-                                <td>{{ getDriverTeam(pit.driver_number) }}</td>
-                                <td>{{ pit.lap_number }}</td>
-                                <td>
-                                  <span [class.fastest-pit-time]="isFastestPit(session.session_key, pit)">
-                                    {{ pit.pit_duration.toFixed(3) }}s
-                                  </span>
-                                  @if (isFastestPit(session.session_key, pit)) {
-                                    <span class="fastest-pit-pill">BEST</span>
-                                  }
+                                <td class="cell-team">{{ getDriverTeam(pit.driver_number) }}</td>
+                                <td class="cell-lap">{{ pit.lap_number }}</td>
+                                <td class="cell-duration">
+                                  <div>
+                                    <span [class.fastest-pit-time]="isFastestPit(session.session_key, pit)">
+                                      {{ pit.pit_duration.toFixed(3) }}s
+                                    </span>
+                                    @if (isFastestPit(session.session_key, pit)) {
+                                      <span class="fastest-pit-pill">BEST</span>
+                                    }
+                                  </div>
+                                  <div class="gap-mobile-sub">{{ pit.date | date:'HH:mm:ss' }}</div>
                                 </td>
-                                <td>{{ pit.date | date:'HH:mm:ss' }}</td>
+                                <td class="cell-time">{{ pit.date | date:'HH:mm:ss' }}</td>
                               </tr>
                             </ng-template>
                           </p-table>
@@ -1313,18 +1322,18 @@
                           <p class="tab-status">Dati sui sorpassi non disponibili per questa sessione (OpenF1 li fornisce solo per le gare).</p>
                         }
                         @if (overtakes[session.session_key]?.length) {
-                          <p-table [value]="overtakes[session.session_key]" styleClass="compact-table">
+                          <p-table [value]="overtakes[session.session_key]" styleClass="compact-table overtakes-table">
                             <ng-template pTemplate="header">
                               <tr>
-                                <th style="width: 15%;">Orario</th>
-                                <th style="width: 70%;">Sorpasso</th>
-                                <th style="width: 15%;">Posizione</th>
+                                <th class="col-ov-time" style="width: 15%;">Orario</th>
+                                <th class="col-ov-main" style="width: 70%;">Sorpasso</th>
+                                <th class="col-ov-pos" style="width: 15%;">Pos</th>
                               </tr>
                             </ng-template>
                             <ng-template pTemplate="body" let-overtake>
                               <tr>
-                                <td>{{ overtake.date | date:'HH:mm:ss' }}</td>
-                                <td>
+                                <td class="cell-ov-time">{{ overtake.date | date:'HH:mm:ss' }}</td>
+                                <td class="cell-ov-main">
                                   <div class="overtake-info">
                                     <span class="overtaking-driver">
                                       <span class="driver-number" [style.background-color]="'#' + getDriverTeamColor(overtake.overtaking_driver_number)" [style.color]="'#000'">{{ overtake.overtaking_driver_number }}</span>
@@ -1337,7 +1346,7 @@
                                     </span>
                                   </div>
                                 </td>
-                                <td>P{{ overtake.position }}</td>
+                                <td class="cell-ov-pos">P{{ overtake.position }}</td>
                               </tr>
                             </ng-template>
                           </p-table>

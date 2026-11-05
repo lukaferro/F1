@@ -74,6 +74,10 @@
   transform: scale(1.1);
 }
 
+.mode-label-short {
+  display: none;
+}
+
 /* Barra di ricerca e filtri */
 .circuits-toolbar {
   background: linear-gradient(135deg, #18181b 0%, #242429 100%);
@@ -1265,34 +1269,155 @@
 
 @media (max-width: 768px) {
   .circuits-container {
-    padding: 1rem;
+    padding: 1rem 0.85rem;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
   }
 
   .header h1 {
-    font-size: 2rem;
+    font-size: clamp(1.65rem, 6vw, 2rem);
+  }
+
+  .subtitle {
+    font-size: 0.92rem;
+    margin-bottom: 1.15rem;
   }
 
   .view-mode-selector {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
-    flex-direction: column;
+    padding: 0.25rem;
+    gap: 0.25rem;
   }
 
   .view-mode-btn {
     width: 100%;
     justify-content: center;
+    padding: 0.55rem 0.35rem;
+    font-size: 0.78rem;
+    gap: 0.35rem;
+  }
+
+  .view-mode-btn i {
+    font-size: 0.88rem;
+  }
+
+  .mode-label-full {
+    display: none;
+  }
+
+  .mode-label-short {
+    display: inline;
+  }
+
+  .circuits-toolbar {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    gap: 0.9rem;
+  }
+
+  .filters-row {
+    gap: 0.85rem;
   }
 
   .circuits-grid {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1.25rem;
+  }
+
+  .circuit-image-container {
+    height: 175px;
   }
 
   .circuit-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+    padding: 0.65rem 0.45rem;
+  }
+
+  .stat-item {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.25rem;
+  }
+
+  .stat-item i {
+    font-size: 1rem;
+  }
+
+  .stat-label {
+    font-size: 0.64rem;
+  }
+
+  .stat-value {
+    font-size: 0.85rem;
+  }
+
+  .map-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.65rem 0.75rem;
+    gap: 0.6rem;
+  }
+
+  .macro-regions-pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.15rem;
+  }
+
+  .macro-regions-pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .macro-pill {
+    flex-shrink: 0;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.78rem;
+  }
+
+  .map-action-toggles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 0.45rem;
+  }
+
+  .toggle-btn {
+    justify-content: center;
+    padding: 0.42rem 0.6rem;
+    font-size: 0.78rem;
   }
 
   .map-viewport-wrapper {
-    height: 480px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+  }
+
+  .f1-world-map-svg {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    min-height: 250px;
+    max-height: 350px;
+  }
+
+  .europe-cluster-hint {
+    position: static;
+    margin: 0.5rem 0.65rem 0.65rem;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.76rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 12px;
   }
 
   .map-inspector-card {
@@ -1300,14 +1425,50 @@
     width: 100%;
     max-height: none;
     border-radius: 0;
+    border: none;
     border-top: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow: none;
+    padding: 1rem;
+    animation: none;
+  }
+
+  .close-inspector-btn {
+    position: static;
+    align-self: flex-end;
+    margin-bottom: -1.75rem;
+    z-index: 2;
+  }
+
+  .inspector-track-preview {
+    height: 115px;
+  }
+
+  .season-summary-banner {
+    padding: 1.1rem;
+    gap: 1rem;
+  }
+
+  .kpi-number {
+    font-size: 1.65rem;
+  }
+
+  .kpi-label {
+    font-size: 0.74rem;
+  }
+
+  .phase-card-header {
+    padding: 1rem;
+  }
+
+  .phase-name {
+    font-size: 1.15rem;
   }
 
   .phase-round-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 0.65rem;
+    padding: 0.9rem 1rem;
   }
 
   .round-row-actions {

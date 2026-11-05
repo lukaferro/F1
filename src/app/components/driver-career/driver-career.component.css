@@ -255,26 +255,59 @@
 }
 @media (max-width: 720px) {
   .career-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+  .career-item {
+    padding: 0.85rem 0.6rem;
+    gap: 0.35rem;
+  }
+  .career-item i,
+  .career-item .career-icon {
+    font-size: 1.4rem;
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .career-label {
+    font-size: 0.76rem;
+  }
+  .career-value {
+    font-size: 1.2rem;
+  }
+  .career-item.full-width.championships-years-item {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.65rem;
+    padding: 1rem 0.85rem;
+  }
+  .career-item.full-width.championships-years-item i {
+    font-size: 1.75rem;
+  }
+  .championship-years {
+    justify-content: center;
   }
   .seasons-header {
     flex-wrap: wrap;
     gap: 0.5rem 1rem;
   }
-  .career-table .col-year { width: 3.6rem; }
-  .career-table .col-num { width: 2.9rem; }
-  .career-table .col-pos { width: 2.4rem; }
-  .career-table .col-points { width: 3.6rem; }
+  .career-table {
+    table-layout: auto;
+  }
+  .career-table .col-year { width: 3.3rem; }
+  .career-table .col-num { width: 2.3rem; }
+  .career-table .col-pos { width: 2.2rem; }
+  .career-table .col-points { width: 3.1rem; }
   .career-table th,
   .career-table td {
-    padding: 0.6rem 0.4rem;
+    padding: 0.55rem 0.32rem;
   }
   .career-table th {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     letter-spacing: 0;
   }
   .career-table td {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
   .career-table td.cell-num,
   .career-table td.cell-pos {
@@ -290,9 +323,8 @@
   .label-short {
     display: inline;
   }
-  /* solo il logo e l'intestazione corta: i testi completi restano per gli screen reader */
-  .label-full,
-  .team-name.has-logo {
+  /* Usiamo le intestazioni corte per i numeri, ma manteniamo visibile il nome scuderia accanto al logo */
+  .label-full {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -301,11 +333,17 @@
     white-space: nowrap;
   }
   .team-logo {
-    margin-right: 0.2rem;
+    width: 18px;
+    height: 18px;
+    margin-right: 0.3rem;
   }
-  /* il grafico si rimpicciolisce: testi più grandi e solo le etichette degli anni ben distanziate */
+  .team-name {
+    font-size: 0.78rem;
+    line-height: 1.25;
+  }
+  /* Font bilanciato per il grafico posizioni su mobile */
   .position-chart .axis-label {
-    font-size: 20px;
+    font-size: 15px;
   }
   .position-chart .x-label.minor {
     display: none;

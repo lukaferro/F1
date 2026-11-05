@@ -613,25 +613,95 @@
 }
 
 @media (max-width: 768px) {
-  .podium {
-    grid-template-columns: 1fr;
+  .gp-detail-container {
+    padding: 1rem 0.85rem;
   }
 
-  .podium-item.first {
-    order: -1;
+  .gp-hero {
+    padding: 1.25rem 1rem;
+    margin-bottom: 1.25rem;
   }
 
   .gp-title {
-    font-size: 1.6rem;
+    font-size: clamp(1.35rem, 5.5vw, 1.75rem);
+  }
+
+  .gp-location {
+    font-size: 0.9rem;
+    gap: 0.4rem;
+  }
+
+  .podium-section {
+    margin-bottom: 1.75rem;
+  }
+
+  .podium {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .podium-item {
+    padding: 0.85rem 0.45rem;
+    border-radius: 12px;
+    gap: 0.25rem;
+  }
+
+  .podium-item.first {
+    padding-top: 1.1rem;
+    padding-bottom: 0.95rem;
+  }
+
+  .podium-visual {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 0.25rem;
+  }
+
+  .podium-item.first .podium-visual {
+    width: 56px;
+    height: 56px;
+  }
+
+  .podium-initials {
+    font-size: 1rem;
+  }
+
+  .podium-position {
+    font-size: 1.2rem;
+  }
+
+  .podium-name {
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+
+  .podium-team {
+    font-size: 0.68rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .podium-time {
+    font-size: 0.68rem;
+  }
+
+  .podium-points {
+    font-size: 0.88rem;
+    margin-top: 0.15rem;
   }
 
   .round-nav {
     flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
   }
 
   .round-nav-btn {
     max-width: 100%;
     width: 100%;
+    padding: 0.75rem 1rem;
   }
 
   .round-nav-btn.next {
@@ -654,32 +724,41 @@
   .driver-mobile-sub {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.2rem;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.18rem;
   }
 
   .race-results-table th,
   .race-results-table td {
-    padding: 0.65rem 0.4rem !important;
+    padding: 0.6rem 0.35rem !important;
   }
 
   .col-pos {
-    width: 34px !important;
-    min-width: 34px !important;
-    padding-left: 0.25rem !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    padding-left: 0.2rem !important;
     padding-right: 0.2rem !important;
   }
 
   .col-pts {
-    width: 44px !important;
-    min-width: 44px !important;
+    width: 42px !important;
+    min-width: 42px !important;
     text-align: center !important;
   }
 
   .col-time {
-    width: 90px !important;
-    min-width: 80px !important;
+    width: 88px !important;
+    min-width: 76px !important;
     text-align: right !important;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
+  }
+
+  .col-qual {
+    font-family: monospace;
+    font-size: 0.73rem !important;
+    text-align: right !important;
+    white-space: nowrap;
+    padding: 0.55rem 0.22rem !important;
   }
 }

@@ -442,3 +442,109 @@
     justify-content: flex-start;
   }
 }
+
+@media (max-width: 768px) {
+  .h2h-panel {
+    padding: 1.1rem 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .h2h-top-bar {
+    gap: 0.9rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .h2h-title-block h2 {
+    font-size: 1.25rem;
+  }
+
+  .h2h-title-block p {
+    font-size: 0.85rem;
+  }
+
+  .h2h-presets {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.2rem;
+  }
+
+  .h2h-presets::-webkit-scrollbar {
+    display: none;
+  }
+
+  .preset-chip {
+    flex-shrink: 0;
+    padding: 0.4rem 0.7rem;
+  }
+
+  .preset-label {
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .preset-sub {
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+
+  .h2h-selectors {
+    gap: 0.65rem;
+    margin-bottom: 1.15rem;
+  }
+
+  .h2h-fighters {
+    gap: 0.75rem;
+    margin-bottom: 1.15rem;
+  }
+
+  .fighter-card {
+    padding: 0.8rem 0.9rem;
+    gap: 0.75rem;
+  }
+
+  .fighter-avatar-wrap {
+    width: 56px;
+    height: 56px;
+  }
+
+  .fighter-name-row h3 {
+    font-size: 1.05rem;
+  }
+
+  .vs-badge {
+    width: 34px;
+    height: 34px;
+    font-size: 0.78rem;
+  }
+
+  .h2h-metrics {
+    gap: 0.65rem;
+  }
+
+  .metric-row {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .metric-header {
+    gap: 0.4rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .metric-label {
+    font-size: 0.75rem;
+    gap: 0.3rem;
+    text-align: center;
+  }
+
+  .metric-val {
+    font-size: 0.98rem;
+  }
+
+  .val-left.is-winner,
+  .val-right.is-winner {
+    font-size: 1.08rem;
+  }
+}
